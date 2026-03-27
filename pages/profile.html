@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile - Famagusta Dart Club</title>
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@4.1.0/fonts/remixicon.css" rel="stylesheet">
+    <link rel="shortcut icon" href="../files/media/images/logo.png">
+    <link rel="stylesheet" href="../css/style.css">
+    <style>
+        .profile-container { padding: 2rem 0; }
+        .profile-card {
+            background: white;
+            border-radius: 10px;
+            padding: 2rem;
+            margin: 1rem 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .profile-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .profile-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            overflow: hidden;
+        }
+        .profile-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .tournament-card {
+            background: #f5f5f5;
+            border-radius: 5px;
+            padding: 1rem;
+            margin: 0.5rem 0;
+        }
+    </style>
+</head>
+<body>
+    <header class="header" id="header">
+        <nav class="nav container">
+            <a href="main.php" class="nav__logo">
+                <img src="../files/media/images/logo.png" alt="logo"> Famagusta Dart Club
+            </a>
+            <div class="nav__menu" id="nav-menu">
+                <ul class="nav__list">
+                    <li class="nav__item">
+                        <a href="main.php#home" class="nav__link">Home</a>
+                    </li>
+                    <li class="nav__item">
+                        <a href="tournaments.html" class="nav__link">Tournaments</a>
+                    </li>
+                    <li class="nav__item">
+                        <a href="blog.html" class="nav__link">Blog</a>
+                    </li>
+                    <li class="nav__item">
+                        <a href="gallery.html" class="nav__link">Gallery</a>
+                    </li>
+                    <li class="nav__item">
+                        <a href="profile.html" class="nav__link active-link">Profile</a>
+                    </li>
+                </ul>
+                <div class="nav__close" id="nav-close">
+                    <i class="ri-close-line"></i>
+                </div>
+            </div>
+            <div class="nav__toggle" id="nav-toggle">
+                <i class="ri-menu-line"></i>
+            </div>
+        </nav>
+    </header>
+
+    <main class="main">
+        <section class="profile-container container">
+            <div class="section__data">
+                <h2 class="section__subtitle">My</h2>
+                <div class="section__titles">
+                    <h1 class="section__title-border">Profile</h1>
+                    <h1 class="section__title">Information</h1>
+                </div>
+            </div>
+            
+            <div class="profile-card">
+                <div class="profile-header">
+                    <div class="profile-avatar">
+                        <img src="../files/media/images/profile/profilePic.jpg" alt="Profile Picture">
+                    </div>
+                    <div>
+                        <h3 id="player-name">Loading...</h3>
+                        <p id="player-email">Loading...</p>
+                    </div>
+                </div>
+                
+                <div>
+                    <h4>My Tournaments</h4>
+                    <div id="my-tournaments">
+                        <!-- Tournaments will be loaded here -->
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer section">
+        <div class="footer__container container grid">
+            <div>
+                <a href="main.php" class="footer__logo">
+                    <img src="../files/media/images/logo.png" alt="logo"> Famagusta Dart Club
+                </a>
+                <p class="footer__description">Register for updates below.</p>
+                <form action="" class="footer__from">
+                    <input type="email" name="user_email" placeholder="Your Email" class="footer__input">
+                    <button class="button" type="submit">Register</button>
+                </form>
+            </div>
+            <div class="footer__content">
+                <div>
+                    <h3 class="footer__title">SERVICES</h3>
+                    <ul class="footer__links">
+                        <li><a href="tournaments.html" class="footer__link">Tournaments</a></li>
+                        <li><a href="gallery.html" class="footer__link">Gallery</a></li>
+                        <li><a href="blog.html" class="footer__link">Blog</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="footer__title">ABOUT US</h3>
+                    <ul class="footer__links">
+                        <li><a href="about.html" class="footer__link">About The Club</a></li>
+                        <li><a href="about.html" class="footer__link">About The Website</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="footer__group">
+            <ul class="footer__social">
+                <a href="https://www.facebook.com/GazimagusaDartsBirligi" class="footer__social-link">
+                    <i class="ri-facebook-circle-fill"></i>
+                </a>
+                <a href="" class="footer__social-link">
+                    <i class="ri-phone-fill"></i>
+                </a>
+            </ul>
+            <span class="footer__copy">&#169; copyright Nazife Dimililer. All rights reserved</span>
+        </div>
+    </footer>
+
+    <script src="../js/scrollreveal.min.js"></script>
+    <script src="../js/behaviour.js"></script>
+    <script>
+        function loadProfile() {
+            fetch('../services/get_profile.php')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        document.getElementById('player-name').textContent = data.player.plr_name + ' ' + data.player.plr_surname;
+                        document.getElementById('player-email').textContent = data.player.email || 'Email not available';
+                        loadMyTournaments();
+                    } else {
+                        console.error('Error loading profile:', data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+        }
+
+        function loadMyTournaments() {
+            fetch('../services/get_my_tournaments.php')
+                .then(response => response.json())
+                .then(data => {
+                    const tournamentsContainer = document.getElementById('my-tournaments');
+                    
+                    if (data.length === 0) {
+                        tournamentsContainer.innerHTML = '<p>No tournaments joined yet.</p>';
+                        return;
+                    }
+                    
+                    tournamentsContainer.innerHTML = '';
+                    
+                    data.forEach(tournament => {
+                        const tournamentCard = document.createElement('div');
+                        tournamentCard.className = 'tournament-card';
+                        tournamentCard.innerHTML = `
+                            <h5>${tournament.tour_title}</h5>
+                            <p><strong>Type:</strong> ${tournament.tour_type}</p>
+                            <p><strong>Status:</strong> ${tournament.player_status}</p>
+                        `;
+                        tournamentsContainer.appendChild(tournamentCard);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error loading tournaments:', error);
+                });
+        }
+
+        document.addEventListener('DOMContentLoaded', loadProfile);
+    </script>
+</body>
+</html>

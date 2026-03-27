@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tournaments - Famagusta Dart Club</title>
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@4.1.0/fonts/remixicon.css" rel="stylesheet">
+    <link rel="shortcut icon" href="../files/media/images/logo.png">
+    <link rel="stylesheet" href="../css/style.css">
+    <style>
+        .tournaments-container { padding: 2rem 0; }
+        .tournament-card {
+            background: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .tournament-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        .tournament-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #333;
+        }
+        .tournament-status {
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: bold;
+        }
+        .status-active { background: #4CAF50; color: white; }
+        .status-upcoming { background: #2196F3; color: white; }
+        .status-completed { background: #9E9E9E; color: white; }
+        .register-btn {
+            background: #ff6b35;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .register-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <header class="header" id="header">
+        <nav class="nav container">
+            <a href="main.php" class="nav__logo">
+                <img src="../files/media/images/logo.png" alt="logo"> Famagusta Dart Club
+            </a>
+            <div class="nav__menu" id="nav-menu">
+                <ul class="nav__list">
+                    <li class="nav__item">
+                        <a href="main.php#home" class="nav__link">Home</a>
+                    </li>
+                    <li class="nav__item">
+                        <a href="tournaments.html" class="nav__link active-link">Tournaments</a>
+                    </li>
+                    <li class="nav__item">
+                        <a href="blog.html" class="nav__link">Blog</a>
+                    </li>
+                    <li class="nav__item">
+                        <a href="gallery.html" class="nav__link">Gallery</a>
+                    </li>
+                    <li class="nav__item">
+                        <a href="profile.html" class="nav__link">Profile</a>
+                    </li>
+                </ul>
+                <div class="nav__close" id="nav-close">
+                    <i class="ri-close-line"></i>
+                </div>
+            </div>
+            <div class="nav__toggle" id="nav-toggle">
+                <i class="ri-menu-line"></i>
+            </div>
+        </nav>
+    </header>
+
+    <main class="main">
+        <section class="tournaments-container container">
+            <div class="section__data">
+                <h2 class="section__subtitle">Available</h2>
+                <div class="section__titles">
+                    <h1 class="section__title-border">Tournaments</h1>
+                    <h1 class="section__title">Join Now</h1>
+                </div>
+            </div>
+            
+            <div id="tournaments-list">
+                <!-- Tournaments will be loaded here -->
+            </div>
+        </section>
+    </main>
+
+    <script src="../js/scrollreveal.min.js"></script>
+    <script src="../js/behaviour.js"></script>
+    <script>
+        function loadTournaments() {
+            fetch('../services/get_tournaments.php')
+                .then(response => response.json())
+                .then(data => {
+                    const tournamentsList = document.getElementById('tournaments-list');
+                    
+                    if (data.length === 0) {
+                        tournamentsList.innerHTML = '<div style="text-align: center; padding: 3rem;"><h3>No tournaments available</h3></div>';
+                        return;
+                    }
+                    
+                    tournamentsList.innerHTML = '';
+                    
+                    data.forEach(tournament => {
+                        const status = getTournamentStatus(tournament.tour_creationDate, tournament.tour_endDate);
+                        const statusClass = getStatusClass(status);
+                        const canRegister = (status === 'Active' || status === 'Upcoming') && !tournament.registered;
+                        const regBadge = tournament.registered ? `<span class="tournament-status status-active" style="background:#673ab7;">Registered${tournament.player_status?` (${tournament.player_status})`:''}</span>` : '';
+                        const buttonLabel = tournament.registered ? 'Already Registered' : (canRegister ? 'Register for Tournament' : 'Registration Closed');
+                        const buttonDisabled = tournament.registered || !(status === 'Active' || status === 'Upcoming');
+                        const tournamentCard = document.createElement('div');
+                        tournamentCard.className = 'tournament-card';
+                        tournamentCard.innerHTML = `
+                            <div class="tournament-header">
+                                <h3 class="tournament-title">${tournament.tour_title}</h3>
+                                <div style="display:flex; gap:8px; align-items:center;">
+                                    ${regBadge}
+                                    <span class="tournament-status ${statusClass}">${status}</span>
+                                </div>
+                            </div>
+                            <p><strong>Type:</strong> ${tournament.tour_type}</p>
+                            <p><strong>Start Date:</strong> ${new Date(tournament.tour_creationDate).toLocaleDateString()}</p>
+                            <p><strong>End Date:</strong> ${new Date(tournament.tour_endDate).toLocaleDateString()}</p>
+                            <button class="register-btn" onclick="registerForTournament(${tournament.tour_id})" ${buttonDisabled ? 'disabled' : ''}>
+                                ${buttonLabel}
+                            </button>
+                        `;
+                        tournamentsList.appendChild(tournamentCard);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error loading tournaments:', error);
+                    document.getElementById('tournaments-list').innerHTML = '<div style="text-align: center; padding: 3rem;"><h3>Error loading tournaments</h3></div>';
+                });
+        }
+
+        function getTournamentStatus(startDate, endDate) {
+            const today = new Date();
+            const start = new Date(startDate);
+            const end = new Date(endDate);
+            
+            if (today > end) return 'Completed';
+            if (today >= start) return 'Active';
+            return 'Upcoming';
+        }
+
+        function getStatusClass(status) {
+            switch(status) {
+                case 'Active': return 'status-active';
+                case 'Upcoming': return 'status-upcoming';
+                case 'Completed': return 'status-completed';
+                default: return '';
+            }
+        }
+
+        function registerForTournament(tournamentId) {
+            fetch('../services/register_tournament.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    tournament_id: tournamentId
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Successfully registered for tournament!');
+                    loadTournaments();
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error registering for tournament. Please try again.');
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', loadTournaments);
+    </script>
+</body>
+</html> 

@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<!--Base was copy pasted from the main page(if there was any issue there, it was also transfered here)-->
+<!--IN THE END THE OTHER IMAGES FOLDER SHOULD BE DELETED AND PATHS I USED FOR IMAGES MUST CHANGE.-->
+
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@4.1.0/fonts/remixicon.css" rel="stylesheet" />
+  <link rel="shortcut icon" href="../images/logo.png" />
+  <link rel="stylesheet" href="../css/style.css" />
+  <link rel="stylesheet" href="../css/login_style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+  <title>Famagusta Dart Club</title>
+</head>
+
+<body>
+  <top id="top"></top>
+  <header class="header" id="header">
+    <nav class="nav container">
+      <a href="main.php" class="nav__logo">
+        <img src="../images/logo.png" alt="logo" /> Famagusta Dart Club
+      </a>
+  </header>
+
+
+  <main class="main">
+    <div class="box">
+      <div class="login">
+        <div class="loginBx">
+          <h2><i class="ri-login-box-line"></i>Sign Up<i class="ri-flashlight-line"></i></h2>
+          <form id="signup-form">
+            <input type="text" id="username" placeholder="Username..." required>
+            <input type="email" id="email" placeholder="Email..." required>
+            <input type="password" id="password" placeholder="Password..." required>
+            <input type="password" id="password2" placeholder="Repeat Password..." required>
+            <input type="submit" value="Sign Up">
+          </form>
+          <div id="error-message" style="color: red;"></div>
+          <div class="group">
+            <a href="login.html"><pre>Already have an account? Login</pre></a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+
+
+
+  <!-- Scroll reveal -->
+  <script src="../js/scrollreveal.min.js"></script>
+
+  <!--primary js file-->
+  <script src="../js/behaviour.js"></script>
+
+  <script>
+   document.getElementById('signup-form').addEventListener('submit', function(event) {
+  event.preventDefault();
+  
+  const username = document.getElementById('username').value;
+  const email = document.getElementById('email').value;
+  const password = document.getElementById('password').value;
+  const password2 = document.getElementById('password2').value;
+  
+  if (password !== password2) {
+    document.getElementById('error-message').innerText = 'Passwords do not match';
+    return;
+  }
+
+  fetch('../services/signup.php', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ username: username, email: email, password: password })
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      window.location.href = 'login.html';
+    } else {
+      document.getElementById('error-message').innerText = data.message;
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+  });
+});
+  </script>
+</body>
+
+</html>

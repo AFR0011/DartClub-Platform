@@ -1,0 +1,235 @@
+<!--
+  TODO:
+    - 
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <!-- Title -->
+    <title>Registration</title>
+
+    <!-- Meta tags -->
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- External stylesheet and icon fonts -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/remixicon@4.1.0/fonts/remixicon.css"
+      rel="stylesheet"
+    />
+    <link rel="shortcut icon" href="../images/logo.png" />
+    <link rel="stylesheet" href="../css/style.css" />
+
+    <!-- Internal CSS -->
+    <style>
+      .button {
+        padding: 6px 12px;
+        margin: 0.5rem 0;
+      }
+    </style>
+    <!-- Client-side scripts -->
+    <script
+      src="https://code.jquery.com/jquery-3.7.1.slim.min.js"
+      integrity="sha256-kmHvs0B+OpCW5GVHUNjv9rOmY0IvSIRcf7zGUDTDQM8="
+      crossorigin="anonymous"
+    ></script>
+    <script src="../js/upload.js"></script>
+  </head>
+  <body>
+    <!-- Header section -->
+    <header class="header" id="header">
+      <nav class="nav container">
+        <!-- Logo and navigation menu -->
+        <a href="main.php" class="nav__logo">
+          <img src="../images/logo.png" alt="logo" /> Famagusta Dart Club
+        </a>
+        <div class="nav__menu" id="nav-menu">
+          <ul class="nav__list">
+            <!-- Navigation links -->
+            <li class="nav__item">
+              <a href="main.php#home" class="nav__link active-link">Home</a>
+            </li>
+            <li class="nav__item">
+              <a href="main.php#events" class="nav__link">Events</a>
+            </li>
+            <li class="nav__item">
+              <a href="main.php#contactus" class="nav__link">Contact us</a>
+            </li>
+            <li class="nav__item">
+              <a href="main.php#about" class="nav__link">About</a>
+            </li>
+            <li class="nav__item">
+              <a href="admin_panel.php" class="nav__link">Admin Panel</a>
+            </li>
+            <!-- Register button -->
+            <div class="nav__link">
+              <a href="#" class="button nav__button"> Register Now </a>
+            </div>
+          </ul>
+          <!-- Close button for mobile -->
+          <div class="nav__close" id="nav-close">
+            <i class="ri-close-line"></i>
+          </div>
+        </div>
+        <!-- Toggle button for mobile -->
+        <div class="nav__toggle" id="nav-toggle">
+          <i class="ri-menu-line"></i>
+        </div>
+      </nav>
+    </header>
+
+    <!-- Main section -->
+    <main class="main">
+      <!-- Registration section -->
+      <section>
+        <div id="downloadforms" class="register container">
+          <br /><br /><br />
+          <h1>Registration</h1>
+          <br />
+          <p>
+            Please download the forms below and submit after filling them.(Both
+            forms must be submitted)
+          </p>
+          <br />
+          <!-- Download buttons for registration forms -->
+          <a class="button" href="../other/athleteform.docx"
+            >Athlete Registration Form</a
+          ><br />
+          <a class="button" href="../other/memberform.docx"
+            >Member Registration Form</a
+          >
+        </div>
+        <br />
+      </section>
+
+      <hr />
+      <br />
+
+      <!-- Upload section -->
+      <form action="../services/upload_application.php" method="post" enctype="multipart/form-data">
+        <section>
+          <div id="uploadSection" class="upload container">
+            <div id="uploadArea" class="upload_area container">
+              <div class="upload__content">
+                <input type="file" multiple="true" max="2" id="uploadInput" name="forms"/>
+                <h3>Drag and drop your forms here</h3>
+                <h3>OR</h3>
+                <button id="browseButton" class="button">Browse Files</button>
+              </div>
+            </div>
+            <div id="uploadFiles" class="upload_files"></div>
+            <br />
+            <button id="uploadButton" class="button" type="submit">
+              Submit Files
+            </button>
+          </div>
+        </section>
+      </form>
+    </main>
+
+    <!-- Footer section -->
+    <footer class="footer section" id="footer">
+      <div class="footer__container container grid">
+        <div>
+          <!-- Footer logo and description -->
+          <a href="#" class="footer__logo">
+            <img src="../images/logo.png" alt="logo img" />Famagusta Dart Club
+          </a>
+          <p class="footer__description">
+            <!-- Something's wrong with this line (CSS most likely) -->
+            Register for updates below.
+          </p>
+          <!-- Email registration form -->
+          <form action="" class="footer__from" id="contact-form">
+            <input
+              type="email"
+              name="user_email"
+              placeholder="Your Email"
+              class="footer__input"
+              id="contact-user"
+            />
+            <button class="button" type="submit">Register</button>
+          </form>
+          <p class="footer__message" id="contact-message"></p>
+        </div>
+        <!-- Footer content -->
+        <div class="footer__content">
+          <div>
+            <!-- Services links -->
+            <h3 class="footer__title">SERVICES</h3>
+            <ul class="footer__links">
+              <li>
+                <a href="#" class="footer__link">Tournaments</a
+                ><!-- FILL THIS PART LATER -->
+              </li>
+              <li>
+                <a href="#" class="footer__link">Gallery</a
+                ><!-- FILL THIS PART LATER -->
+              </li>
+              <li>
+                <a href="#" class="footer__link">Blog</a
+                ><!-- FILL THIS PART LATER -->
+              </li>
+            </ul>
+          </div>
+          <div>
+            <!-- About Us links -->
+            <h3 class="footer__title">ABOUT US</h3>
+            <ul class="footer__links">
+              <li>
+                <a href="#" class="footer__link">About The Club</a>
+              </li>
+              <li>
+                <a href="#" class="footer__link">About The Website</a
+                ><!-- FILL THIS PART LATER -->
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <!-- Footer social links and copyright -->
+      <div class="container">
+        <!-- Either HTML of this div or previous div, or the CSS might need debugging -->
+        <div class="footer__group">
+          <ul class="footer__social">
+            <!-- Social media links -->
+            <a href="" class="footer__social-link">
+              <i class="ri-facebook-circle-fill"></i>
+            </a>
+            <a href="" class="footer__social-link">
+              <i class="ri-instagram-fill"></i>
+            </a>
+            <a href="" class="footer__social-link">
+              <i class="ri-phone-fill"></i>
+            </a>
+            <a href="" class="footer__social-link">
+              <i class="ri-mail-fill"></i>
+            </a>
+          </ul>
+          <!-- Copyright notice -->
+          <span class="footer__copy">
+            &#169; copyright Nazife Dimililer. All rights reserved
+          </span>
+        </div>
+      </div>
+    </footer>
+
+    <!-- Scroll reveal script -->
+    <script src="../js/scrollreveal.min.js"></script>
+
+    <!-- Email JS script -->
+    <script
+      type="text/javascript"
+      src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"
+    ></script>
+   
+    <!--primary js file-->
+    <script src="../js/behaviour.js"></script>
+
+    <!--handle email service-->
+    <script src="../js/contact_form.js"></script>
+
+
+  </body>
+</html>

@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@4.1.0/fonts/remixicon.css" rel="stylesheet" />
+  <link rel="shortcut icon" href="../images/logo.png" />
+  <link rel="stylesheet" href="../css/style.css" />
+  <link rel="stylesheet" href="../css/login_style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+  <title>Famagusta Dart Club</title>
+</head>
+
+<body>
+  <top id="top"></top>
+  <header class="header" id="header">
+    <nav class="nav container">
+      <a href="main.php" class="nav__logo">
+        <img src="../images/logo.png" alt="logo" /> Famagusta Dart Club
+      </a>
+  </header>
+
+
+  <main class="main">
+    <div class="box">
+      <div class="login">
+        <div class="loginBx">
+          <h2><i class="ri-login-box-line"></i>Login<i class="ri-flashlight-line"></i></h2>
+          <form id="login-form">
+            <input type="email" id="email" placeholder="Email..." required>
+            <input type="password" id="password" placeholder="Password..." required>
+            <input type="submit" value="Sign In">
+          </form>
+          <div id="error-message" style="color: red;"></div>
+          <div class="group">
+            <a href="reset_password.html">Forgot Password?</a>
+            <a href="sign_up.html">Sign Up</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+
+
+
+  <!-- Scroll reveal -->
+  <script src="../js/scrollreveal.min.js"></script>
+
+  <!--primary js file-->
+  <script src="../js/behaviour.js"></script>
+
+  <script>
+    document.getElementById('login-form').addEventListener('submit', function(event) {
+      event.preventDefault();
+
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+
+      fetch('../services/login.php', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ email: email, password: password })
+      })
+      .then(response => {
+        console.log('Raw response:', response);
+        return response.json();
+      })
+      .then(data => {
+        console.log('Parsed data:', data);
+        if (data.success) {
+          window.location.href = 'main.php';
+        } else {
+          document.getElementById('error-message').innerText = data.message;
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        document.getElementById('error-message').innerText = 'An error occurred during login.';
+      });
+    });
+  </script>
+</body>
+
+</html>

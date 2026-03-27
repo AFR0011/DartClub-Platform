@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@4.1.0/fonts/remixicon.css" rel="stylesheet" />
+    <link rel="shortcut icon" href="../images/logo.png" />
+    <link rel="stylesheet" href="../css/style.css" />
+    <title>Blog - Famagusta Dart Club</title>
+</head>
+<body>
+    <header class="header" id="header">
+        <nav class="nav container">
+            <a href="#top" class="nav__logo">
+                <img src="../images/logo.png" alt="logo" /> Famagusta Dart Club
+            </a>
+            <div class="nav__menu" id="nav-menu">
+                <ul class="nav__list">
+                    <li class="nav__item">
+                        <a href="index.html" class="nav__link">Home</a>
+                    </li>
+                    <li class="nav__item">
+                        <a href="gallery.html" class="nav__link">Gallery</a>
+                    </li>
+                    <li class="nav__item">
+                        <a href="blog.html" class="nav__link active-link">Blog</a>
+                    </li>
+                    <li class="nav__item">
+                        <a href="contact.html" class="nav__link">Contact Us</a>
+                    </li>
+                </ul>
+                <div class="nav__close" id="nav-close">
+                    <i class="ri-close-line"></i>
+                </div>
+            </div>
+            <div class="nav__toggle" id="nav-toggle">
+                <i class="ri-menu-line"></i>
+            </div>
+        </nav>
+    </header>
+
+    <main class="main">
+        <section class="blog section container">
+            <div class="section__title">
+                <h2>Our Blog</h2>
+            </div>
+            <div class="blog__form" id="blog-form" style="display:none;">
+                <textarea id="post-content" placeholder="What's on your mind?" class="blog__textarea"></textarea>
+                <button id="post-btn" class="button">Post</button>
+            </div>
+            <div id="posts" class="blog__posts">
+                <!-- Blog posts will be dynamically added here -->
+            </div>
+            <div class="blog__pagination" style="display:flex;gap:8px;align-items:center;margin-top:12px;">
+                <button id="prev-page" class="button">Prev</button>
+                <span id="page-info"></span>
+                <button id="next-page" class="button">Next</button>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer section">
+        <div class="footer__container container grid">
+            <div>
+                <a href="#top" class="footer__logo">
+                    <img src="../images/logo.png" alt="logo" /> Famagusta Dart Club
+                </a>
+                <p class="footer__description">Register for updates below.</p>
+                <form action="" class="footer__from">
+                    <input type="email" name="user_email" placeholder="Your Email" class="footer__input" />
+                    <button class="button" type="submit">Register</button>
+                </form>
+            </div>
+            <div class="footer__content">
+                <div>
+                    <h3 class="footer__title">SERVICES</h3>
+                    <ul class="footer__links">
+                        <li><a href="tournaments.html" class="footer__link">Tournaments</a></li>
+                        <li><a href="gallery.html" class="footer__link">Gallery</a></li>
+                        <li><a href="blog.html" class="footer__link">Blog</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="footer__title">ABOUT US</h3>
+                    <ul class="footer__links">
+                        <li><a href="about.html" class="footer__link">About The Club</a></li>
+                        <li><a href="about.html" class="footer__link">About The Website</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="footer__group">
+            <ul class="footer__social">
+                <a href="https://www.facebook.com/GazimagusaDartsBirligi" class="footer__social-link">
+                    <i class="ri-facebook-circle-fill"></i>
+                </a>
+                <a href="" class="footer__social-link">
+                    <i class="ri-phone-fill"></i>
+                </a>
+            </ul>
+            <span class="footer__copy">&#169; copyright Nazife Dimililer. All rights reserved</span>
+        </div>
+    </footer>
+
+    <a href="#top" class="scrollup" id="scroll-up">
+        <i class="ri-arrow-up-line"></i>
+    </a>
+
+    <script src="../js/scrollreveal.min.js"></script>
+    <script src="../js/behaviour.js"></script>
+    <script>
+        let isPrivileged = false;
+        let currentPage = 1;
+        let total = 0;
+        let pageSize = 10;
+
+        function renderBlogsPayload(payload) {
+            const postsContainer = document.getElementById('posts');
+            const blogs = payload && payload.items ? payload.items : [];
+            total = payload && payload.total ? payload.total : 0;
+            pageSize = payload && payload.pageSize ? payload.pageSize : 10;
+            currentPage = payload && payload.page ? payload.page : 1;
+
+            const pageInfo = document.getElementById('page-info');
+            const totalPages = Math.max(1, Math.ceil(total / pageSize));
+            pageInfo.textContent = `Page ${currentPage} of ${totalPages}`;
+            document.getElementById('prev-page').disabled = currentPage <= 1;
+            document.getElementById('next-page').disabled = currentPage >= totalPages;
+
+            if (!blogs || blogs.length === 0) {
+                postsContainer.innerHTML = '<div style="text-align: center; padding: 2rem;"><h3>No blog posts available</h3></div>';
+                return;
+            }
+            postsContainer.innerHTML = '';
+            blogs.forEach(blog => {
+                const blogPost = document.createElement('div');
+                blogPost.className = 'blog__post';
+                blogPost.innerHTML = `
+                    <h3>${blog.blog_title}</h3>
+                    <p>${blog.blog_content}</p>
+                    <small>${blog.author ? `By ${blog.author} - ` : ''}${blog.created_at ? new Date(blog.created_at).toLocaleDateString() : ''}</small>
+                    ${isPrivileged ? `<div><button class="button" data-id="${blog.blog_id}">Delete</button></div>` : ''}
+                `;
+                if (isPrivileged) {
+                    const delBtn = blogPost.querySelector('button[data-id]');
+                    delBtn.addEventListener('click', () => deleteBlog(blog.blog_id));
+                }
+                postsContainer.appendChild(blogPost);
+            });
+        }
+
+        function loadBlogs(page = 1) {
+            fetch(`../services/get_blogs.php?page=${page}&pageSize=${pageSize}`)
+                .then(response => response.json())
+                .then(renderBlogsPayload)
+                .catch(error => {
+                    console.error('Error loading blogs:', error);
+                    document.getElementById('posts').innerHTML = '<div style="text-align: center; padding: 2rem;"><h3>Error loading blog posts</h3></div>';
+                });
+        }
+
+        function createBlogPost() {
+            const content = document.getElementById('post-content').value.trim();
+            if (!content) {
+                alert('Please fill in the content');
+                return;
+            }
+            fetch('../services/create_blog.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title: 'Blog Post', content })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('post-content').value = '';
+                    loadBlogs();
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error creating blog post. Please try again.');
+            });
+        }
+
+        function deleteBlog(blogId) {
+            if (!confirm('Delete this blog post?')) return;
+            fetch('../services/delete_blog.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ blog_id: blogId })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    loadBlogs();
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error deleting blog post. Please try again.');
+            });
+        }
+
+        function checkUserRole() {
+            return fetch('../services/getUserRole.php')
+                .then(response => response.json())
+                .then(data => {
+                    isPrivileged = (data.user_role === 'admin' || data.user_role === 'manager');
+                    const form = document.getElementById('blog-form');
+                    form.style.display = isPrivileged ? 'block' : 'none';
+                    if (isPrivileged) {
+                        document.getElementById('post-btn').addEventListener('click', createBlogPost);
+                    }
+                })
+                .catch(() => {
+                    isPrivileged = false;
+                    const form = document.getElementById('blog-form');
+                    form.style.display = 'none';
+                });
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            checkUserRole().then(loadBlogs);
+            document.getElementById('prev-page').addEventListener('click', () => {
+                if (currentPage > 1) loadBlogs(currentPage - 1);
+            });
+            document.getElementById('next-page').addEventListener('click', () => {
+                const totalPages = Math.max(1, Math.ceil(total / pageSize));
+                if (currentPage < totalPages) loadBlogs(currentPage + 1);
+            });
+        });
+    </script>
+</body>
+</html>
