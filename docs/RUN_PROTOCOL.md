@@ -3,6 +3,10 @@
 ## Purpose
 Define how to verify work in this repo when there is no single automated test command and the current Codex environment does not expose PHP CLI on PATH.
 
+## Companion Doc
+- Use `docs/TESTING_CHECKLIST.md` for the concrete next-session click path and data-entry sequence.
+- Use this file for the validation ladder and reporting rules.
+
 ## Verification Ladder
 ### Level 0 - Static Repo Validation
 Use for:

@@ -21,6 +21,7 @@
 - Main changes:
   - initialized local git metadata for the working tree
   - added repo docs pack and repo-local Codex config
+  - added a next-session manual testing checklist
   - added shared PHP bootstrap/config path
   - added shared player/tournament helper layers
   - removed request-path schema mutation from active handlers

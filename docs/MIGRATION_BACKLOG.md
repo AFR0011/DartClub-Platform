@@ -14,6 +14,7 @@
 - Moved public/profile/tournament identity reads to `players.user_id`.
 
 ## Next High-Priority Validation
+- Follow `docs/TESTING_CHECKLIST.md` in order.
 - Run a real DB import from `dart_club.sql`.
 - Smoke-test:
   - signup/login

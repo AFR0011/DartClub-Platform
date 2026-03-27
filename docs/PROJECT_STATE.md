@@ -74,6 +74,7 @@
 
 ## Remaining Priorities
 - Run a real XAMPP/MariaDB smoke test against the updated schema.
+- Use `docs/TESTING_CHECKLIST.md` as the next-session manual verification order.
 - Verify:
   - signup/login
   - player approval/creation
@@ -97,3 +98,5 @@
   - database import
   - browser/XAMPP flows
   - end-to-end tournament UI interactions
+- Next-session operator guide:
+  - `docs/TESTING_CHECKLIST.md`
