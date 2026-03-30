@@ -3,51 +3,117 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tournaments - Famagusta Dart Club</title>
+    <title>Tournament Hub - Famagusta Dart Club</title>
     <link href="https://cdn.jsdelivr.net/npm/remixicon@4.1.0/fonts/remixicon.css" rel="stylesheet">
     <link rel="shortcut icon" href="../files/media/images/logo.png">
     <link rel="stylesheet" href="../css/style.css">
     <style>
-        .tournaments-container { padding: 2rem 0; }
+        .page-shell {
+            padding: 7rem 0 3rem;
+        }
+
+        .hub-hero,
         .tournament-card {
-            background: white;
-            border-radius: 10px;
-            padding: 1.5rem;
-            margin: 1rem 0;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        .tournament-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1rem;
-        }
-        .tournament-title {
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: #333;
-        }
-        .tournament-status {
-            padding: 0.5rem 1rem;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
             border-radius: 20px;
-            font-size: 0.9rem;
-            font-weight: bold;
+            padding: 1.5rem;
         }
-        .status-active { background: #4CAF50; color: white; }
-        .status-upcoming { background: #2196F3; color: white; }
-        .status-completed { background: #9E9E9E; color: white; }
-        .register-btn {
-            background: #ff6b35;
-            color: white;
-            border: none;
-            padding: 0.75rem 1.5rem;
-            border-radius: 5px;
-            cursor: pointer;
-            font-weight: bold;
+
+        .hub-hero {
+            display: grid;
+            gap: 1rem;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            margin-bottom: 2rem;
         }
-        .register-btn:disabled {
-            background: #ccc;
-            cursor: not-allowed;
+
+        .hub-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.45rem 0.9rem;
+            border-radius: 999px;
+            background: rgba(255, 107, 53, 0.16);
+            color: #ffd7ca;
+            font-size: 0.85rem;
+        }
+
+        .hub-sections {
+            display: grid;
+            gap: 2rem;
+        }
+
+        .section-block {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .card-grid {
+            display: grid;
+            gap: 1rem;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        }
+
+        .tournament-card h3 {
+            margin-bottom: 0.75rem;
+        }
+
+        .tournament-meta {
+            display: grid;
+            gap: 0.35rem;
+            margin-bottom: 1rem;
+            color: var(--text-color);
+        }
+
+        .status-chip {
+            display: inline-block;
+            padding: 0.45rem 0.85rem;
+            border-radius: 999px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            margin-bottom: 0.9rem;
+        }
+
+        .status-registration_open,
+        .status-registration_closed,
+        .status-draft {
+            background: rgba(56, 189, 248, 0.16);
+            color: #9fe6ff;
+        }
+
+        .status-in_progress {
+            background: rgba(34, 197, 94, 0.18);
+            color: #b8f7c9;
+        }
+
+        .status-completed,
+        .status-archived {
+            background: rgba(148, 163, 184, 0.18);
+            color: #dde6f0;
+        }
+
+        .card-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            margin-top: 1rem;
+        }
+
+        .ghost-button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.8rem 1.1rem;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #fff;
+        }
+
+        .empty-message {
+            padding: 1rem;
+            border: 1px dashed rgba(255, 255, 255, 0.12);
+            border-radius: 16px;
+            color: var(--text-color);
         }
     </style>
 </head>
@@ -58,23 +124,7 @@
                 <img src="../files/media/images/logo.png" alt="logo"> Famagusta Dart Club
             </a>
             <div class="nav__menu" id="nav-menu">
-                <ul class="nav__list">
-                    <li class="nav__item">
-                        <a href="main.php#home" class="nav__link">Home</a>
-                    </li>
-                    <li class="nav__item">
-                        <a href="tournaments.html" class="nav__link active-link">Tournaments</a>
-                    </li>
-                    <li class="nav__item">
-                        <a href="blog.html" class="nav__link">Blog</a>
-                    </li>
-                    <li class="nav__item">
-                        <a href="gallery.html" class="nav__link">Gallery</a>
-                    </li>
-                    <li class="nav__item">
-                        <a href="profile.html" class="nav__link">Profile</a>
-                    </li>
-                </ul>
+                <ul class="nav__list"></ul>
                 <div class="nav__close" id="nav-close">
                     <i class="ri-close-line"></i>
                 </div>
@@ -86,115 +136,134 @@
     </header>
 
     <main class="main">
-        <section class="tournaments-container container">
-            <div class="section__data">
-                <h2 class="section__subtitle">Available</h2>
-                <div class="section__titles">
-                    <h1 class="section__title-border">Tournaments</h1>
-                    <h1 class="section__title">Join Now</h1>
+        <section class="page-shell container">
+            <div class="hub-hero">
+                <div>
+                    <div class="hub-pill"><i class="ri-focus-3-line"></i> Public tournament hub</div>
+                    <h1 class="section__title" style="margin-top: 1rem;">Track every competition stage in one place</h1>
+                    <p style="margin-top: 1rem; color: var(--text-color);">
+                        Browse upcoming events, follow live brackets, review completed tournaments, and revisit archived seasons.
+                    </p>
+                </div>
+                <div>
+                    <h3>What you can do here</h3>
+                    <p style="color: var(--text-color); margin-top: 0.75rem;">
+                        Guests can explore public results and live brackets. Players can register when registration is open and jump into detailed tournament views.
+                    </p>
                 </div>
             </div>
-            
-            <div id="tournaments-list">
-                <!-- Tournaments will be loaded here -->
+
+            <div id="hub-sections" class="hub-sections">
+                <div class="empty-message">Loading tournaments...</div>
             </div>
         </section>
     </main>
 
+    <a href="#top" class="scrollup" id="scroll-up">
+        <i class="ri-arrow-up-line"></i>
+    </a>
+
     <script src="../js/scrollreveal.min.js"></script>
     <script src="../js/behaviour.js"></script>
     <script>
-        function loadTournaments() {
-            fetch('../services/get_tournaments.php')
-                .then(response => response.json())
-                .then(data => {
-                    const tournamentsList = document.getElementById('tournaments-list');
-                    
-                    if (data.length === 0) {
-                        tournamentsList.innerHTML = '<div style="text-align: center; padding: 3rem;"><h3>No tournaments available</h3></div>';
-                        return;
-                    }
-                    
-                    tournamentsList.innerHTML = '';
-                    
-                    data.forEach(tournament => {
-                        const status = getTournamentStatus(tournament.tour_creationDate, tournament.tour_endDate);
-                        const statusClass = getStatusClass(status);
-                        const canRegister = (status === 'Active' || status === 'Upcoming') && !tournament.registered;
-                        const regBadge = tournament.registered ? `<span class="tournament-status status-active" style="background:#673ab7;">Registered${tournament.player_status?` (${tournament.player_status})`:''}</span>` : '';
-                        const buttonLabel = tournament.registered ? 'Already Registered' : (canRegister ? 'Register for Tournament' : 'Registration Closed');
-                        const buttonDisabled = tournament.registered || !(status === 'Active' || status === 'Upcoming');
-                        const tournamentCard = document.createElement('div');
-                        tournamentCard.className = 'tournament-card';
-                        tournamentCard.innerHTML = `
-                            <div class="tournament-header">
-                                <h3 class="tournament-title">${tournament.tour_title}</h3>
-                                <div style="display:flex; gap:8px; align-items:center;">
-                                    ${regBadge}
-                                    <span class="tournament-status ${statusClass}">${status}</span>
-                                </div>
-                            </div>
-                            <p><strong>Type:</strong> ${tournament.tour_type}</p>
-                            <p><strong>Start Date:</strong> ${new Date(tournament.tour_creationDate).toLocaleDateString()}</p>
-                            <p><strong>End Date:</strong> ${new Date(tournament.tour_endDate).toLocaleDateString()}</p>
-                            <button class="register-btn" onclick="registerForTournament(${tournament.tour_id})" ${buttonDisabled ? 'disabled' : ''}>
-                                ${buttonLabel}
-                            </button>
-                        `;
-                        tournamentsList.appendChild(tournamentCard);
-                    });
-                })
-                .catch(error => {
-                    console.error('Error loading tournaments:', error);
-                    document.getElementById('tournaments-list').innerHTML = '<div style="text-align: center; padding: 3rem;"><h3>Error loading tournaments</h3></div>';
-                });
+        const sectionConfig = {
+            registration_open: { title: 'Upcoming', description: 'Registration is open right now.' },
+            registration_closed: { title: 'Upcoming', description: 'Registration has closed, but the tournament has not started yet.' },
+            in_progress: { title: 'Live', description: 'Matches are in progress or already reporting results.' },
+            completed: { title: 'Completed', description: 'Recently finished tournaments and final winners.' },
+            archived: { title: 'Old Tournaments', description: 'Archived history that stays public and read-only.' },
+            draft: { title: 'Upcoming', description: 'Draft tournaments that are visible but not open yet.' }
+        };
+
+        function tournamentCard(tournament) {
+            const canRegister = tournament.status === 'registration_open' && !tournament.registered;
+            const registerDisabled = !canRegister;
+            const registerLabel = tournament.registered
+                ? `Registered${tournament.player_status ? ` (${tournament.player_status})` : ''}`
+                : (canRegister ? 'Register' : 'Registration Closed');
+
+            return `
+                <article class="tournament-card">
+                    <span class="status-chip status-${tournament.status}">${tournament.status.replaceAll('_', ' ')}</span>
+                    <h3>${tournament.tour_title}</h3>
+                    <div class="tournament-meta">
+                        <span><strong>Format:</strong> ${tournament.tour_type}</span>
+                        <span><strong>Start:</strong> ${new Date(tournament.tour_creationDate).toLocaleDateString()}</span>
+                        <span><strong>End:</strong> ${new Date(tournament.tour_endDate).toLocaleDateString()}</span>
+                        ${tournament.winner_label ? `<span><strong>Winner:</strong> ${tournament.winner_label}</span>` : ''}
+                    </div>
+                    <div class="card-actions">
+                        <a href="${tournament.detail_url}" class="button">Open Tournament</a>
+                        <button class="ghost-button" ${registerDisabled ? 'disabled' : ''} onclick="registerForTournament(${tournament.tour_id})">
+                            ${registerLabel}
+                        </button>
+                    </div>
+                </article>
+            `;
         }
 
-        function getTournamentStatus(startDate, endDate) {
-            const today = new Date();
-            const start = new Date(startDate);
-            const end = new Date(endDate);
-            
-            if (today > end) return 'Completed';
-            if (today >= start) return 'Active';
-            return 'Upcoming';
-        }
-
-        function getStatusClass(status) {
-            switch(status) {
-                case 'Active': return 'status-active';
-                case 'Upcoming': return 'status-upcoming';
-                case 'Completed': return 'status-completed';
-                default: return '';
-            }
-        }
-
-        function registerForTournament(tournamentId) {
-            fetch('../services/register_tournament.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    tournament_id: tournamentId
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert('Successfully registered for tournament!');
-                    loadTournaments();
-                } else {
-                    alert('Error: ' + data.message);
+        function renderSections(tournaments) {
+            const sections = {};
+            tournaments.forEach((tournament) => {
+                const key = sectionConfig[tournament.status] ? tournament.status : 'registration_open';
+                if (!sections[key]) {
+                    sections[key] = [];
                 }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Error registering for tournament. Please try again.');
+                sections[key].push(tournament);
+            });
+
+            const order = ['registration_open', 'registration_closed', 'in_progress', 'completed', 'archived'];
+            const html = order
+                .filter((key) => Array.isArray(sections[key]) && sections[key].length > 0)
+                .map((key) => `
+                    <section class="section-block">
+                        <div>
+                            <h2>${sectionConfig[key].title}</h2>
+                            <p style="color: var(--text-color); margin-top: 0.35rem;">${sectionConfig[key].description}</p>
+                        </div>
+                        <div class="card-grid">
+                            ${sections[key].map(tournamentCard).join('')}
+                        </div>
+                    </section>
+                `)
+                .join('');
+
+            document.getElementById('hub-sections').innerHTML = html || '<div class="empty-message">No public tournaments are available right now.</div>';
+        }
+
+        async function loadTournaments() {
+            const response = await fetch('../services/get_tournaments.php');
+            const data = await response.json();
+            if (!Array.isArray(data)) {
+                throw new Error(data.error || 'Failed to load tournaments.');
+            }
+            renderSections(data);
+        }
+
+        async function registerForTournament(tournamentId) {
+            const response = await fetch('../services/register_tournament.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ tournament_id: tournamentId })
+            });
+            const data = await response.json();
+            if (!data.success) {
+                window.alert(data.message || 'Registration failed.');
+                return;
+            }
+
+            window.alert(data.message);
+            loadTournaments().catch((error) => {
+                document.getElementById('hub-sections').innerHTML = `<div class="empty-message">${error.message}</div>`;
             });
         }
 
-        document.addEventListener('DOMContentLoaded', loadTournaments);
+        document.addEventListener('DOMContentLoaded', () => {
+            loadTournaments().catch((error) => {
+                document.getElementById('hub-sections').innerHTML = `<div class="empty-message">${error.message}</div>`;
+            });
+        });
     </script>
 </body>
-</html> 
+</html>
+

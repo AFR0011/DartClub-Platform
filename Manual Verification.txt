@@ -1,0 +1,15 @@
+1. pages/admin/manage_players.php: Warning: Undefined variable $db in C:\Users\Ali\Desktop\Dart Club\pages\admin\manage_players.php on line 77
+
+Fatal error: Uncaught Error: Call to a member function prepare() on null in C:\Users\Ali\Desktop\Dart Club\pages\admin\manage_players.php:77 Stack trace: #0 {main} thrown in C:\Users\Ali\Desktop\Dart Club\pages\admin\manage_players.php on line 77
+
+2. Design overhaul on admin panel (needs to look modern and visually appealing, less "blocky", not just white boxes next to each other; similar colors to main page should be used where applicable, slightly different to visually represent the difference of the admin panel and main website; bracket visualization especially needs some attention, currently it's just white boxes aligned to each other and no real difference exists between group, league, and elimination modes, not an appealing bracket design)
+
+3. Things like "Promote Groups" should be automatically handled based on relevant conditions; the tournament should not need manual management of every single step. The only manual thing is going to be entering scores for matches, everything else should be done automatically afterwards (e.g., player moves up if they win a match in elimination, winners are displayed properly, player stats are updated in their profiles when done, etc.)
+
+4. pages/admin/show_tournament_details.php?id=8: tournament is completed, yet the matches and tournament details can still be modified. Add an option to "archive" or "finish" or "end" to each completed tournament, which will make all aspects of it read-only, and record all the results publicly for display in the main website (player stats, tournament goes into a section in the tournament pages called "old tournaments".
+
+5. League mode is actually supposed to be what Group mode currently is, and Group mode is supposed to be multiple teams getting to face members of the opposing teams.
+
+6. All pages except home have the old nav bar, which is missing some actions and links.
+
+7. For the main website, UI and design should be improved to be more modern and visually appealing, less "blocky", especially for profile page, blogs page, tournaments page and become consistent with the home page.

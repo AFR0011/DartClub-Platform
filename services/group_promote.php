@@ -19,6 +19,7 @@ if ($tourId <= 0) {
 
 try {
     $conn->begin_transaction();
+    tournament_assert_mutable($conn, $tourId);
     $advancerCount = tournament_promote_groups($conn, $tourId);
     $conn->commit();
 

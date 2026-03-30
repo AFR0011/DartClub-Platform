@@ -3,6 +3,7 @@
 require_once '../../services/app_bootstrap.php';
 require_once '../../services/dbConnection.php';
 require_once '../../services/auth.php';
+require_once '../../services/shared/tournament_helpers.php';
 require_once '../../services/shared/tournament_view_helpers.php';
 
 app_start_session();
@@ -12,6 +13,10 @@ $tournamentStmt = $conn->prepare('SELECT tour_id, tour_title, tour_creationDate,
 $tournamentStmt->execute();
 $tournaments = $tournamentStmt->get_result()->fetch_all(MYSQLI_ASSOC);
 $tournamentStmt->close();
+
+foreach ($tournaments as $index => $row) {
+    $tournaments[$index] = tournament_refresh_lifecycle($conn, (int) $row['tour_id']);
+}
 
 $playerStmt = $conn->prepare('SELECT plr_idNum, plr_name, plr_surname FROM players ORDER BY plr_surname, plr_name');
 $playerStmt->execute();
@@ -83,8 +88,9 @@ $playerStmt->close();
         <?php endif; ?>
 
         <div class="callout">
-            Supported tournament modes in this cleanup cycle are <strong>League</strong>, <strong>Group</strong>, and <strong>Elimination</strong>.
-            Double-elimination has been intentionally deferred until it has a full bracket engine behind it.
+            Supported tournament formats are <strong>Round Robin</strong>, <strong>League</strong>, <strong>Group</strong>, and <strong>Elimination</strong>.
+            <strong>League</strong> now means pool-stage plus knockout, while <strong>Group</strong> is the team-based format.
+            Double-elimination remains intentionally deferred until a dedicated bracket engine exists.
         </div>
 
         <div class="table-container">
@@ -124,6 +130,7 @@ $playerStmt->close();
                     <label for="tournamentType">Tournament Type</label>
                     <select name="tour_type" id="tournamentType" required>
                         <option value="">Select type</option>
+                        <option value="Round Robin">Round Robin</option>
                         <option value="League">League</option>
                         <option value="Group">Group</option>
                         <option value="Elimination">Elimination</option>
@@ -144,9 +151,19 @@ $playerStmt->close();
                     <label for="tour_endDate">End Date</label>
                     <input type="date" name="tour_endDate" id="tour_endDate" required>
                 </div>
+
+                <div class="form-group">
+                    <label for="registration_open_at">Registration Opens</label>
+                    <input type="date" name="registration_open_at" id="registration_open_at">
+                </div>
+
+                <div class="form-group">
+                    <label for="registration_close_at">Registration Closes</label>
+                    <input type="date" name="registration_close_at" id="registration_close_at">
+                </div>
             </div>
 
-            <div id="groupSettings" class="inline-grid" style="display:none;">
+            <div id="leagueSettings" class="inline-grid" style="display:none;">
                 <div class="form-group">
                     <label for="group_count">Number of Groups</label>
                     <input type="number" name="group_count" id="group_count" min="2" value="2">
@@ -155,6 +172,13 @@ $playerStmt->close();
                 <div class="form-group">
                     <label for="advancers_per_group">Advancers per Group</label>
                     <input type="number" name="advancers_per_group" id="advancers_per_group" min="1" value="1">
+                </div>
+            </div>
+
+            <div id="teamSettings" class="inline-grid" style="display:none;">
+                <div class="form-group">
+                    <label for="team_count">Number of Teams</label>
+                    <input type="number" name="team_count" id="team_count" min="2" value="2">
                 </div>
             </div>
 
@@ -191,17 +215,21 @@ $playerStmt->close();
 
     <script>
         const typeSelect = document.getElementById('tournamentType');
-        const groupSettings = document.getElementById('groupSettings');
+        const leagueSettings = document.getElementById('leagueSettings');
+        const teamSettings = document.getElementById('teamSettings');
         const typeHint = document.getElementById('typeHint');
 
         function syncTournamentMode() {
             const selectedType = typeSelect.value;
-            groupSettings.style.display = selectedType === 'Group' ? 'grid' : 'none';
+            leagueSettings.style.display = selectedType === 'League' ? 'grid' : 'none';
+            teamSettings.style.display = selectedType === 'Group' ? 'grid' : 'none';
 
-            if (selectedType === 'League') {
-                typeHint.textContent = 'League tournaments generate round-robin matches and standings immediately.';
+            if (selectedType === 'Round Robin') {
+                typeHint.textContent = 'Round Robin tournaments place every active player into one shared standings table.';
+            } else if (selectedType === 'League') {
+                typeHint.textContent = 'League tournaments assign players to groups, complete group-stage round robins, and automatically build a knockout bracket from top finishers.';
             } else if (selectedType === 'Group') {
-                typeHint.textContent = 'Group tournaments persist group assignments, create group-stage round robins, and promote top finishers into a knockout bracket later.';
+                typeHint.textContent = 'Group tournaments are team-based. The system creates per-tournament teams from the selected player pool and schedules team fixtures.';
             } else if (selectedType === 'Elimination') {
                 typeHint.textContent = 'Elimination tournaments generate a single-elimination bracket with deterministic bye carry-forward.';
             } else {
@@ -227,6 +255,13 @@ $playerStmt->close();
                 alert('End date cannot be before start date.');
                 event.preventDefault();
                 return;
+            }
+
+            const registrationOpen = document.getElementById('registration_open_at').value;
+            const registrationClose = document.getElementById('registration_close_at').value;
+            if (registrationOpen && registrationClose && new Date(registrationClose) < new Date(registrationOpen)) {
+                alert('Registration close date cannot be before the registration open date.');
+                event.preventDefault();
             }
         });
     </script>

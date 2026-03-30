@@ -1,5 +1,5 @@
 <?php
-if (!session_status()) session_start();
+if (session_status() === PHP_SESSION_NONE) session_start();
 include 'dbConnection.php';
 
 header('Content-Type: application/json');
@@ -11,7 +11,7 @@ if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'admin') {
 }
 
 try {
-    $sql = "SELECT user_id, user_name, email, user_role FROM users ORDER BY user_id";
+    $sql = "SELECT user_id, user_name, email, user_role, membership_status FROM users ORDER BY user_id";
     $stmt = $conn->prepare($sql);
     $stmt->execute();
     $result = $stmt->get_result();

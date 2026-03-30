@@ -22,8 +22,9 @@ $transactionStarted = false;
 
 try {
     $tournament = tournament_fetch_settings($conn, $tourId);
-    if ($tournament['tour_type'] !== 'League') {
-        throw new RuntimeException('League tools only work for league tournaments.');
+    tournament_assert_mutable($conn, $tourId);
+    if (!in_array($tournament['tour_type'], ['Round Robin', 'League'], true)) {
+        throw new RuntimeException('Rescheduling is only available for round robin and league tournaments.');
     }
 
     if (tournament_has_completed_matches($conn, $tourId)) {
@@ -33,7 +34,15 @@ try {
     $conn->begin_transaction();
     $transactionStarted = true;
     $playerIds = tournament_fetch_player_ids($conn, $tourId);
-    tournament_rebuild_structure($conn, $tourId, 'League', $playerIds, $startDate, null);
+    tournament_rebuild_structure(
+        $conn,
+        $tourId,
+        $tournament['tour_type'],
+        $playerIds,
+        $startDate,
+        $tournament['group_count'] !== null ? (int) $tournament['group_count'] : null,
+        $tournament['team_count'] !== null ? (int) $tournament['team_count'] : null
+    );
     $conn->commit();
 
     app_json_response(['success' => true, 'created' => count($playerIds)]);

@@ -6,7 +6,7 @@
 - `css/`: site/admin styles
 - `js/`: public/admin client-side logic
 - `files/`: media assets and uploaded/static image content
-- `other/`: document forms
+- `other/`: forms, logs, and local helper artifacts
 - `vendor/`: Composer dependencies
 - `dart_club.sql`: expected database schema dump
 - `README.md`, `progress.md`, `todolist.md`, `tournament-errors.md`: historical migration notes and backlog inputs
@@ -15,21 +15,53 @@
 - `pages/main.php`
   - public landing page
 - `pages/tournaments.html`
-  - calls `services/get_tournaments.php`
-  - calls `services/register_tournament.php`
+  - public tournament hub
+  - calls:
+    - `services/get_tournaments.php`
+    - `services/register_tournament.php`
+- `pages/tournament_details.php`
+  - public tournament detail page
+  - calls:
+    - `services/get_tournament_details.php`
 - `pages/profile.html`
-  - calls `services/get_profile.php`
-  - calls `services/get_my_tournaments.php`
+  - player dashboard
+  - calls:
+    - `services/get_player_dashboard.php`
+    - `services/save_profile.php`
+    - `services/get_my_tournaments.php`
+- `pages/register.html`
+  - club membership workflow
+  - calls:
+    - `services/get_session_context.php`
+    - `services/submit_membership_application.php`
 - `pages/blog.html`
-  - uses blog APIs
+  - public blog plus approved-member draft workspace
+  - calls:
+    - `services/get_blogs.php`
+    - `services/create_blog.php`
+    - `services/update_blog_status.php`
+    - `services/create_blog_comment.php`
+    - `services/delete_blog_comment.php`
+    - `services/toggle_blog_reaction.php`
 - `pages/gallery.html`
-  - uses gallery APIs
-- `pages/login.html`, `pages/sign_up.html`, `pages/register.html`, `pages/reset_password.html`
+  - public gallery plus manager/admin upload controls
+  - calls:
+    - `services/gallery_get.php`
+    - `services/gallery_upload.php`
+    - `services/gallery_delete.php`
+- `pages/login.html`, `pages/sign_up.html`, `pages/reset_password.html`
   - auth/onboarding surfaces
 
 ## Admin Surfaces
+- `pages/admin/admin_panel.php`
+  - admin landing page with links into tournaments, users, membership, blog, and gallery
 - `pages/admin/manage_tournaments.php`
   - canonical tournament creation/list page
+  - supports:
+    - `Round Robin`
+    - `League`
+    - `Group`
+    - `Elimination`
   - posts to `services/create_tournament.php`
 - `pages/admin/show_tournament_details.php`
   - canonical tournament management screen
@@ -40,69 +72,112 @@
     - `services/match_update.php`
     - `services/match_delete.php`
     - `services/match_result.php`
-    - `services/group_promote.php`
+    - `services/team_match_result.php`
     - `services/league_tools.php`
-  - client behavior now lives in `js/admin_tournament_details.js`
+  - client behavior lives in `js/admin_tournament_details.js`
 - `pages/admin/manage_players.php`
-  - application review and player creation flow
-  - posts to `services/create_player.php`
+  - active membership review console and player registry
+  - uses:
+    - `services/get_membership_applications.php`
+    - `services/review_membership_application.php`
+    - `services/create_player.php`
 - `pages/admin/manage_users.php`
-  - user role management
+  - user role management plus membership-state visibility
 - `pages/admin/manage_blogs.php`
-  - legacy blog admin page
+  - legacy bridge into the public/community blog workspace
+- `pages/admin/image_upload.php`
+  - legacy bridge into the gallery workspace
 - `pages/admin/record_match_result.php`, `pages/admin/view_match_details.php`
-  - legacy match detail/result pages
+  - legacy fallback match screens
 
 ## Shared Backend Layers
 - `services/config.php`
   - canonical DB env/default config
 - `services/app_bootstrap.php`
-  - session, DB connection, JSON helpers
+  - session, DB connection, JSON helpers, and app utility functions
 - `services/dbConnection.php`
   - compatibility include that exposes `$conn`
+- `services/auth.php`
+  - auth, role, and membership capability helpers
+- `services/get_session_context.php`
+  - current-user/session capability payload used by public pages
 - `services/shared/player_helpers.php`
   - `users.user_id -> players.user_id` lookups
+  - player profile creation/update helpers
 - `services/shared/tournament_helpers.php`
-  - tournament creation
+  - tournament creation and updates
   - roster attachment
   - group assignment
   - round-robin scheduling
+  - league group-stage plus knockout scheduling
+  - team tournament generation and standings
   - elimination bracket generation
-  - standings updates
-  - group promotion
-  - tournament page data loading
+  - lifecycle refresh and archive guards
+  - result propagation and tournament page data loading
 - `services/shared/tournament_view_helpers.php`
   - status and display-label helpers for admin rendering
 
 ## Active Data Model
 - `users`
-  - auth identity and roles
+  - auth identity, role, and membership state
 - `players`
   - player profile data
-  - now expected to use `user_id` as the canonical link to `users`
+  - uses `user_id` as the canonical link to `users`
 - `applications`
-  - player application uploads
+  - legacy application uploads
+- `membership_applications`
+  - active club membership review workflow
 - `tournaments`
-  - tournament metadata
-  - now expected to include `group_count` and `advancers_per_group`
+  - tournament metadata and lifecycle state
+  - active fields include:
+    - `format_code`
+    - `status`
+    - `registration_open_at`
+    - `registration_close_at`
+    - `started_at`
+    - `completed_at`
+    - `archived_at`
+    - `group_count`
+    - `advancers_per_group`
+    - `team_count`
+    - `winner_player_id`
+    - `winner_team_id`
+    - `winner_label`
+    - `is_public`
 - `tournament_players`
-  - tournament roster and player status
-  - now expected to include `group_number`
+  - tournament roster, player status, and placement tracking
+  - active fields include:
+    - `group_number`
+    - `final_rank`
+    - `placement_label`
+    - `eliminated_at`
 - `tournament_standings`
-  - league/group-stage standings
+  - round-robin and league group-stage standings
+- `tournament_teams`
+  - per-tournament team records for `Group`
+- `tournament_team_players`
+  - player-to-team membership for `Group`
 - `matches`
-  - scheduled/completed matches
-  - now expected to include:
+  - scheduled/completed player fixtures
+  - active fields include:
     - `bracket`
     - `group_number`
     - `loser_next_match_id`
     - `loser_position_in_next`
+- `team_matches`
+  - scheduled/completed team fixtures for `Group`
 - `match_legs`
   - per-leg detail
 - `blogs`
-  - blog content plus author metadata
-- `media`
-  - gallery/media records
+  - blog content, draft/publish state, and moderation metadata
+- `blog_images`
+  - uploaded blog media
+- `blog_comments`
+  - flat authenticated comments
+- `blog_reactions`
+  - single-like reactions
+- `gallery_images`
+  - public gallery records
 
 ## Current Flow Ownership
 - Auth:
@@ -110,8 +185,10 @@
   - `services/login.php`
   - `services/logout.php`
   - `services/auth.php`
+  - `services/get_session_context.php`
 - Tournament public reads:
   - `services/get_tournaments.php`
+  - `services/get_tournament_details.php`
   - `services/get_my_tournaments.php`
 - Tournament admin write path:
   - `services/create_tournament.php`
@@ -123,6 +200,22 @@
   - `services/match_update.php`
   - `services/match_delete.php`
   - `services/match_result.php`
+  - `services/team_match_result.php`
+- Membership workflow:
+  - `services/submit_membership_application.php`
+  - `services/get_membership_applications.php`
+  - `services/review_membership_application.php`
+- Blog/community:
+  - `services/create_blog.php`
+  - `services/get_blogs.php`
+  - `services/update_blog_status.php`
+  - `services/create_blog_comment.php`
+  - `services/delete_blog_comment.php`
+  - `services/toggle_blog_reaction.php`
+- Gallery:
+  - `services/gallery_get.php`
+  - `services/gallery_upload.php`
+  - `services/gallery_delete.php`
 
 ## Static And Media Assets
 - Main styles:
@@ -133,23 +226,30 @@
 - Shared site/admin JS:
   - `js/behaviour.js`
   - `js/admin_nav.js`
-  - `js/blog.js`
-  - `js/upload.js`
 - Media:
   - `files/media/images/`
   - `files/media/images/gallery/`
   - `files/media/images/profile/`
+  - `files/media/images/blog/`
 
 ## Drift Fixed In This Pass
 - Removed request-path schema mutation from active handlers.
 - Removed mixed direct DB credentials from pages/services.
 - Removed steady-state username-based identity resolution from public/profile/tournament reads.
 - Removed `DoubleElimination` from the active create flow.
+- Added an explicit `Round Robin` format so the old single-table behavior is no longer overloaded onto `League`.
+- Reassigned tournament semantics to:
+  - `League` = player groups plus knockout
+  - `Group` = team tournament mode
+- Added lifecycle state and archive guards to tournament mutation paths.
+- Added public tournament detail, player dashboard, membership, blog/community, and gallery workflows.
 - Aligned admin UI input names with backend contract:
   - `group_count`
   - `advancers_per_group`
+  - `team_count`
 
 ## Known Remaining Drift
 - Some legacy admin pages still duplicate newer behavior.
 - Public registration is roster-level, not automatic bracket inclusion.
+- Apache-backed visual QA and responsive/mobile review still need a full manual pass.
 - Historical notes in `progress.md` still describe superseded code paths.

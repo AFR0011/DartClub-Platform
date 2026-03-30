@@ -1,9 +1,11 @@
 <?php
 
 require_once __DIR__ . '/app_bootstrap.php';
+require_once __DIR__ . '/auth.php';
 require_once __DIR__ . '/shared/tournament_helpers.php';
 
 app_start_session();
+require_any_role(['admin', 'manager']);
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     $_SESSION['error'] = 'Invalid request method.';

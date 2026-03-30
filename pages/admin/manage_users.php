@@ -35,6 +35,7 @@ require_role('admin');
                         <th>Username</th>
                         <th>Email</th>
                         <th>Current Role</th>
+                        <th>Membership</th>
                         <th>Action</th>
                     </tr>
                 </thead>
@@ -66,6 +67,7 @@ require_role('admin');
                                     <option value="admin" ${user.user_role === 'admin' ? 'selected' : ''}>Admin</option>
                                 </select>
                             </td>
+                            <td>${user.membership_status || 'not_submitted'}</td>
                             <td>
                                 <button onclick="deleteUser(${user.user_id})" class="button delete-btn">Delete</button>
                             </td>

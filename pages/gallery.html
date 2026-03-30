@@ -1,307 +1,230 @@
 <!DOCTYPE html>
-<!--Base was copy pasted from the main page(if there was any issue there, it was also transfered here)-->
-
-
 <html lang="en">
-
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link href="https://cdn.jsdelivr.net/npm/remixicon@4.1.0/fonts/remixicon.css" rel="stylesheet" />
-  <link rel="shortcut icon" href="../images/logo.png" />
+  <link rel="shortcut icon" href="../files/media/images/logo.png" />
   <link rel="stylesheet" href="../css/style.css" />
-  <link rel="stylesheet" href="../css/gallety_style.css" />
+  <title>Gallery - Famagusta Dart Club</title>
+  <style>
+    .gallery-shell {
+      padding: 7rem 0 3rem;
+      display: grid;
+      gap: 1.5rem;
+    }
 
-  <title>Famagusta Dart Club</title>
+    .surface {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 18px;
+      padding: 1.5rem;
+    }
+
+    .gallery-grid {
+      display: grid;
+      gap: 1rem;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    }
+
+    .gallery-card {
+      overflow: hidden;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .gallery-card img {
+      width: 100%;
+      height: 220px;
+      object-fit: cover;
+      display: block;
+    }
+
+    .gallery-card__body {
+      padding: 0.9rem;
+      display: grid;
+      gap: 0.6rem;
+    }
+
+    .lightbox {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.82);
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      padding: 2rem;
+    }
+
+    .lightbox img {
+      max-width: min(100%, 1000px);
+      max-height: 85vh;
+      border-radius: 16px;
+    }
+  </style>
 </head>
-
 <body>
-  <top id="top"></top>
   <header class="header" id="header">
     <nav class="nav container">
-      <a href="#top" class="nav__logo">
-        <img src="../images/logo.png" alt="logo" /> Famagusta Dart Club
+      <a href="main.php" class="nav__logo">
+        <img src="../files/media/images/logo.png" alt="logo" /> Famagusta Dart Club
       </a>
+      <div class="nav__menu" id="nav-menu">
+        <ul class="nav__list"></ul>
+        <div class="nav__close" id="nav-close">
+          <i class="ri-close-line"></i>
+        </div>
+      </div>
+      <div class="nav__toggle" id="nav-toggle">
+        <i class="ri-menu-line"></i>
+      </div>
+    </nav>
   </header>
 
-
   <main class="main">
-
-
-
-    <div class="galleryTop">
-
-      <div class="box">
-        <div class="imgBox">
-          <img src="../images/gallery/galleryTop/1.jpg">
-        </div>
-        <div class="content">
-          <h2>Member's name<br><span>Member's Position</span></h2>
-        </div>
-      </div>
-      <div class="box">
-        <div class="imgBox">
-          <img src="../images/gallery/galleryTop/2.jpg">
-        </div>
-        <div class="content">
-          <h2>Member's name<br><span>Member's Position</span></h2>
-        </div>
-      </div>
-      <div class="box">
-        <div class="imgBox">
-          <img src="../images/gallery/galleryTop/3.jpg">
-        </div>
-        <div class="content">
-          <h2>Member's name<br><span>Member's Position</span></h2>
-        </div>
-      </div>
-      <div class="box">
-        <div class="imgBox">
-          <img src="../images/gallery/galleryTop/4.jpg">
-        </div>
-        <div class="content">
-          <h2>Member's name<br><span>Member's Position</span></h2>
-        </div>
-      </div>
-
-    </div>
-    
-    <div class="galleryHeader">
-      <br><br>
-      <h1 class="home__title" align="center">Our Photos</h1><!--GALLERY IS HERE, Will require backend code later-->
-    </div>
-    <div class="gallery-actions" align="center" id="gallery-actions" style="display:none;">
-      <button id="add-photo-btn">Add Photo</button>
-      <input type="file" id="upload-photo" style="display:none;" accept="image/*">
-      <button id="delete-photo-btn">Delete Photo</button>
-    </div>
-    <div class="container">
-      <div class="image-container" id="gallery-list"> 
-        <!-- Images will be loaded here -->
-      </div>
-
-      <div class="popup-image" style="display:none;">
-        <span>&times;</span>
-        <img alt="Preview">
-      </div>
-
-
-
-    </div>
-
-
+    <section class="gallery-shell container" id="gallery-shell">
+      <div class="surface">Loading gallery...</div>
+    </section>
   </main>
 
-  <footer class="footer section" id="footer">
-    <div class="footer__container container grid">
-      <div>
-        <a href="#top" class="footer__logo">
-          <img src="../images/logo.png" alt="logo img" />Famagusta Dart Club
-        </a>
-        <p class="footer__description">
-          <!--Something's wrong with this line(CSS most likely)-->
-          Register for <br />
-          updates below.
-        </p>
-
-        <form action="" class="footer__from" id="contact-form">
-          <input type="email" name="user_email" placeholder="Your Email" class="footer__input" id="contact-user" />
-          <button class="button" type="submit">Register</button>
-        </form>
-        <p class="footer__message" id="contact-message"></p>
-      </div>
-
-      <div class="footer__content">
-        <div>
-          <h3 class="footer__title">SERVICES</h3>
-
-          <ul class="footer__links">
-            <li>
-              <a href="#top" class="footer__link">Tournaments</a><!--FILL THIS PART LATER-->
-            </li>
-            <li>
-              <a href="#top" class="footer__link">Gallery</a><!--FILL THIS PART LATER-->
-            </li>
-            <li>
-              <a href="#top" class="footer__link">Blog</a><!--FILL THIS PART LATER-->
-            </li>
-          </ul>
-        </div>
-
-        <div>
-          <h3 class="footer__title">ABOUT US</h3>
-
-          <ul class="footer__links">
-            <li>
-              <a href="#top" class="footer__link">About The Club</a>
-            </li>
-            <li>
-              <a href="#top" class="footer__link">About The Website</a><!--FILL THIS PART LATER-->
-            </li>
-          </ul>
-        </div>
-      </div>
-    </div>
-
-    <div class="container">
-      <!--Either HTML of this div or previous div, or the CSS might need debugging-->
-      <div class="footer__group">
-        <ul class="footer__social">
-          <a href="https://www.facebook.com/GazimagusaDartsBirligi" class="footer__social-link">
-            <i class="ri-facebook-circle-fill"></i>
-          </a>
-          <a href="" class="footer__social-link">
-            <i class="ri-phone-fill"></i>
-          </a>
-        </ul>
-
-        <span class="footer__copy">
-          &#169; copyright Nazife Dimililer. All rights reserved
-        </span>
-      </div>
-    </div>
-  </footer>
+  <div class="lightbox" id="lightbox">
+    <img id="lightbox-image" alt="Gallery preview" />
+  </div>
 
   <a href="#top" class="scrollup" id="scroll-up">
     <i class="ri-arrow-up-line"></i>
   </a>
 
-  <!-- Scroll reveal -->
   <script src="../js/scrollreveal.min.js"></script>
-
-  <!--EMAIL JS-->
-  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
-  <!--primary js file-->
   <script src="../js/behaviour.js"></script>
-
   <script>
-    function bindPreviewClicks() {
-      document.querySelectorAll('#gallery-list img').forEach(image => {
-        image.onclick = () => {
-          const popup = document.querySelector('.popup-image');
-          popup.style.display = 'block';
-          popup.querySelector('img').src = image.getAttribute('src');
-        }
-      });
-      const closer = document.querySelector('.popup-image span');
-      if (closer) closer.onclick = () => { document.querySelector('.popup-image').style.display = 'none'; };
+    let galleryContext = null;
+
+    function renderGallery(images) {
+      return `
+        <div class="gallery-grid">
+          ${images.map((image) => `
+            <article class="gallery-card">
+              <img src="${image.file_path}" alt="${image.title || 'Gallery image'}" onclick="openLightbox('${image.file_path}')">
+              <div class="gallery-card__body">
+                <strong>${image.title || 'Club memory'}</strong>
+                ${image.source_blog_id ? '<span style="color: var(--text-color); font-size: 0.9rem;">Also used in a blog post</span>' : ''}
+                ${
+                  galleryContext?.can_manage_club && Number(image.id) > 0
+                    ? `<button type="button" class="cancel-btn" onclick="deleteImage(${image.id}, ${image.source_blog_id ? 'true' : 'false'})">${image.source_blog_id ? 'Remove from gallery' : 'Delete'}</button>`
+                    : ''
+                }
+              </div>
+            </article>
+          `).join('')}
+        </div>
+      `;
     }
 
-    async function loadGallery() {
-      const list = document.getElementById('gallery-list');
-      list.innerHTML = '';
-      try {
-        const resp = await fetch('../services/gallery_get.php');
-        const data = await resp.json();
-        if (!Array.isArray(data) || data.length === 0) {
-          list.innerHTML = '<p style="text-align:center;width:100%">No images yet.</p>';
-          return;
+    async function loadGalleryPage() {
+      const [contextResponse, galleryResponse] = await Promise.all([
+        fetch('../services/get_session_context.php'),
+        fetch('../services/gallery_get.php')
+      ]);
+
+      galleryContext = await contextResponse.json();
+      const images = await galleryResponse.json();
+      if (!Array.isArray(images)) {
+        throw new Error(images.error || 'Failed to load gallery images.');
+      }
+
+      const shell = document.getElementById('gallery-shell');
+      shell.innerHTML = `
+        <section class="surface">
+          <h1>Club Gallery</h1>
+          <p style="color: var(--text-color); margin-top: 0.85rem;">
+            Photos from blog posts, events, tournaments, and club life all collect here.
+          </p>
+        </section>
+        ${
+          galleryContext?.can_manage_club
+            ? `
+              <section class="surface">
+                <h2>Upload gallery image</h2>
+                <form id="gallery-upload-form" style="display:grid; gap: 0.8rem; margin-top: 1rem;">
+                  <input type="text" name="title" placeholder="Image title">
+                  <input type="file" name="image" accept="image/*" required>
+                  <button type="submit" class="button">Upload image</button>
+                </form>
+              </section>
+            `
+            : ''
         }
-        data.forEach(item => {
-          const div = document.createElement('div');
-          div.className = 'image';
-          div.dataset.id = item.id;
-          const img = document.createElement('img');
-          img.setAttribute('src', item.file_path);
-          img.setAttribute('alt', item.title || 'Gallery image');
-          img.setAttribute('loading', 'lazy');
-          img.setAttribute('decoding', 'async');
-          // Provide default thumbnail dimensions to reduce CLS (adjust via CSS as needed)
-          img.setAttribute('width', '300');
-          img.setAttribute('height', '200');
-          div.appendChild(img);
-          list.appendChild(div);
-        });
-        bindPreviewClicks();
-      } catch(e) {
-        list.innerHTML = '<p style="text-align:center;width:100%">Failed to load images.</p>';
+        <section class="surface">
+          ${images.length > 0 ? renderGallery(images) : '<p style="color: var(--text-color);">No images available yet.</p>'}
+        </section>
+      `;
+
+      const uploadForm = document.getElementById('gallery-upload-form');
+      if (uploadForm) {
+        uploadForm.addEventListener('submit', uploadImage);
       }
     }
 
-    function enableAdminControls() {
-      const actions = document.getElementById('gallery-actions');
-      actions.style.display = 'block';
-
-      // Add photo
-      document.getElementById('add-photo-btn').addEventListener('click', () => {
-        document.getElementById('upload-photo').click();
+    async function uploadImage(event) {
+      event.preventDefault();
+      const formData = new FormData(event.currentTarget);
+      const response = await fetch('../services/gallery_upload.php', {
+        method: 'POST',
+        body: formData
       });
+      const data = await response.json();
+      if (!data.success) {
+        window.alert(data.message || 'Upload failed.');
+        return;
+      }
 
-      document.getElementById('upload-photo').addEventListener('change', async function() {
-        const file = this.files[0];
-        if (!file) return;
-        const form = new FormData();
-        form.append('image', file);
-        try {
-          const resp = await fetch('../services/gallery_upload.php', { method: 'POST', body: form });
-          const data = await resp.json();
-          if (data && data.success) {
-            await loadGallery();
-          } else {
-            alert(data.message || 'Upload failed');
-          }
-        } catch(e) {
-          alert('Upload failed');
-        } finally {
-          this.value = '';
-        }
-      });
-
-      // Delete photo
-      document.getElementById('delete-photo-btn').addEventListener('click', () => {
-        const images = document.querySelectorAll('#gallery-list .image img');
-        images.forEach(img => {
-          img.classList.toggle('selectable');
-          async function deleteImage() {
-            if (confirm('Are you sure you want to delete this photo?')) {
-              const parent = img.closest('.image');
-              const id = parent ? parent.dataset.id : null;
-              if (id) {
-                try {
-                  const resp = await fetch('../services/gallery_delete.php', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id: parseInt(id) })
-                  });
-                  const data = await resp.json();
-                  if (data && data.success) {
-                    await loadGallery();
-                  } else {
-                    alert(data.message || 'Delete failed');
-                  }
-                } catch(e) {
-                  alert('Delete failed');
-                }
-              }
-            }
-            img.classList.remove('selectable');
-            img.removeEventListener('click', deleteImage);
-          }
-          img.addEventListener('click', deleteImage);
-        });
-      });
+      await loadGalleryPage();
     }
 
-    // Gate controls by role
-    fetch('../services/getUserRole.php')
-      .then(resp => resp.json())
-      .then(data => {
-        if (data.user_role === 'admin' || data.user_role === 'manager') {
-          enableAdminControls();
-        } else {
-          // Ensure actions remain hidden
-          const actions = document.getElementById('gallery-actions');
-          if (actions) actions.style.display = 'none';
-        }
-        loadGallery();
-      })
-      .catch(() => {
-        const actions = document.getElementById('gallery-actions');
-        if (actions) actions.style.display = 'none';
-        loadGallery();
+    async function deleteImage(id, linkedToBlog) {
+      const message = linkedToBlog
+        ? 'Remove this image from the gallery? The blog post will keep its image.'
+        : 'Delete this image from the gallery?';
+
+      if (!window.confirm(message)) {
+        return;
+      }
+
+      const response = await fetch('../services/gallery_delete.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id })
       });
+      const data = await response.json();
+      if (!data.success) {
+        window.alert(data.message || 'Delete failed.');
+        return;
+      }
+
+      if (data.removed_from_gallery_only) {
+        window.alert('Image removed from the gallery. The blog post keeps its image.');
+      }
+
+      await loadGalleryPage();
+    }
+
+    function openLightbox(src) {
+      document.getElementById('lightbox-image').src = src;
+      document.getElementById('lightbox').style.display = 'flex';
+    }
+
+    document.getElementById('lightbox').addEventListener('click', () => {
+      document.getElementById('lightbox').style.display = 'none';
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+      loadGalleryPage().catch((error) => {
+        document.getElementById('gallery-shell').innerHTML = `<div class="surface">${error.message}</div>`;
+      });
+    });
   </script>
-
 </body>
-
 </html>

@@ -1,56 +1,78 @@
 <?php
-if (!session_status()) session_start();
-require_once 'dbConnection.php';
-require_once 'auth.php';
 
-header('Content-Type: application/json');
+require_once __DIR__ . '/app_bootstrap.php';
+require_once __DIR__ . '/dbConnection.php';
+require_once __DIR__ . '/auth.php';
 
-if (!in_array(get_current_role(), ['admin','manager'], true)) {
-    echo json_encode(['success' => false, 'message' => 'Unauthorized']);
-    exit();
+app_start_session();
+
+if (!is_manager_or_admin()) {
+    app_json_response(['success' => false, 'message' => 'Unauthorized'], 403);
 }
 
-$input = json_decode(file_get_contents('php://input'), true);
-$id = $input['id'] ?? null;
-if (!$id) {
-    echo json_encode(['success' => false, 'message' => 'Missing id']);
-    exit();
+function gallery_delete_resolve_absolute_path(string $webPath): ?string
+{
+    $relativePath = str_replace('../', '', $webPath);
+    $fullPath = __DIR__ . '/../' . str_replace('/', DIRECTORY_SEPARATOR, $relativePath);
+    $directory = realpath(dirname($fullPath));
+    if ($directory === false) {
+        return null;
+    }
+
+    $absolutePath = $directory . DIRECTORY_SEPARATOR . basename($fullPath);
+    return is_file($absolutePath) ? $absolutePath : null;
 }
 
-try {
-    // Fetch file path
-    $find = $conn->prepare("SELECT file_path FROM gallery_images WHERE id = ?");
-    $find->bind_param('i', $id);
-    $find->execute();
-    $res = $find->get_result();
-    if ($res->num_rows === 0) {
-        echo json_encode(['success' => false, 'message' => 'Not found']);
-        $find->close();
-        exit();
-    }
-    $row = $res->fetch_assoc();
-    $find->close();
+function gallery_delete_has_file_references(mysqli $db, string $webPath): bool
+{
+    $galleryStmt = $db->prepare('SELECT COUNT(*) AS ref_count FROM gallery_images WHERE file_path = ?');
+    $galleryStmt->bind_param('s', $webPath);
+    $galleryStmt->execute();
+    $galleryRefs = (int) ($galleryStmt->get_result()->fetch_assoc()['ref_count'] ?? 0);
+    $galleryStmt->close();
 
-    // Delete DB record
-    $del = $conn->prepare("DELETE FROM gallery_images WHERE id = ?");
-    $del->bind_param('i', $id);
-    $ok = $del->execute();
-    $del->close();
-
-    // Try to delete file from disk (best effort)
-    $webPath = $row['file_path']; // '../files/media/images/gallery/filename.ext'
-    $absPath = realpath(__DIR__ . '/../pages/' . $webPath);
-    if ($absPath === false) {
-        // Fallback: compute from services dir
-        $absPath = realpath(__DIR__ . '/../' . ltrim($webPath, './'));
-    }
-    if ($absPath && is_file($absPath)) {
-        @unlink($absPath);
+    if ($galleryRefs > 0) {
+        return true;
     }
 
-    echo json_encode(['success' => $ok]);
-} catch (Exception $e) {
-    echo json_encode(['success' => false, 'message' => 'Server error: ' . $e->getMessage()]);
+    $blogStmt = $db->prepare('SELECT COUNT(*) AS ref_count FROM blog_images WHERE file_path = ?');
+    $blogStmt->bind_param('s', $webPath);
+    $blogStmt->execute();
+    $blogRefs = (int) ($blogStmt->get_result()->fetch_assoc()['ref_count'] ?? 0);
+    $blogStmt->close();
+
+    return $blogRefs > 0;
 }
 
-$conn->close();
+$input = app_read_json_input();
+$id = isset($input['id']) ? (int) $input['id'] : 0;
+if ($id <= 0) {
+    app_json_response(['success' => false, 'message' => 'Missing id.'], 422);
+}
+
+$find = $conn->prepare('SELECT file_path, source_blog_id FROM gallery_images WHERE id = ?');
+$find->bind_param('i', $id);
+$find->execute();
+$row = $find->get_result()->fetch_assoc();
+$find->close();
+
+if (!$row) {
+    app_json_response(['success' => false, 'message' => 'Image not found.'], 404);
+}
+
+$delete = $conn->prepare('DELETE FROM gallery_images WHERE id = ?');
+$delete->bind_param('i', $id);
+$delete->execute();
+$delete->close();
+
+if (!gallery_delete_has_file_references($conn, (string) $row['file_path'])) {
+    $absolutePath = gallery_delete_resolve_absolute_path((string) $row['file_path']);
+    if ($absolutePath) {
+    @unlink($absolutePath);
+    }
+}
+
+app_json_response([
+    'success' => true,
+    'removed_from_gallery_only' => !empty($row['source_blog_id']),
+]);

@@ -4,19 +4,17 @@ require_once __DIR__ . '/player_helpers.php';
 
 function tournament_status_data(array $tournament): array
 {
-    $today = new DateTime();
-    $endDate = new DateTime($tournament['tour_endDate']);
-    $startDate = new DateTime($tournament['tour_creationDate']);
+    $status = $tournament['status'] ?? 'draft';
+    $map = [
+        'draft' => ['label' => 'Draft', 'class' => 'status-upcoming'],
+        'registration_open' => ['label' => 'Registration Open', 'class' => 'status-upcoming'],
+        'registration_closed' => ['label' => 'Registration Closed', 'class' => 'status-upcoming'],
+        'in_progress' => ['label' => 'Live', 'class' => 'status-active'],
+        'completed' => ['label' => 'Completed', 'class' => 'status-completed'],
+        'archived' => ['label' => 'Archived', 'class' => 'status-completed'],
+    ];
 
-    if ($today > $endDate) {
-        return ['label' => 'Completed', 'class' => 'status-completed'];
-    }
-
-    if ($today >= $startDate) {
-        return ['label' => 'Active', 'class' => 'status-active'];
-    }
-
-    return ['label' => 'Upcoming', 'class' => 'status-upcoming'];
+    return $map[$status] ?? ['label' => ucfirst(str_replace('_', ' ', $status)), 'class' => 'status-upcoming'];
 }
 
 function tournament_match_label(array $match, string $slot, array $matchNumbersById): string
@@ -42,10 +40,11 @@ function tournament_round_title(int $roundNumber): string
 {
     $labels = [
         1 => 'Round 1',
-        2 => 'Round 2',
+        2 => 'Quarterfinal',
         3 => 'Semifinal',
         4 => 'Final',
     ];
 
     return $labels[$roundNumber] ?? ('Round ' . $roundNumber);
 }
+

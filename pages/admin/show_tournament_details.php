@@ -25,8 +25,11 @@ try {
 $tournament = $pageData['tournament'];
 $players = $pageData['players'];
 $matches = $pageData['matches'];
+$teamMatches = $pageData['team_matches'];
+$teams = $pageData['teams'];
 $standings = $pageData['standings'];
 $groupStandings = $pageData['group_standings'];
+$teamStandings = $pageData['team_standings'];
 $availablePlayers = $pageData['available_players'];
 $status = tournament_status_data($tournament);
 
@@ -199,7 +202,8 @@ $playersForJs = array_map(function (array $player): array {
         <?php endif; ?>
 
         <div class="callout">
-            This is the active tournament management screen. Structure rebuilds are blocked automatically once completed matches exist.
+            Tournament structures rebuild automatically from the current active roster. Once scores have been recorded, structural changes are blocked.
+            League promotion now happens automatically after all group-stage matches are complete, and archived tournaments are read-only.
         </div>
 
         <div class="info-grid">
@@ -229,7 +233,7 @@ $playersForJs = array_map(function (array $player): array {
                             <label for="tour_endDate">End Date</label>
                             <input type="date" name="tour_endDate" id="tour_endDate" value="<?php echo htmlspecialchars(date('Y-m-d', strtotime($tournament['tour_endDate']))); ?>" required>
                         </div>
-                        <?php if ($tournament['tour_type'] === 'Group'): ?>
+                        <?php if ($tournament['tour_type'] === 'League'): ?>
                             <div>
                                 <label for="group_count">Group Count</label>
                                 <input type="number" name="group_count" id="group_count" min="2" value="<?php echo (int) $tournament['group_count']; ?>">
@@ -237,6 +241,11 @@ $playersForJs = array_map(function (array $player): array {
                             <div>
                                 <label for="advancers_per_group">Advancers per Group</label>
                                 <input type="number" name="advancers_per_group" id="advancers_per_group" min="1" value="<?php echo (int) $tournament['advancers_per_group']; ?>">
+                            </div>
+                        <?php elseif ($tournament['tour_type'] === 'Group'): ?>
+                            <div>
+                                <label for="team_count">Team Count</label>
+                                <input type="number" name="team_count" id="team_count" min="2" value="<?php echo (int) $tournament['team_count']; ?>">
                             </div>
                         <?php endif; ?>
                     </div>
@@ -247,7 +256,7 @@ $playersForJs = array_map(function (array $player): array {
                             <tr>
                                 <th>Name</th>
                                 <th>Status</th>
-                                <?php if ($tournament['tour_type'] === 'Group'): ?><th>Group</th><?php endif; ?>
+                                <?php if ($tournament['tour_type'] === 'League'): ?><th>Group</th><?php endif; ?>
                                 <th>Remove</th>
                             </tr>
                         </thead>
@@ -262,7 +271,7 @@ $playersForJs = array_map(function (array $player): array {
                                             <?php endforeach; ?>
                                         </select>
                                     </td>
-                                    <?php if ($tournament['tour_type'] === 'Group'): ?><td><?php echo $player['group_number'] !== null ? (int) $player['group_number'] : '-'; ?></td><?php endif; ?>
+                                    <?php if ($tournament['tour_type'] === 'League'): ?><td><?php echo $player['group_number'] !== null ? (int) $player['group_number'] : '-'; ?></td><?php endif; ?>
                                     <td><input type="checkbox" name="remove_players[]" value="<?php echo (int) $player['plr_idNum']; ?>"></td>
                                 </tr>
                             <?php endforeach; ?>
@@ -293,7 +302,7 @@ $playersForJs = array_map(function (array $player): array {
                         <tr>
                             <th>Name</th>
                             <th>Status</th>
-                            <?php if ($tournament['tour_type'] === 'Group'): ?><th>Group</th><?php endif; ?>
+                            <?php if ($tournament['tour_type'] === 'League'): ?><th>Group</th><?php endif; ?>
                         </tr>
                     </thead>
                     <tbody>
@@ -301,7 +310,7 @@ $playersForJs = array_map(function (array $player): array {
                             <tr>
                                 <td><?php echo htmlspecialchars(player_name($player)); ?></td>
                                 <td><?php echo htmlspecialchars($player['player_status']); ?></td>
-                                <?php if ($tournament['tour_type'] === 'Group'): ?><td><?php echo $player['group_number'] !== null ? (int) $player['group_number'] : '-'; ?></td><?php endif; ?>
+                                <?php if ($tournament['tour_type'] === 'League'): ?><td><?php echo $player['group_number'] !== null ? (int) $player['group_number'] : '-'; ?></td><?php endif; ?>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>
@@ -311,11 +320,14 @@ $playersForJs = array_map(function (array $player): array {
 
         <div class="section-toggle">
             <button type="button" class="active" data-section-button="matches">Matches</button>
-            <?php if ($tournament['tour_type'] === 'League'): ?>
+            <?php if ($tournament['tour_type'] === 'Round Robin'): ?>
                 <button type="button" data-section-button="standings">Standings</button>
             <?php endif; ?>
-            <?php if ($tournament['tour_type'] === 'Group'): ?>
+            <?php if ($tournament['tour_type'] === 'League'): ?>
                 <button type="button" data-section-button="groups">Groups</button>
+            <?php endif; ?>
+            <?php if ($tournament['tour_type'] === 'Group'): ?>
+                <button type="button" data-section-button="teams">Teams</button>
             <?php endif; ?>
             <?php if (!empty($knockoutRounds)): ?>
                 <button type="button" data-section-button="bracket">Bracket</button>
@@ -324,67 +336,109 @@ $playersForJs = array_map(function (array $player): array {
 
         <section class="page-section active" data-section="matches">
             <div class="header-actions">
-                <h2>Matches</h2>
+                <h2><?php echo $tournament['tour_type'] === 'Group' ? 'Team Fixtures' : 'Matches'; ?></h2>
                 <div>
-                    <?php if ($tournament['tour_type'] === 'League'): ?>
-                        <button type="button" class="action-btn" id="openLeagueToolsBtn">Reschedule League</button>
+                    <?php if (in_array($tournament['tour_type'], ['Round Robin', 'League'], true)): ?>
+                        <button type="button" class="action-btn" id="openLeagueToolsBtn">Reschedule Structure</button>
                     <?php endif; ?>
-                    <?php if ($tournament['tour_type'] === 'Group'): ?>
-                        <button type="button" class="action-btn" id="promoteGroupsBtn">Promote Groups</button>
+                    <?php if ($tournament['tour_type'] !== 'Group'): ?>
+                        <button type="button" class="action-btn" id="addMatchBtn">Add Match</button>
                     <?php endif; ?>
-                    <button type="button" class="action-btn" id="addMatchBtn">Add Match</button>
                     <button type="button" class="action-btn" id="refreshMatchesBtn">Refresh</button>
                 </div>
             </div>
 
-            <table class="matches-table">
-                <thead>
-                    <tr>
-                        <th>Match #</th>
-                        <th>Round</th>
-                        <th>Date</th>
-                        <th>Time</th>
-                        <th>Bracket</th>
-                        <th>Group</th>
-                        <th>Player 1</th>
-                        <th>Score</th>
-                        <th>Player 2</th>
-                        <th>Status</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ($matches as $match): ?>
+            <?php if ($tournament['tour_type'] === 'Group'): ?>
+                <table class="matches-table">
+                    <thead>
                         <tr>
-                            <td><?php echo (int) $matchNumbersById[(int) $match['match_id']]; ?></td>
-                            <td><?php echo (int) $match['round_number']; ?></td>
-                            <td><?php echo htmlspecialchars($match['match_date']); ?></td>
-                            <td><?php echo htmlspecialchars($match['match_time']); ?></td>
-                            <td><?php echo htmlspecialchars((string) ($match['bracket'] ?? '-')); ?></td>
-                            <td><?php echo $match['group_number'] !== null ? (int) $match['group_number'] : '-'; ?></td>
-                            <td><?php echo htmlspecialchars(tournament_match_label($match, 'player1', $matchNumbersById)); ?></td>
-                            <td>
-                                <?php if ($match['match_status'] === 'Completed'): ?>
-                                    <?php echo htmlspecialchars((string) $match['player1_score']); ?> - <?php echo htmlspecialchars((string) $match['player2_score']); ?>
-                                <?php else: ?>
-                                    vs
-                                <?php endif; ?>
-                            </td>
-                            <td><?php echo htmlspecialchars(tournament_match_label($match, 'player2', $matchNumbersById)); ?></td>
-                            <td><?php echo htmlspecialchars($match['match_status']); ?></td>
-                            <td>
-                                <button type="button" class="action-btn" onclick="openMatchModal(<?php echo (int) $match['match_id']; ?>)">Open</button>
-                                <button type="button" class="cancel-btn" onclick="deleteMatch(<?php echo (int) $match['match_id']; ?>)">Delete</button>
-                            </td>
+                            <th>Round</th>
+                            <th>Date</th>
+                            <th>Time</th>
+                            <th>Team 1</th>
+                            <th>Score</th>
+                            <th>Team 2</th>
+                            <th>Status</th>
+                            <th>Record Result</th>
                         </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($teamMatches as $teamMatch): ?>
+                            <tr>
+                                <td><?php echo (int) $teamMatch['round_number']; ?></td>
+                                <td><?php echo htmlspecialchars($teamMatch['match_date']); ?></td>
+                                <td><?php echo htmlspecialchars($teamMatch['match_time']); ?></td>
+                                <td><?php echo htmlspecialchars((string) ($teamMatch['team1_name'] ?? 'TBD')); ?></td>
+                                <td>
+                                    <?php if ($teamMatch['match_status'] === 'Completed'): ?>
+                                        <?php echo htmlspecialchars((string) $teamMatch['team1_score']); ?> - <?php echo htmlspecialchars((string) $teamMatch['team2_score']); ?>
+                                    <?php else: ?>
+                                        vs
+                                    <?php endif; ?>
+                                </td>
+                                <td><?php echo htmlspecialchars((string) ($teamMatch['team2_name'] ?? 'TBD')); ?></td>
+                                <td><?php echo htmlspecialchars($teamMatch['match_status']); ?></td>
+                                <td>
+                                    <form onsubmit="return saveTeamMatchResult(event, <?php echo (int) $teamMatch['team_match_id']; ?>)" style="display:flex;gap:6px;align-items:center;">
+                                        <input type="number" min="0" name="team1_score" style="width:72px;">
+                                        <input type="number" min="0" name="team2_score" style="width:72px;">
+                                        <button type="submit" class="action-btn">Save</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            <?php else: ?>
+                <table class="matches-table">
+                    <thead>
+                        <tr>
+                            <th>Match #</th>
+                            <th>Round</th>
+                            <th>Date</th>
+                            <th>Time</th>
+                            <th>Bracket</th>
+                            <th>Group</th>
+                            <th>Player 1</th>
+                            <th>Score</th>
+                            <th>Player 2</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($matches as $match): ?>
+                            <tr>
+                                <td><?php echo (int) $matchNumbersById[(int) $match['match_id']]; ?></td>
+                                <td><?php echo (int) $match['round_number']; ?></td>
+                                <td><?php echo htmlspecialchars($match['match_date']); ?></td>
+                                <td><?php echo htmlspecialchars($match['match_time']); ?></td>
+                                <td><?php echo htmlspecialchars((string) ($match['bracket'] ?? '-')); ?></td>
+                                <td><?php echo $match['group_number'] !== null ? (int) $match['group_number'] : '-'; ?></td>
+                                <td><?php echo htmlspecialchars(tournament_match_label($match, 'player1', $matchNumbersById)); ?></td>
+                                <td>
+                                    <?php if ($match['match_status'] === 'Completed'): ?>
+                                        <?php echo htmlspecialchars((string) $match['player1_score']); ?> - <?php echo htmlspecialchars((string) $match['player2_score']); ?>
+                                    <?php else: ?>
+                                        vs
+                                    <?php endif; ?>
+                                </td>
+                                <td><?php echo htmlspecialchars(tournament_match_label($match, 'player2', $matchNumbersById)); ?></td>
+                                <td><?php echo htmlspecialchars($match['match_status']); ?></td>
+                                <td>
+                                    <button type="button" class="action-btn" onclick="openMatchModal(<?php echo (int) $match['match_id']; ?>)">Open</button>
+                                    <button type="button" class="cancel-btn" onclick="deleteMatch(<?php echo (int) $match['match_id']; ?>)">Delete</button>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            <?php endif; ?>
         </section>
 
-        <?php if ($tournament['tour_type'] === 'League'): ?>
+        <?php if ($tournament['tour_type'] === 'Round Robin'): ?>
             <section class="page-section" data-section="standings">
-                <h2>League Standings</h2>
+                <h2>Round Robin Standings</h2>
                 <table class="standings-table">
                     <thead>
                         <tr>
@@ -416,7 +470,7 @@ $playersForJs = array_map(function (array $player): array {
             </section>
         <?php endif; ?>
 
-        <?php if ($tournament['tour_type'] === 'Group'): ?>
+        <?php if ($tournament['tour_type'] === 'League'): ?>
             <section class="page-section" data-section="groups">
                 <h2>Group Stage</h2>
                 <div class="section-grid">
@@ -457,6 +511,53 @@ $playersForJs = array_map(function (array $player): array {
                                     </div>
                                 <?php endforeach; ?>
                             <?php endif; ?>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            </section>
+        <?php endif; ?>
+
+        <?php if ($tournament['tour_type'] === 'Group'): ?>
+            <section class="page-section" data-section="teams">
+                <h2>Teams & Standings</h2>
+                <div class="section-grid">
+                    <div class="section-card">
+                        <h3>Team Standings</h3>
+                        <table class="standings-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Team</th>
+                                    <th>Played</th>
+                                    <th>Won</th>
+                                    <th>Lost</th>
+                                    <th>Drawn</th>
+                                    <th>Points</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($teamStandings as $index => $standing): ?>
+                                    <tr>
+                                        <td><?php echo $index + 1; ?></td>
+                                        <td><?php echo htmlspecialchars($standing['team_name']); ?></td>
+                                        <td><?php echo (int) $standing['matches_played']; ?></td>
+                                        <td><?php echo (int) $standing['matches_won']; ?></td>
+                                        <td><?php echo (int) $standing['matches_lost']; ?></td>
+                                        <td><?php echo (int) $standing['matches_drawn']; ?></td>
+                                        <td><?php echo (int) $standing['points']; ?></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                    <?php foreach ($teams as $team): ?>
+                        <div class="section-card">
+                            <h3><?php echo htmlspecialchars($team['team_name']); ?></h3>
+                            <ul>
+                                <?php foreach ($team['players'] as $teamPlayer): ?>
+                                    <li><?php echo htmlspecialchars(trim($teamPlayer['plr_name'] . ' ' . $teamPlayer['plr_surname'])); ?></li>
+                                <?php endforeach; ?>
+                            </ul>
                         </div>
                     <?php endforeach; ?>
                 </div>
@@ -523,7 +624,7 @@ $playersForJs = array_map(function (array $player): array {
     <div class="modal-overlay" id="leagueToolsModal">
         <div class="modal-card">
             <div class="header-actions">
-                <h3>League Rescheduling</h3>
+                <h3>Structure Rescheduling</h3>
                 <button type="button" class="cancel-btn" onclick="closeLeagueToolsModal()">Close</button>
             </div>
             <div class="inline-grid">

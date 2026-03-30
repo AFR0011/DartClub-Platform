@@ -27,10 +27,18 @@ Treat it as historical migration context only.
 - Keep the current plain PHP/MySQL architecture unless explicitly asked to migrate away from it.
 - Use `services/config.php`, `services/app_bootstrap.php`, and `services/dbConnection.php` as the canonical DB/bootstrap path.
 - Do not reintroduce request-path schema mutations such as `ALTER TABLE ... IF NOT EXISTS` inside live handlers.
+- Keep club membership separate from auth role:
+  - `user_role` controls auth (`player`, `manager`, `admin`)
+  - `membership_status` controls club-member workflow
 - Keep tournament support scoped to:
+  - `Round Robin`
   - `League`
   - `Group`
   - single `Elimination`
+- Treat tournament semantics as:
+  - `Round Robin` = single-table round robin
+  - `League` = grouped player stage plus knockout
+  - `Group` = per-tournament team competition
 - Treat `DoubleElimination` as deferred unless the user explicitly asks to design and implement a full bracket engine.
 - Prefer `users.user_id -> players.user_id` for identity mapping.
 - Do not bring back steady-state username-based player resolution in public/profile/tournament services.
@@ -47,7 +55,8 @@ Before substantial work, read:
 
 ## Verification Rules
 - Do not claim completion without verification.
-- This environment currently does not expose `php` on PATH, so PHP linting may be unavailable from Codex.
+- `php` may still be absent from PATH, but local linting is available through:
+  - `C:\Users\Ali\xampp\php\php.exe`
 - Use the verification ladder in `docs/RUN_PROTOCOL.md`.
 - Prefer the least expensive valid check for the change:
   - static repo inspection

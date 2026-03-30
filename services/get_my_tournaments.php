@@ -20,8 +20,14 @@ try {
                 t.tour_id,
                 t.tour_title,
                 t.tour_type,
+                t.status,
+                t.tour_creationDate,
+                t.tour_endDate,
+                t.winner_label,
                 tp.player_status,
-                tp.registration_date
+                tp.registration_date,
+                tp.final_rank,
+                tp.placement_label
             FROM tournament_players tp
             JOIN tournaments t ON tp.tour_id = t.tour_id
             WHERE tp.plr_id = ?
@@ -36,3 +42,4 @@ try {
 } catch (Throwable $exception) {
     app_json_response(['error' => 'Failed to fetch tournaments: ' . $exception->getMessage()], 500);
 }
+

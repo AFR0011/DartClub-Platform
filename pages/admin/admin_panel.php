@@ -21,6 +21,12 @@
     <div class="container">
         <span style="font-size:30px;cursor:pointer" onclick="openNav()">&#9776;</span>
         <h1>Dart Tournament Club Management</h1>
+        <p style="margin-top: 16px;">Use the sidebar for core admin workflows, or jump directly to the public workspaces below.</p>
+        <p style="margin-top: 12px;">
+            <a href="../blog.html">Blog workspace</a> |
+            <a href="../gallery.html">Gallery workspace</a> |
+            <a href="manage_tournaments.php">Tournament operations</a>
+        </p>
     </div>
 </body>
 

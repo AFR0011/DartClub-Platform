@@ -206,6 +206,35 @@ async function promoteGroups() {
     }
 }
 
+async function saveTeamMatchResult(event, teamMatchId) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const formData = new FormData(form);
+    const team1Score = parseInt(formData.get('team1_score') || '0', 10);
+    const team2Score = parseInt(formData.get('team2_score') || '0', 10);
+
+    try {
+        const response = await fetch('../../services/team_match_result.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                team_match_id: teamMatchId,
+                team1_score: team1Score,
+                team2_score: team2Score
+            })
+        });
+        const data = await response.json();
+        if (!data.success) {
+            throw new Error(data.message || 'Failed to record team result');
+        }
+        refreshMatches();
+    } catch (error) {
+        window.alert(error.message);
+    }
+
+    return false;
+}
+
 function openLeagueToolsModal() {
     const modal = document.getElementById('leagueToolsModal');
     if (modal) {
@@ -269,3 +298,4 @@ window.deleteMatch = deleteMatch;
 window.openLeagueToolsModal = openLeagueToolsModal;
 window.closeLeagueToolsModal = closeLeagueToolsModal;
 window.submitLeagueTools = submitLeagueTools;
+window.saveTeamMatchResult = saveTeamMatchResult;
