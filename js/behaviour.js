@@ -18,19 +18,26 @@ if (navClose) {
 }
 
 // REMOVE MENU MOBILE
-const navLink = document.querySelectorAll(".nav__link");
+document.addEventListener("click", (event) => {
+  const clickedNavLink = event.target.closest(".nav__link");
+  if (!clickedNavLink) {
+    return;
+  }
 
-const linkAction = () => {
-  const navMenu = document.getElementById("nav-menu");
-  // When we click on each nav__link, we remove the show-menu class
-  navMenu.classList.remove("show-menu");
-};
-navLink.forEach((n) => n.addEventListener("click", linkAction));
+  const mobileMenu = document.getElementById("nav-menu");
+  if (mobileMenu) {
+    mobileMenu.classList.remove("show-menu");
+  }
+});
 
 //for changing background header
 
 const scrollHeader = () => {
   const header = document.getElementById("header");
+  if (!header) {
+    return;
+  }
+
   // Add a class if the bottom offset is greater than 50 of the viewport
   this.scrollY >= 50
     ? header.classList.add("bg-header")
@@ -50,8 +57,12 @@ const scrollActive = () => {
       sectionTop = current.offsetTop - 58,
       sectionId = current.getAttribute("id"),
       sectionsClass = document.querySelector(
-        ".nav__menu a[href*=" + sectionId + "]"
+        `.nav__menu a[href*="${sectionId}"]`
       );
+
+    if (!sectionsClass) {
+      return;
+    }
 
     if (scrollDown > sectionTop && scrollDown <= sectionTop + sectionHeight) {
       sectionsClass.classList.add("active-link");
@@ -65,6 +76,10 @@ window.addEventListener("scroll", scrollActive);
 //Scroll up
 const scrollUp = () => {
   const scrollUp = document.getElementById("scroll-up");
+  if (!scrollUp) {
+    return;
+  }
+
   // When the scroll is higher than 350 viewport height, add the show-scroll class to the a tag with the scrollup class
   this.scrollY >= 350
     ? scrollUp.classList.add("show-scroll")
@@ -72,15 +87,49 @@ const scrollUp = () => {
 };
 window.addEventListener("scroll", scrollUp);
 
-// Smooth scrolling
-document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-  anchor.addEventListener('click', function (e) {
-      e.preventDefault();
-      console.log(e.target.getAttribute('href'));
-      console.log(typeof(document.querySelector(this.getAttribute('href'))));
+async function appFetchJson(url, options = {}) {
+  const response = await fetch(url, options);
+  const responseText = await response.text();
 
-      document.querySelector(this.getAttribute('href')).scrollIntoView({
-          behavior: 'smooth'
+  let payload = null;
+  if (responseText !== "") {
+    try {
+      payload = JSON.parse(responseText);
+    } catch (error) {
+      const preview = responseText.trim().slice(0, 160);
+      throw new Error(`Invalid JSON response from ${url}: ${preview}`);
+    }
+  }
+
+  if (!response.ok) {
+    const message =
+      payload?.message ||
+      payload?.error ||
+      `Request failed with status ${response.status}.`;
+    throw new Error(message);
+  }
+
+  return payload;
+}
+
+window.appFetchJson = appFetchJson;
+
+// Smooth scrolling
+document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
+  anchor.addEventListener("click", function (e) {
+      const targetSelector = this.getAttribute("href");
+      if (!targetSelector || targetSelector === "#") {
+        return;
+      }
+
+      const targetElement = document.querySelector(targetSelector);
+      if (!targetElement) {
+        return;
+      }
+
+      e.preventDefault();
+      targetElement.scrollIntoView({
+          behavior: "smooth"
       });
   });
 });
@@ -107,6 +156,12 @@ function currentPageName() {
   return parts[parts.length - 1] || "main.php";
 }
 
+function isAuthPage() {
+  return ["login.html", "sign_up.html", "reset_password.html"].includes(
+    currentPageName()
+  );
+}
+
 function setActiveLinkClass(linkPath) {
   const page = currentPageName();
   return page === linkPath ? "nav__link active-link" : "nav__link";
@@ -127,7 +182,7 @@ function escapeHtml(value) {
 }
 
 async function logoutFromShell() {
-  await fetch("../services/logout.php", { method: "POST" });
+  await appFetchJson("../services/logout.php", { method: "POST" });
   window.location.href = "main.php";
 }
 
@@ -224,10 +279,26 @@ function buildFooterHtml(context) {
   `;
 }
 
+function buildCompactFooterHtml() {
+  return `
+    <footer class="footer section footer--compact" id="footer">
+      <div class="container">
+        <div class="footer__group">
+          <span class="footer__copy">&#169; Famagusta Dart Club. All rights reserved.</span>
+        </div>
+      </div>
+    </footer>
+  `;
+}
+
 async function hydratePublicShell() {
   try {
-    const response = await fetch("../services/get_session_context.php");
-    const context = await response.json();
+    const context = await appFetchJson("../services/get_session_context.php");
+    const authPage = isAuthPage();
+
+    if (authPage) {
+      document.body.classList.add("auth-shell-page");
+    }
 
     const logo = document.querySelector(".nav__logo");
     if (logo) {
@@ -249,12 +320,15 @@ async function hydratePublicShell() {
     }
 
     let footer = document.querySelector(".footer");
+    const footerHtml = authPage
+      ? buildCompactFooterHtml()
+      : buildFooterHtml(context);
     if (!footer) {
       const wrapper = document.createElement("div");
-      wrapper.innerHTML = buildFooterHtml(context);
+      wrapper.innerHTML = footerHtml;
       document.body.appendChild(wrapper.firstElementChild);
     } else {
-      footer.outerHTML = buildFooterHtml(context);
+      footer.outerHTML = footerHtml;
     }
 
     const logoutButton = document.getElementById("shell-logout-btn");

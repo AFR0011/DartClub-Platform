@@ -79,18 +79,9 @@ function tournament_normalize_settings(array $input, int $playerCount = 0): arra
     if ($type === 'League') {
         $groupCount = max(2, (int) $groupCount);
         $advancersPerGroup = max(1, (int) $advancersPerGroup);
-        if ($playerCount > 0 && $groupCount > $playerCount) {
-            throw new InvalidArgumentException('Group count cannot exceed the number of selected players.');
-        }
-        if ($playerCount > 0 && ($groupCount * $advancersPerGroup) >= $playerCount) {
-            throw new InvalidArgumentException('League settings must leave enough players for a knockout stage.');
-        }
         $teamCount = null;
     } elseif ($type === 'Group') {
         $teamCount = max(2, (int) $teamCount);
-        if ($playerCount > 0 && $teamCount > $playerCount) {
-            throw new InvalidArgumentException('Team count cannot exceed the number of selected players.');
-        }
         $groupCount = null;
         $advancersPerGroup = null;
     } else {
@@ -113,6 +104,50 @@ function tournament_normalize_settings(array $input, int $playerCount = 0): arra
         'status' => tournament_compute_initial_status($registrationOpen, $registrationClose),
         'is_public' => isset($input['is_public']) ? ((int) $input['is_public'] === 1 ? 1 : 0) : 1,
     ];
+}
+
+function tournament_validate_structure_settings(array $settings, int $playerCount): void
+{
+    if ($playerCount < 2) {
+        throw new RuntimeException('At least two entrants are required before a tournament structure can be generated.');
+    }
+
+    if ($settings['tour_type'] === 'League') {
+        $groupCount = max(2, (int) ($settings['group_count'] ?? 0));
+        $advancersPerGroup = max(1, (int) ($settings['advancers_per_group'] ?? 0));
+
+        if ($groupCount > $playerCount) {
+            throw new InvalidArgumentException('Group count cannot exceed the number of tournament entrants.');
+        }
+
+        if (($groupCount * $advancersPerGroup) >= $playerCount) {
+            throw new InvalidArgumentException('League settings must leave enough players for a knockout stage.');
+        }
+    }
+
+    if ($settings['tour_type'] === 'Group') {
+        $teamCount = max(2, (int) ($settings['team_count'] ?? 0));
+        if ($teamCount > $playerCount) {
+            throw new InvalidArgumentException('Team count cannot exceed the number of tournament entrants.');
+        }
+    }
+}
+
+function tournament_sanitize_player_status(string $status, string $fallback = 'Registered'): string
+{
+    $safeStatus = trim($status);
+    $allowed = ['Active', 'Registered', 'Withdrawn'];
+
+    if (in_array($safeStatus, $allowed, true)) {
+        return $safeStatus;
+    }
+
+    return in_array($fallback, $allowed, true) ? $fallback : 'Registered';
+}
+
+function tournament_structure_is_locked(mysqli $db, int $tourId): bool
+{
+    return tournament_has_structure($db, $tourId) && tournament_has_completed_matches($db, $tourId);
 }
 
 function tournament_insert(mysqli $db, array $settings): int
@@ -601,23 +636,34 @@ function tournament_rebuild_structure(
 function tournament_create_with_players(mysqli $db, array $settings, array $playerIds): int
 {
     $playerIds = tournament_unique_player_ids($playerIds);
-    if (count($playerIds) < 2) {
-        throw new InvalidArgumentException('At least two players must be selected.');
-    }
-
     $normalized = tournament_normalize_settings($settings, count($playerIds));
     $tourId = tournament_insert($db, $normalized);
-
-    tournament_rebuild_structure(
-        $db,
-        $tourId,
-        $normalized['tour_type'],
-        $playerIds,
-        $normalized['tour_startDate']->format('Y-m-d'),
-        $normalized['group_count'],
-        $normalized['team_count'],
-        isset($settings['team_names']) && is_array($settings['team_names']) ? $settings['team_names'] : null
+    $selectedPlayersStatus = tournament_sanitize_player_status(
+        (string) ($settings['selectedPlayersStatus'] ?? $settings['selected_players_status'] ?? 'Registered'),
+        'Registered'
     );
+
+    if (!empty($playerIds)) {
+        tournament_attach_players($db, $tourId, $playerIds, null, $selectedPlayersStatus);
+    }
+
+    $shouldGenerateImmediately = !in_array($normalized['status'], ['draft', 'registration_open'], true)
+        && $selectedPlayersStatus === 'Active'
+        && count($playerIds) >= 2;
+
+    if ($shouldGenerateImmediately) {
+        tournament_validate_structure_settings($normalized, count($playerIds));
+        tournament_rebuild_structure(
+            $db,
+            $tourId,
+            $normalized['tour_type'],
+            $playerIds,
+            $normalized['tour_startDate']->format('Y-m-d'),
+            $normalized['group_count'],
+            $normalized['team_count'],
+            isset($settings['team_names']) && is_array($settings['team_names']) ? $settings['team_names'] : null
+        );
+    }
 
     tournament_refresh_lifecycle($db, $tourId);
 
@@ -653,6 +699,23 @@ function tournament_fetch_player_ids(mysqli $db, int $tourId): array
     $stmt->close();
 
     return $playerIds;
+}
+
+function tournament_has_structure(mysqli $db, int $tourId): bool
+{
+    $stmt = $db->prepare(
+        "SELECT (
+            (SELECT COUNT(*) FROM matches WHERE tour_id = ?) +
+            (SELECT COUNT(*) FROM team_matches WHERE tour_id = ?) +
+            (SELECT COUNT(*) FROM tournament_teams WHERE tour_id = ?)
+        ) AS structure_count"
+    );
+    $stmt->bind_param('iii', $tourId, $tourId, $tourId);
+    $stmt->execute();
+    $row = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+
+    return ((int) ($row['structure_count'] ?? 0)) > 0;
 }
 
 function tournament_has_completed_matches(mysqli $db, int $tourId): bool
@@ -705,10 +768,7 @@ function tournament_update(mysqli $db, int $tourId, array $payload): void
             if (!array_key_exists($playerId, $finalStatuses)) {
                 continue;
             }
-            $safeStatus = trim((string) $status);
-            if ($safeStatus !== '') {
-                $finalStatuses[$playerId] = $safeStatus;
-            }
+            $finalStatuses[$playerId] = tournament_sanitize_player_status((string) $status, $finalStatuses[$playerId]);
         }
     }
 
@@ -716,21 +776,11 @@ function tournament_update(mysqli $db, int $tourId, array $payload): void
         unset($finalStatuses[$playerId]);
     }
 
+    $newPlayersStatus = tournament_sanitize_player_status((string) ($payload['new_players_status'] ?? 'Registered'), 'Registered');
     foreach ($newPlayerIds as $playerId) {
         if (!isset($finalStatuses[$playerId])) {
-            $finalStatuses[$playerId] = 'Active';
+            $finalStatuses[$playerId] = $newPlayersStatus;
         }
-    }
-
-    $activePlayerIds = [];
-    foreach ($finalStatuses as $playerId => $status) {
-        if ($status === 'Active') {
-            $activePlayerIds[] = (int) $playerId;
-        }
-    }
-
-    if (count($activePlayerIds) < 2) {
-        throw new RuntimeException('A tournament needs at least two active players.');
     }
 
     $settingsInput = [
@@ -745,29 +795,7 @@ function tournament_update(mysqli $db, int $tourId, array $payload): void
         'team_count' => $payload['team_count'] ?? $tournament['team_count'],
         'is_public' => $payload['is_public'] ?? $tournament['is_public'],
     ];
-    $normalized = tournament_normalize_settings($settingsInput, count($activePlayerIds));
-
-    $currentActive = [];
-    foreach ($currentStatuses as $playerId => $status) {
-        if ($status === 'Active') {
-            $currentActive[] = (int) $playerId;
-        }
-    }
-    sort($currentActive);
-    sort($activePlayerIds);
-
-    $groupSettingsChanged = $tournament['tour_type'] === 'League'
-        && (
-            (int) $tournament['group_count'] !== (int) $normalized['group_count']
-            || (int) $tournament['advancers_per_group'] !== (int) $normalized['advancers_per_group']
-        );
-    $teamCountChanged = $tournament['tour_type'] === 'Group'
-        && (int) $tournament['team_count'] !== (int) $normalized['team_count'];
-    $requiresRebuild = $currentActive !== $activePlayerIds || $groupSettingsChanged || $teamCountChanged;
-
-    if ($requiresRebuild && tournament_has_completed_matches($db, $tourId)) {
-        throw new RuntimeException('Cannot rebuild the tournament structure after results have been recorded.');
-    }
+    $normalized = tournament_normalize_settings($settingsInput, count($finalStatuses));
 
     $updateTournament = $db->prepare(
         'UPDATE tournaments
@@ -817,7 +845,7 @@ function tournament_update(mysqli $db, int $tourId, array $payload): void
     }
 
     if (!empty($newPlayerIds)) {
-        tournament_attach_players($db, $tourId, $newPlayerIds, null, 'Active');
+        tournament_attach_players($db, $tourId, $newPlayerIds, null, $newPlayersStatus);
     }
 
     $statusStmt = $db->prepare('UPDATE tournament_players SET player_status = ? WHERE tour_id = ? AND plr_id = ?');
@@ -827,20 +855,74 @@ function tournament_update(mysqli $db, int $tourId, array $payload): void
     }
     $statusStmt->close();
 
-    if ($requiresRebuild) {
-        tournament_rebuild_structure(
-            $db,
-            $tourId,
-            $tournament['tour_type'],
-            $activePlayerIds,
-            $normalized['tour_startDate']->format('Y-m-d'),
-            $normalized['group_count'],
-            $normalized['team_count'],
-            isset($payload['team_names']) && is_array($payload['team_names']) ? $payload['team_names'] : null
-        );
+    tournament_refresh_lifecycle($db, $tourId);
+}
+
+function tournament_generate_structure(mysqli $db, int $tourId, ?string $startDate = null): int
+{
+    tournament_assert_mutable($db, $tourId);
+    $tournament = tournament_refresh_lifecycle($db, $tourId);
+
+    if (in_array($tournament['status'], ['draft', 'registration_open'], true)) {
+        throw new RuntimeException('Tournament registration must be closed before generating the structure.');
     }
 
+    if (tournament_structure_is_locked($db, $tourId)) {
+        throw new RuntimeException('Cannot rebuild the tournament structure after results have been recorded.');
+    }
+
+    $playerRowsStmt = $db->prepare('SELECT plr_id, player_status FROM tournament_players WHERE tour_id = ? ORDER BY plr_id');
+    $playerRowsStmt->bind_param('i', $tourId);
+    $playerRowsStmt->execute();
+    $playerRows = $playerRowsStmt->get_result()->fetch_all(MYSQLI_ASSOC);
+    $playerRowsStmt->close();
+
+    $competitionPlayerIds = [];
+    foreach ($playerRows as $row) {
+        if (($row['player_status'] ?? '') === 'Withdrawn') {
+            continue;
+        }
+        $competitionPlayerIds[] = (int) $row['plr_id'];
+    }
+
+    $competitionPlayerIds = tournament_unique_player_ids($competitionPlayerIds);
+    $settingsInput = [
+        'tour_type' => $tournament['tour_type'],
+        'tour_title' => $tournament['tour_title'],
+        'tour_startDate' => $startDate ?: date('Y-m-d', strtotime($tournament['tour_creationDate'])),
+        'tour_endDate' => date('Y-m-d', strtotime($tournament['tour_endDate'])),
+        'registration_open_at' => date('Y-m-d', strtotime($tournament['registration_open_at'] ?: $tournament['tour_creationDate'])),
+        'registration_close_at' => date('Y-m-d', strtotime($tournament['registration_close_at'] ?: $tournament['tour_creationDate'])),
+        'group_count' => $tournament['group_count'],
+        'advancers_per_group' => $tournament['advancers_per_group'],
+        'team_count' => $tournament['team_count'],
+        'is_public' => $tournament['is_public'],
+    ];
+    $normalized = tournament_normalize_settings($settingsInput, count($competitionPlayerIds));
+    tournament_validate_structure_settings($normalized, count($competitionPlayerIds));
+
+    $activate = $db->prepare(
+        "UPDATE tournament_players
+         SET player_status = 'Active'
+         WHERE tour_id = ? AND player_status <> 'Withdrawn'"
+    );
+    $activate->bind_param('i', $tourId);
+    $activate->execute();
+    $activate->close();
+
+    tournament_rebuild_structure(
+        $db,
+        $tourId,
+        $tournament['tour_type'],
+        $competitionPlayerIds,
+        $normalized['tour_startDate']->format('Y-m-d'),
+        $normalized['group_count'],
+        $normalized['team_count']
+    );
+
     tournament_refresh_lifecycle($db, $tourId);
+
+    return count($competitionPlayerIds);
 }
 
 function tournament_fetch_match(mysqli $db, int $matchId): array
@@ -1599,7 +1681,19 @@ function tournament_fetch_page_data(mysqli $db, int $tourId): array
         throw new RuntimeException('Tournament not found.');
     }
 
-    $tournament = tournament_refresh_lifecycle($db, $tourId);
+    $summary = [
+        'player_count' => (int) ($tournament['player_count'] ?? 0),
+        'match_count' => (int) ($tournament['match_count'] ?? 0),
+        'team_match_count' => (int) ($tournament['team_match_count'] ?? 0),
+        'team_count_actual' => (int) ($tournament['team_count_actual'] ?? 0),
+    ];
+
+    $tournament = array_merge(tournament_refresh_lifecycle($db, $tourId), $summary);
+    $tournament['structure_generated'] = (
+        $tournament['match_count'] > 0
+        || $tournament['team_match_count'] > 0
+        || $tournament['team_count_actual'] > 0
+    ) ? 1 : 0;
 
     $playersSql = "SELECT
                         p.plr_idNum,

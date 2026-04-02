@@ -1,72 +1,57 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) session_start();
-include 'dbConnection.php';
 
-header('Content-Type: application/json');
+require_once __DIR__ . '/app_bootstrap.php';
+require_once __DIR__ . '/dbConnection.php';
+require_once __DIR__ . '/auth.php';
 
-// Check if user is logged in and is admin
-if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'admin') {
-    echo json_encode(['success' => false, 'message' => 'Unauthorized access']);
-    exit();
+app_start_session();
+
+if (!is_logged_in() || get_current_role() !== 'admin') {
+    app_json_response(['success' => false, 'message' => 'Unauthorized access'], 403);
 }
 
-// Get the POST data
-$input = json_decode(file_get_contents('php://input'), true);
-$user_id = $input['user_id'] ?? null;
+$input = app_read_json_input();
+$userId = isset($input['user_id']) ? (int) $input['user_id'] : 0;
 
-if (!$user_id) {
-    echo json_encode(['success' => false, 'message' => 'User ID is required']);
-    exit();
+if ($userId <= 0) {
+    app_json_response(['success' => false, 'message' => 'User ID is required'], 422);
 }
 
-// Prevent admin from deleting themselves
-if ($user_id == $_SESSION['user_id']) {
-    echo json_encode(['success' => false, 'message' => 'Cannot delete your own account']);
-    exit();
+if ($userId === get_current_user_id()) {
+    app_json_response(['success' => false, 'message' => 'Cannot delete your own account'], 422);
 }
+
+$conn->begin_transaction();
 
 try {
-    // Start transaction
-    $conn->begin_transaction();
-    
-    // Delete from tournament_players
-    $sql1 = "DELETE FROM tournament_players WHERE plr_id = ?";
-    $stmt1 = $conn->prepare($sql1);
-    $stmt1->bind_param("i", $user_id);
-    $stmt1->execute();
-    $stmt1->close();
-    
-    // Delete from tournament_standings
-    $sql2 = "DELETE FROM tournament_standings WHERE player_id = ?";
-    $stmt2 = $conn->prepare($sql2);
-    $stmt2->bind_param("i", $user_id);
-    $stmt2->execute();
-    $stmt2->close();
-    
-    // Delete from players
-    $sql3 = "DELETE FROM players WHERE plr_idNum = ?";
-    $stmt3 = $conn->prepare($sql3);
-    $stmt3->bind_param("i", $user_id);
-    $stmt3->execute();
-    $stmt3->close();
-    
-    // Delete from users
-    $sql4 = "DELETE FROM users WHERE user_id = ?";
-    $stmt4 = $conn->prepare($sql4);
-    $stmt4->bind_param("i", $user_id);
-    $stmt4->execute();
-    $stmt4->close();
-    
-    // Commit transaction
-    $conn->commit();
-    
-    echo json_encode(['success' => true, 'message' => 'User deleted successfully']);
-    
-} catch (Exception $e) {
-    // Rollback transaction on error
-    $conn->rollback();
-    echo json_encode(['success' => false, 'message' => 'Database error: ' . $e->getMessage()]);
-}
+    $playerLookup = $conn->prepare('SELECT plr_idNum FROM players WHERE user_id = ? LIMIT 1');
+    $playerLookup->bind_param('i', $userId);
+    $playerLookup->execute();
+    $playerRow = $playerLookup->get_result()->fetch_assoc();
+    $playerLookup->close();
 
-$conn->close();
-?> 
+    if ($playerRow && !empty($playerRow['plr_idNum'])) {
+        $playerId = (int) $playerRow['plr_idNum'];
+        $deletePlayer = $conn->prepare('DELETE FROM players WHERE plr_idNum = ?');
+        $deletePlayer->bind_param('i', $playerId);
+        $deletePlayer->execute();
+        $deletePlayer->close();
+    }
+
+    $deleteUser = $conn->prepare('DELETE FROM users WHERE user_id = ?');
+    $deleteUser->bind_param('i', $userId);
+    $deleteUser->execute();
+
+    if ($deleteUser->affected_rows !== 1) {
+        $deleteUser->close();
+        throw new RuntimeException('User not found.');
+    }
+
+    $deleteUser->close();
+    $conn->commit();
+
+    app_json_response(['success' => true, 'message' => 'User deleted successfully']);
+} catch (Throwable $exception) {
+    $conn->rollback();
+    app_json_response(['success' => false, 'message' => $exception->getMessage()], 500);
+}

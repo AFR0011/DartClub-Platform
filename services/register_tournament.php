@@ -7,10 +7,6 @@ require_once __DIR__ . '/shared/tournament_helpers.php';
 
 app_start_session();
 
-if (!isset($_SESSION['user_id'])) {
-    app_json_response(['success' => false, 'message' => 'You must be logged in to register for tournaments.'], 401);
-}
-
 $input = app_read_json_input();
 $tournamentId = isset($input['tournament_id']) ? (int) $input['tournament_id'] : 0;
 if ($tournamentId <= 0) {
@@ -18,11 +14,6 @@ if ($tournamentId <= 0) {
 }
 
 try {
-    $playerId = player_id_for_user($conn, (int) $_SESSION['user_id']);
-    if (!$playerId) {
-        app_json_response(['success' => false, 'message' => 'Please complete your player profile before registering for tournaments.'], 422);
-    }
-
     $tournament = tournament_refresh_lifecycle($conn, $tournamentId);
     if (!$tournament) {
         app_json_response(['success' => false, 'message' => 'Tournament not found.'], 404);
@@ -36,6 +27,41 @@ try {
         app_json_response(['success' => false, 'message' => 'Tournament registration is unavailable.'], 422);
     }
 
+    $conn->begin_transaction();
+    $userId = isset($_SESSION['user_id']) ? (int) $_SESSION['user_id'] : 0;
+    $playerId = $userId > 0 ? player_id_for_user($conn, $userId) : null;
+
+    if (!$playerId) {
+        if ($userId > 0) {
+            $seedPayload = player_seed_payload_for_user($conn, $userId);
+            if ($seedPayload) {
+                $playerId = player_create_or_update_for_user($conn, $userId, $seedPayload);
+            }
+        }
+
+        $firstName = trim((string) ($input['plr_name'] ?? ''));
+        $surname = trim((string) ($input['plr_surname'] ?? ''));
+        if (!$playerId && ($firstName === '' || $surname === '')) {
+            app_json_response([
+                'success' => false,
+                'requires_name' => true,
+                'message' => 'Enter your first name and surname to complete this tournament registration.',
+            ], 422);
+        }
+
+        if (!$playerId && $userId > 0) {
+            $playerId = player_create_or_update_for_user($conn, $userId, [
+                'plr_name' => $firstName,
+                'plr_surname' => $surname,
+            ]);
+        } elseif (!$playerId) {
+            $playerId = player_create_guest($conn, [
+                'plr_name' => $firstName,
+                'plr_surname' => $surname,
+            ]);
+        }
+    }
+
     $existingStmt = $conn->prepare(
         'SELECT player_status
          FROM tournament_players
@@ -47,6 +73,7 @@ try {
     $existingStmt->close();
 
     if ($existing) {
+        $conn->rollback();
         app_json_response(['success' => false, 'message' => 'You are already registered for this tournament.']);
     }
 
@@ -59,11 +86,15 @@ try {
     $insert->execute();
     $insert->close();
 
+    $conn->commit();
     app_json_response([
         'success' => true,
-        'message' => 'Successfully registered for tournament. A manager can promote your registration into the active competition roster from the admin screen.',
+        'message' => 'Successfully registered for the tournament.',
     ]);
 } catch (Throwable $exception) {
+    try {
+        $conn->rollback();
+    } catch (Throwable $ignored) {
+    }
     app_json_response(['success' => false, 'message' => 'Database error: ' . $exception->getMessage()], 500);
 }
-

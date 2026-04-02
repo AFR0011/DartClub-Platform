@@ -18,6 +18,18 @@ foreach ($tournaments as $index => $row) {
     $tournaments[$index] = tournament_refresh_lifecycle($conn, (int) $row['tour_id']);
 }
 
+$statusCounts = [
+    'total' => count($tournaments),
+    'registration_open' => 0,
+    'in_progress' => 0,
+    'completed' => 0,
+];
+foreach ($tournaments as $tournamentRow) {
+    $statusCounts['registration_open'] += (($tournamentRow['status'] ?? '') === 'registration_open') ? 1 : 0;
+    $statusCounts['in_progress'] += (($tournamentRow['status'] ?? '') === 'in_progress') ? 1 : 0;
+    $statusCounts['completed'] += in_array(($tournamentRow['status'] ?? ''), ['completed', 'archived'], true) ? 1 : 0;
+}
+
 $playerStmt = $conn->prepare('SELECT plr_idNum, plr_name, plr_surname FROM players ORDER BY plr_surname, plr_name');
 $playerStmt->execute();
 $players = $playerStmt->get_result()->fetch_all(MYSQLI_ASSOC);
@@ -32,25 +44,200 @@ $playerStmt->close();
     <link href="../../css/admin_style.css" rel="stylesheet">
     <script src="../../js/admin_nav.js"></script>
     <style>
-        .inline-grid {
+        .hero-band {
+            display: grid;
+            gap: 18px;
+            grid-template-columns: 1.4fr 1fr;
+            margin-bottom: 22px;
+        }
+
+        .hero-card,
+        .stats-card,
+        .surface-panel {
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(245, 248, 255, 0.92));
+            border: 1px solid rgba(37, 99, 235, 0.1);
+            border-radius: 22px;
+            padding: 20px;
+            box-shadow: 0 18px 36px rgba(15, 23, 42, 0.06);
+        }
+
+        .hero-card {
+            background:
+                radial-gradient(circle at top right, rgba(245, 158, 11, 0.14), transparent 32%),
+                radial-gradient(circle at bottom left, rgba(37, 99, 235, 0.12), transparent 32%),
+                linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(244, 248, 255, 0.95));
+        }
+
+        .hero-card p,
+        .stats-card p,
+        .mini-note {
+            color: #5b6678;
+        }
+
+        .stats-grid {
             display: grid;
             gap: 12px;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .stat-pill {
+            padding: 14px;
+            border-radius: 18px;
+            background: rgba(37, 99, 235, 0.06);
+            border: 1px solid rgba(37, 99, 235, 0.08);
+        }
+
+        .stat-pill strong {
+            display: block;
+            font-size: 1.45rem;
+            color: #18212f;
+            line-height: 1.1;
+        }
+
+        .inline-grid {
+            display: grid;
+            gap: 14px;
             grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
         }
 
         .callout {
             margin: 16px 0;
-            padding: 12px 16px;
+            padding: 16px 18px;
             border-left: 4px solid #1f6feb;
-            background: #eef5ff;
+            background: linear-gradient(180deg, #eef5ff, #f7fbff);
+            border-radius: 18px;
         }
 
         .player-picker {
-            max-height: 320px;
+            max-height: 360px;
             overflow: auto;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            padding: 8px;
+            border: 1px solid rgba(15, 23, 42, 0.08);
+            border-radius: 20px;
+            padding: 8px 12px;
+            background: rgba(255, 255, 255, 0.8);
+        }
+
+        .player-picker table {
+            margin: 10px 0 0;
+        }
+
+        .player-picker .players-table tbody tr {
+            cursor: pointer;
+            transition: background-color 0.18s ease, transform 0.18s ease;
+        }
+
+        .player-picker .players-table tbody tr:hover {
+            transform: translateY(-1px);
+        }
+
+        .player-picker .players-table tbody tr.is-selected {
+            background: rgba(37, 99, 235, 0.1);
+        }
+
+        .row-toggle {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            border-radius: 999px;
+            border: 1px solid rgba(15, 23, 42, 0.12);
+            background: rgba(255, 255, 255, 0.88);
+            color: #334155;
+            font-size: 0.84rem;
+            font-weight: 700;
+        }
+
+        .row-toggle input {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            cursor: pointer;
+            margin: 0;
+        }
+
+        .row-toggle-indicator {
+            width: 18px;
+            height: 18px;
+            border-radius: 999px;
+            border: 2px solid rgba(37, 99, 235, 0.32);
+            background: transparent;
+            transition: background-color 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+        }
+
+        .row-toggle.is-selected {
+            border-color: rgba(37, 99, 235, 0.3);
+            background: rgba(37, 99, 235, 0.1);
+            color: #1d4ed8;
+        }
+
+        .row-toggle.is-selected .row-toggle-indicator {
+            background: linear-gradient(180deg, #60a5fa, #2563eb);
+            border-color: rgba(37, 99, 235, 0.92);
+            transform: scale(1.02);
+        }
+
+        .selection-meta {
+            color: #5b6678;
+            font-size: 0.92rem;
+            margin-top: 10px;
+        }
+
+        .player-picker thead th {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+        }
+
+        .table-container {
+            overflow: auto;
+            border-radius: 22px;
+        }
+
+        .filter-bar {
+            display: grid;
+            gap: 12px;
+            grid-template-columns: 1fr auto;
+            align-items: end;
+            margin-bottom: 12px;
+        }
+
+        .compact-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            border-radius: 999px;
+            background: rgba(37, 99, 235, 0.08);
+            color: #1d4ed8;
+            font-weight: 600;
+            font-size: 0.88rem;
+        }
+
+        .toolbar-line {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 12px;
+        }
+
+        @media (max-width: 900px) {
+            .hero-band {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 640px) {
+            .stats-grid,
+            .filter-bar {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
@@ -87,13 +274,50 @@ $playerStmt->close();
             </div>
         <?php endif; ?>
 
-        <div class="callout">
-            Supported tournament formats are <strong>Round Robin</strong>, <strong>League</strong>, <strong>Group</strong>, and <strong>Elimination</strong>.
-            <strong>League</strong> now means pool-stage plus knockout, while <strong>Group</strong> is the team-based format.
-            Double-elimination remains intentionally deferred until a dedicated bracket engine exists.
+        <div class="hero-band">
+            <div class="hero-card">
+                <div class="compact-chip">Tournament workspace</div>
+                <h2 style="margin-top:14px;">Create smoother event flows without overpacking the page</h2>
+                <p style="margin-top:10px;">
+                    Start with an empty tournament or a registration-first roster, then generate fixtures once the field is ready.
+                    The details view now supports same-page structure management, bracket work, and lighter-weight score handling.
+                </p>
+                <div class="callout" style="margin-bottom:0;">
+                    Supported tournament formats are <strong>Round Robin</strong>, <strong>League</strong>, <strong>Group</strong>, and <strong>Elimination</strong>.
+                    <strong>League</strong> means pool-stage plus knockout, while <strong>Group</strong> is the team-based format. Double-elimination remains deferred until a dedicated bracket engine exists.
+                </div>
+            </div>
+            <div class="stats-card">
+                <h3 style="margin-top:0;">Tournament Snapshot</h3>
+                <div class="stats-grid" style="margin-top:14px;">
+                    <div class="stat-pill">
+                        <span class="mini-note">Total tournaments</span>
+                        <strong><?php echo (int) $statusCounts['total']; ?></strong>
+                    </div>
+                    <div class="stat-pill">
+                        <span class="mini-note">Registration open</span>
+                        <strong><?php echo (int) $statusCounts['registration_open']; ?></strong>
+                    </div>
+                    <div class="stat-pill">
+                        <span class="mini-note">Live now</span>
+                        <strong><?php echo (int) $statusCounts['in_progress']; ?></strong>
+                    </div>
+                    <div class="stat-pill">
+                        <span class="mini-note">Finished</span>
+                        <strong><?php echo (int) $statusCounts['completed']; ?></strong>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <div class="table-container">
+        <div class="surface-panel">
+            <div class="toolbar-line">
+                <div>
+                    <h2 style="margin:0;">Current Tournaments</h2>
+                    <p class="mini-note">Open any tournament to edit its roster, fixtures, groups, or bracket structure.</p>
+                </div>
+            </div>
+            <div class="table-container">
             <table class="tournaments-table">
                 <thead>
                     <tr>
@@ -119,12 +343,18 @@ $playerStmt->close();
                     <?php endforeach; ?>
                 </tbody>
             </table>
+            </div>
         </div>
     </div>
 
     <div class="container">
-        <h1>Create Tournament</h1>
-        <form action="../../services/create_tournament.php" method="post" id="tournamentForm" class="tournament-form">
+        <div class="toolbar-line">
+            <div>
+                <h1>Create Tournament</h1>
+                <p class="mini-note">Keep the setup compact now, then do structure work after registration closes.</p>
+            </div>
+        </div>
+        <form action="../../services/create_tournament.php" method="post" id="tournamentForm" class="tournament-form surface-panel" style="padding:24px;">
             <div class="inline-grid">
                 <div class="form-group">
                     <label for="tournamentType">Tournament Type</label>
@@ -186,7 +416,25 @@ $playerStmt->close();
                 Select a tournament type to see mode-specific requirements.
             </div>
 
-            <h3>Select Active Players</h3>
+            <h3>Select Players (Optional)</h3>
+            <div class="filter-bar">
+                <div class="form-group" style="margin-bottom:0;">
+                    <label for="playerFilter">Filter player list</label>
+                    <input type="text" id="playerFilter" placeholder="Type a player name to narrow the list">
+                </div>
+                <div class="form-group" style="margin-bottom:0;">
+                    <label for="selectedPlayersStatus">Add selected players as</label>
+                    <select name="selectedPlayersStatus" id="selectedPlayersStatus">
+                        <option value="Registered" selected>Registered entrants</option>
+                        <option value="Active">Active competition roster</option>
+                    </select>
+                </div>
+            </div>
+            <div class="inline-grid" style="margin-bottom:16px;">
+                <div class="form-group">
+                    <div class="compact-chip">Select existing players only if you want to seed the roster immediately.</div>
+                </div>
+            </div>
             <div class="player-picker">
                 <table class="players-table">
                     <thead>
@@ -197,14 +445,21 @@ $playerStmt->close();
                     </thead>
                     <tbody>
                         <?php foreach ($players as $player): ?>
-                            <tr>
-                                <td><input type="checkbox" name="selectedPlayers[]" value="<?php echo (int) $player['plr_idNum']; ?>"></td>
+                            <tr data-player-row data-player-name="<?php echo htmlspecialchars(strtolower(trim($player['plr_name'] . ' ' . $player['plr_surname']))); ?>">
+                                <td>
+                                    <label class="row-toggle" data-row-toggle>
+                                        <input type="checkbox" name="selectedPlayers[]" value="<?php echo (int) $player['plr_idNum']; ?>">
+                                        <span class="row-toggle-indicator" aria-hidden="true"></span>
+                                        <span>Select</span>
+                                    </label>
+                                </td>
                                 <td><?php echo htmlspecialchars(trim($player['plr_name'] . ' ' . $player['plr_surname'])); ?></td>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>
                 </table>
             </div>
+            <div class="selection-meta" id="playerSelectionCount">No players selected yet.</div>
 
             <div class="form-buttons" style="margin-top:16px;">
                 <input type="submit" value="Create Tournament" class="submit-btn">
@@ -218,6 +473,49 @@ $playerStmt->close();
         const leagueSettings = document.getElementById('leagueSettings');
         const teamSettings = document.getElementById('teamSettings');
         const typeHint = document.getElementById('typeHint');
+        const playerFilter = document.getElementById('playerFilter');
+        const playerSelectionCount = document.getElementById('playerSelectionCount');
+
+        function syncSelectableRow(row) {
+            const checkbox = row.querySelector('input[type="checkbox"]');
+            const toggle = row.querySelector('[data-row-toggle]');
+            const checked = !!checkbox?.checked;
+            row.classList.toggle('is-selected', checked);
+            toggle?.classList.toggle('is-selected', checked);
+        }
+
+        function refreshSelectionCount() {
+            const selectedCount = document.querySelectorAll('input[name="selectedPlayers[]"]:checked').length;
+            playerSelectionCount.textContent = selectedCount > 0
+                ? `${selectedCount} player${selectedCount === 1 ? '' : 's'} selected for the initial roster.`
+                : 'No players selected yet.';
+        }
+
+        function bindSelectableRows() {
+            document.querySelectorAll('[data-player-row]').forEach((row) => {
+                const checkbox = row.querySelector('input[type="checkbox"]');
+                if (!checkbox) {
+                    return;
+                }
+
+                syncSelectableRow(row);
+
+                row.addEventListener('click', (event) => {
+                    if (event.target.closest('input, button, a, select, textarea')) {
+                        return;
+                    }
+
+                    checkbox.checked = !checkbox.checked;
+                    syncSelectableRow(row);
+                    refreshSelectionCount();
+                });
+
+                checkbox.addEventListener('change', () => {
+                    syncSelectableRow(row);
+                    refreshSelectionCount();
+                });
+            });
+        }
 
         function syncTournamentMode() {
             const selectedType = typeSelect.value;
@@ -225,13 +523,13 @@ $playerStmt->close();
             teamSettings.style.display = selectedType === 'Group' ? 'grid' : 'none';
 
             if (selectedType === 'Round Robin') {
-                typeHint.textContent = 'Round Robin tournaments place every active player into one shared standings table.';
+                typeHint.textContent = 'Round Robin tournaments place all competition entrants into one shared standings table once you generate the fixture list.';
             } else if (selectedType === 'League') {
-                typeHint.textContent = 'League tournaments assign players to groups, complete group-stage round robins, and automatically build a knockout bracket from top finishers.';
+                typeHint.textContent = 'League tournaments assign players to groups, complete group-stage round robins, and automatically build a knockout bracket from top finishers after the structure exists.';
             } else if (selectedType === 'Group') {
-                typeHint.textContent = 'Group tournaments are team-based. The system creates per-tournament teams from the selected player pool and schedules team fixtures.';
+                typeHint.textContent = 'Group tournaments are team-based. You can create the tournament first, collect registrations, and generate teams and fixtures later.';
             } else if (selectedType === 'Elimination') {
-                typeHint.textContent = 'Elimination tournaments generate a single-elimination bracket with deterministic bye carry-forward.';
+                typeHint.textContent = 'Elimination tournaments generate a single-elimination bracket with deterministic bye carry-forward once you are ready to seed the final entrant list.';
             } else {
                 typeHint.textContent = 'Select a tournament type to see mode-specific requirements.';
             }
@@ -240,16 +538,20 @@ $playerStmt->close();
         typeSelect.addEventListener('change', syncTournamentMode);
         syncTournamentMode();
 
+        playerFilter?.addEventListener('input', function () {
+            const query = this.value.trim().toLowerCase();
+            document.querySelectorAll('[data-player-row]').forEach((row) => {
+                const playerName = row.dataset.playerName || '';
+                row.style.display = playerName.includes(query) ? '' : 'none';
+            });
+        });
+
+        bindSelectableRows();
+        refreshSelectionCount();
+
         document.getElementById('tournamentForm').addEventListener('submit', function (event) {
-            const selectedPlayers = document.querySelectorAll('input[name="selectedPlayers[]"]:checked');
             const startDate = new Date(document.getElementById('tour_startDate').value);
             const endDate = new Date(document.getElementById('tour_endDate').value);
-
-            if (selectedPlayers.length < 2) {
-                alert('Please select at least two players for the tournament.');
-                event.preventDefault();
-                return;
-            }
 
             if (endDate < startDate) {
                 alert('End date cannot be before start date.');
@@ -263,6 +565,13 @@ $playerStmt->close();
                 alert('Registration close date cannot be before the registration open date.');
                 event.preventDefault();
             }
+        });
+
+        document.getElementById('tournamentForm').addEventListener('reset', function () {
+            window.setTimeout(() => {
+                document.querySelectorAll('[data-player-row]').forEach(syncSelectableRow);
+                refreshSelectionCount();
+            }, 0);
         });
     </script>
 </body>

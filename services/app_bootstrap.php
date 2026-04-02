@@ -28,6 +28,22 @@ if (!defined('APP_BOOTSTRAPPED')) {
         return $connection;
     }
 
+    function app_is_service_request(): bool
+    {
+        $scriptPath = $_SERVER['SCRIPT_FILENAME'] ?? '';
+        if ($scriptPath === '') {
+            return false;
+        }
+
+        $resolvedScript = realpath($scriptPath) ?: $scriptPath;
+        $servicesDir = realpath(__DIR__);
+        if ($servicesDir === false) {
+            return false;
+        }
+
+        return str_starts_with($resolvedScript, $servicesDir . DIRECTORY_SEPARATOR);
+    }
+
     function app_read_json_input(): array
     {
         $decoded = json_decode(file_get_contents('php://input'), true);
@@ -45,6 +61,14 @@ if (!defined('APP_BOOTSTRAPPED')) {
 
         echo json_encode($payload);
         exit();
+    }
+
+    function app_service_exception_payload(Throwable $exception): array
+    {
+        return [
+            'success' => false,
+            'message' => $exception->getMessage() !== '' ? $exception->getMessage() : 'Unexpected server error.',
+        ];
     }
 
     function app_redirect(string $path): void
@@ -73,5 +97,21 @@ if (!defined('APP_BOOTSTRAPPED')) {
         } catch (Exception $exception) {
             throw new InvalidArgumentException($fieldName . ' is invalid.');
         }
+    }
+
+    if (app_is_service_request()) {
+        ini_set('display_errors', '0');
+
+        set_error_handler(static function (int $severity, string $message, string $file, int $line): bool {
+            if (!(error_reporting() & $severity)) {
+                return false;
+            }
+
+            throw new ErrorException($message, 0, $severity, $file, $line);
+        });
+
+        set_exception_handler(static function (Throwable $exception): void {
+            app_json_response(app_service_exception_payload($exception), 500);
+        });
     }
 }

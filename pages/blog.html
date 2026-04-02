@@ -11,7 +11,7 @@
         .blog-shell {
             padding: 7rem 0 3rem;
             display: grid;
-            gap: 1.5rem;
+            gap: 1.75rem;
         }
 
         .surface,
@@ -19,13 +19,16 @@
         .comment-card {
             background: rgba(255, 255, 255, 0.04);
             border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 18px;
-            padding: 1.4rem;
+            border-radius: 22px;
+            padding: 1.5rem;
         }
 
         .blog-post {
             display: grid;
             gap: 1rem;
+            background:
+                radial-gradient(circle at top right, rgba(255, 107, 53, 0.08), transparent 32%),
+                rgba(255, 255, 255, 0.04);
         }
 
         .blog-form-grid {
@@ -76,6 +79,40 @@
             background: rgba(255, 107, 53, 0.18);
             color: #ffd7ca;
         }
+
+        .hero-surface {
+            display: grid;
+            gap: 1rem;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            background:
+                radial-gradient(circle at top right, rgba(255, 107, 53, 0.12), transparent 34%),
+                radial-gradient(circle at bottom left, rgba(255, 255, 255, 0.06), transparent 40%),
+                rgba(255, 255, 255, 0.04);
+        }
+
+        .summary-strip {
+            display: grid;
+            gap: 1rem;
+            grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+        }
+
+        .summary-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 18px;
+            padding: 1rem 1.1rem;
+        }
+
+        .summary-card strong {
+            display: block;
+            color: #fff;
+            font-size: 1.45rem;
+        }
+
+        .summary-card span {
+            color: var(--text-color);
+            font-size: 0.92rem;
+        }
     </style>
 </head>
 <body>
@@ -107,7 +144,7 @@
     </a>
 
     <script src="../js/scrollreveal.min.js"></script>
-    <script src="../js/behaviour.js"></script>
+    <script src="../js/behaviour.js?v=20260402-2"></script>
     <script>
         let sessionContext = null;
 
@@ -225,11 +262,26 @@
 
             const shell = document.getElementById('blog-shell');
             shell.innerHTML = `
-                <section class="surface">
-                    <h1>Club Blog</h1>
-                    <p style="color: var(--text-color); margin-top: 0.85rem;">
-                        Match reports, club updates, tournament recaps, and member stories all live here.
-                    </p>
+                <section class="surface hero-surface">
+                    <div>
+                        <div class="membership-chip"><i class="ri-article-line"></i> Club stories</div>
+                        <h1 style="margin-top: 1rem;">Club Blog</h1>
+                        <p style="color: var(--text-color); margin-top: 0.85rem;">
+                            Match reports, tournament recaps, club updates, and member stories all live here in one place.
+                        </p>
+                    </div>
+                    <div>
+                        <h3>Publishing flow</h3>
+                        <p style="color: var(--text-color); margin-top: 0.75rem;">
+                            Approved members write drafts. Managers and admins can publish, moderate, and keep the public feed tidy.
+                        </p>
+                    </div>
+                </section>
+                <section class="summary-strip">
+                    <article class="summary-card"><strong>${postsPayload.items.length}</strong><span>Visible posts</span></article>
+                    <article class="summary-card"><strong>${postsPayload.items.reduce((total, post) => total + Number(post.comment_count || 0), 0)}</strong><span>Total comments</span></article>
+                    <article class="summary-card"><strong>${postsPayload.items.reduce((total, post) => total + Number(post.like_count || 0), 0)}</strong><span>Total likes</span></article>
+                    <article class="summary-card"><strong>${sessionContext?.can_author_blog ? 'Yes' : 'No'}</strong><span>You can draft posts</span></article>
                 </section>
                 ${createPostForm()}
                 <section style="display: grid; gap: 1rem;">

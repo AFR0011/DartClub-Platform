@@ -4,19 +4,33 @@
     box-sizing: border-box;
 }
 
-body, html {
-    height: 100%;
+html {
+    min-height: 100%;
+}
+
+body {
+    min-height: 100vh;
     display: flex;
-    justify-content: center;
-    align-items: center;
+    flex-direction: column;
 }
 
 main {
     width: 100%;
-    height: 100%;
+    flex: 1;
     display: flex;
     justify-content: center;
     align-items: center;
+    padding: 6rem 1.5rem 2rem;
+}
+
+body.auth-shell-page .footer--compact {
+    width: 100%;
+    padding-top: 0;
+}
+
+body.auth-shell-page .footer--compact .footer__group {
+    margin-top: 0;
+    padding-bottom: 2rem;
 }
 
 @property --a {

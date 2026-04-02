@@ -1,9 +1,7 @@
 <?php
 
 require_once __DIR__ . '/app_bootstrap.php';
-require_once __DIR__ . '/dbConnection.php';
 require_once __DIR__ . '/auth.php';
-require_once __DIR__ . '/shared/player_helpers.php';
 
 app_start_session();
 
@@ -20,6 +18,9 @@ if (!$userId) {
     ]);
 }
 
+require_once __DIR__ . '/dbConnection.php';
+require_once __DIR__ . '/shared/player_helpers.php';
+
 $stmt = $conn->prepare(
     'SELECT user_id, user_name, email, user_role, membership_status
      FROM users
@@ -31,6 +32,8 @@ $user = $stmt->get_result()->fetch_assoc();
 $stmt->close();
 
 if (!$user) {
+    $_SESSION = [];
+
     app_json_response([
         'logged_in' => false,
         'user_role' => 'guest',
@@ -60,4 +63,3 @@ app_json_response([
     'can_manage_club' => is_manager_or_admin(),
     'has_player_profile' => $player !== null && !empty($player['plr_idNum']),
 ]);
-

@@ -2,9 +2,9 @@
 
 ## Metadata
 - Project: `Dart Club`
-- Last updated: 2026-03-30
+- Last updated: 2026-04-02
 - Repo type: legacy PHP/MySQL website
-- Current repo status: mapped, documented, runtime-tested on XAMPP, and debug-hardened across the core tournament, membership, and community flows
+- Current repo status: mapped, documented, runtime-tested on XAMPP, and further debug-hardened across the shared public shell, JSON service layer, and admin user management flow
 
 ## Current Objective
 - Finish the migration from an ad-hoc legacy codebase to a maintainable public club platform.
@@ -29,7 +29,7 @@
   - membership registration
 - Backend maturity is now stronger in the core product lanes:
   - auth/signup/login now share one bootstrap/session path
-  - tournament flows are consolidated behind shared helpers
+  - tournament flows are consolidated behind shared helpers, including deferred fixture generation after registration
   - membership, blog, gallery, and profile dashboard flows now have working service layers
   - visual polish and some legacy admin cleanup still remain
 
@@ -66,6 +66,21 @@
   - managers/admins can publish and moderate
 
 ## What Changed In This Pass
+- Hardened the shared public-shell fetch path so guests no longer need a working DB connection just to load navigation/session context.
+- Added service-level exception/error handling so JSON endpoints return JSON failures instead of leaking HTML warning/fatal output into frontend `.json()` callers.
+- Fixed config env parsing so empty-string DB passwords are no longer overwritten by fallback defaults.
+- Removed the duplicated legacy navbar bootstrap from `pages/main.php` so the shared shell owns the public-nav contract again.
+- Fixed shared `js/behaviour.js` shell edge cases around missing section anchors, dynamically injected nav links, and `href="#"` logout links.
+- Fixed admin user deletion to resolve players through `players.user_id` before deleting tournament/player data.
+- Changed tournament creation and roster management so tournaments can be created empty, stay in a registration-first state, and generate fixtures only after registration closes.
+- Added public tournament registration fallback for guests or signed-in users without a player profile by collecting a first name and surname at registration time.
+- Fixed tournament page-data aggregation so admin/public detail reads keep `player_count`, `match_count`, and related summary fields after lifecycle refreshes.
+- Refreshed the tournament admin UI with a less dense visual layout, compact controls, searchable player selection, and a more direct fixture-management workspace.
+- Added same-page quick scoring for individual matches and drag-and-drop slot swapping inside the knockout bracket view.
+- Added a connected tournament-bracket visualization with live drag-and-drop slot swaps and quick-score controls, while preserving the older compact card stack as a renamed bracket-board view.
+- Added row-click player selection on tournament admin roster forms so add/remove actions no longer depend on tiny raw checkboxes.
+- Added a public tournament-hub filter for “My tournaments” and refreshed the logged-in registration flow so signed-in users without a player row can still register instantly from their account name.
+- Extended the newer tournament/public visual language onto the public tournament-detail page, the blog page, and older admin landing/user-management surfaces.
 - Rebuilt `dart_club.sql` around the productized data model:
   - membership state
   - membership applications
@@ -109,6 +124,8 @@
 - `create_player.php` plus SMTP/email delivery has not been exercised end to end.
 - Public registration still stores roster registration only; admins decide whether and when registrations become active competition entries.
 - Final UI polish still needs a true browser/responsive pass on the public and admin shells.
+- Some local XAMPP/MariaDB installs may still have broken or missing grants for `dartadmin`; the repo now surfaces clean JSON failures in that state, but the DB user itself still needs an environment-level fix.
+- The new guest registration path creates lightweight `players` rows with `user_id = NULL`; long-term cleanup/reporting rules for those guest-only records are still undocumented.
 
 ## Remaining Priorities
 - Use `docs/TESTING_CHECKLIST.md` as the next-session manual verification order.
@@ -117,11 +134,35 @@
   - responsive/mobile review
   - SMTP-backed credential email behavior
   - visual/admin navigation click-through
+- Do a manual browser pass on the new deferred tournament workflow:
+  - empty tournament creation
+  - guest registration modal
+  - signed-in no-profile registration fallback
+  - admin generate/rebuild structure button
+- Do a manual browser pass on the upgraded tournament admin UX:
+  - compact match scoring in the table view
+  - connected bracket drag-and-drop seeding
+  - bracket-board vs connected-bracket readability
+  - mobile/tablet readability of the denser admin tournament screens
+- Do a manual browser pass on the updated public tournament hub:
+  - “My tournaments” filtering
+  - logged-in quick registration
+  - guest name-entry registration modal copy and flow
 - Clean up or retire remaining legacy admin pages once replacement coverage is confirmed.
 - Standardize any remaining asset-path or presentation inconsistencies and document SMTP expectations clearly for deployment.
 
 ## Verification State
 - Verified in this pass:
+  - guest `services/get_session_context.php` now returns clean JSON even when the configured DB user cannot connect
+  - DB-backed service CLI checks using `putenv(...)` overrides for blank-password local root access:
+    - `services/get_tournaments.php`
+    - `services/get_blogs.php`
+    - `services/gallery_get.php`
+  - shared shell/frontend static inspection for:
+    - dynamic nav-link close handling
+    - missing-section scroll guards
+    - `href="#"` smooth-scroll guard
+  - canonical admin user delete path inspection against `players.user_id -> users.user_id`
   - fresh DB import from `dart_club.sql`
   - PHP syntax lint via `C:\Users\Ali\xampp\php\php.exe -l`
   - public/auth/profile/membership/tournament/blog/gallery HTTP smoke checks
@@ -154,9 +195,33 @@
   - admin user role update and self-delete guard
   - broad HTML sweep for inline PHP warnings/fatals on key public/admin pages
   - unauthenticated access blocking for admin pages and admin mutation services
+  - deferred tournament workflow coverage for:
+    - empty tournament creation
+    - guest/public registration name fallback
+    - registration-open structure generation blocking
+    - registration-closed structure generation and roster promotion
+    - admin page-data summary counts after lifecycle refresh
+  - tournament admin interaction coverage for:
+    - quick-score submissions through the live `match_result.php` endpoint
+    - knockout-slot swapping through the live `match_swap_players.php` endpoint
+    - winner propagation after same-page bracket scoring
+  - public-hub contract coverage for:
+    - `pages/tournaments.html` source updates for “My tournaments” and quick-register copy
+    - live signed-in registration without a manual name prompt via an auto-seeded temporary player profile
+  - public/admin page-source smoke checks for:
+    - `pages/tournament_details.php`
+    - `pages/blog.html`
+    - `pages/admin/show_tournament_details.php`
+    - `pages/admin/manage_users.php`
+    - `pages/admin/admin_panel.php`
 - Not verified in this pass:
   - Apache-backed visual QA
   - SMTP/email delivery
   - full manual click-through of all admin navigation/items under a real browser
+  - end-to-end browser execution of the updated admin user delete flow
+  - signed-in browser registration flow for a user without a player profile
+  - real drag-and-drop interaction under an actual browser pointer/touch session
+  - real browser rendering of the new connected public/admin bracket layouts
+  - standard built-in-server DB-backed smoke checks under the default `dartadmin` credentials because the local MariaDB grant state is unhealthy
 - Next-session operator guide:
   - `docs/TESTING_CHECKLIST.md`

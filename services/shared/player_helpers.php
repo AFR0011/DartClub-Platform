@@ -34,6 +34,80 @@ function player_name(array $player): string
     return trim(($player['plr_name'] ?? '') . ' ' . ($player['plr_surname'] ?? ''));
 }
 
+function player_seed_name_from_username(string $username): array
+{
+    $normalized = trim((string) preg_replace('/[._-]+/', ' ', $username));
+    $parts = preg_split('/\s+/', $normalized) ?: [];
+    $parts = array_values(array_filter(array_map('trim', $parts)));
+
+    if (empty($parts)) {
+        return [
+            'plr_name' => 'Club',
+            'plr_surname' => 'Member',
+        ];
+    }
+
+    $firstName = ucwords(strtolower($parts[0]));
+    $surnameParts = array_slice($parts, 1);
+    $surname = !empty($surnameParts)
+        ? implode(' ', array_map(static function (string $part): string {
+            return ucwords(strtolower($part));
+        }, $surnameParts))
+        : 'Member';
+
+    return [
+        'plr_name' => $firstName,
+        'plr_surname' => $surname,
+    ];
+}
+
+function player_seed_payload_for_user(mysqli $db, int $userId): ?array
+{
+    $stmt = $db->prepare('SELECT user_name FROM users WHERE user_id = ?');
+    $stmt->bind_param('i', $userId);
+    $stmt->execute();
+    $row = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+
+    if (!$row || empty($row['user_name'])) {
+        return null;
+    }
+
+    return player_seed_name_from_username((string) $row['user_name']);
+}
+
+function player_create_guest(mysqli $db, array $payload): int
+{
+    $firstName = trim((string) ($payload['plr_name'] ?? ''));
+    $surname = trim((string) ($payload['plr_surname'] ?? ''));
+
+    if ($firstName === '' || $surname === '') {
+        throw new InvalidArgumentException('First name and surname are required.');
+    }
+
+    $slugSource = strtolower(preg_replace('/[^a-z0-9]+/i', '-', $firstName . '-' . $surname) ?? '');
+    $slugSource = trim($slugSource, '-');
+    if ($slugSource === '') {
+        $slugSource = 'guest-player';
+    }
+
+    $guestUsername = $slugSource . '-' . substr(bin2hex(random_bytes(4)), 0, 8);
+
+    $sql = 'INSERT INTO players (
+                plr_name,
+                plr_surname,
+                plr_username,
+                user_id
+            ) VALUES (?, ?, ?, NULL)';
+    $stmt = $db->prepare($sql);
+    $stmt->bind_param('sss', $firstName, $surname, $guestUsername);
+    $stmt->execute();
+    $playerId = (int) $db->insert_id;
+    $stmt->close();
+
+    return $playerId;
+}
+
 function players_not_in_tournament(mysqli $db, int $tourId): array
 {
     $sql = 'SELECT p.plr_idNum, p.plr_name, p.plr_surname
@@ -134,4 +208,3 @@ function player_create_or_update_for_user(mysqli $db, int $userId, array $payloa
 
     return $playerId;
 }
-

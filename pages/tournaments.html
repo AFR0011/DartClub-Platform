@@ -25,6 +25,10 @@
             gap: 1rem;
             grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
             margin-bottom: 2rem;
+            background:
+                radial-gradient(circle at top right, rgba(255, 107, 53, 0.12), transparent 34%),
+                radial-gradient(circle at bottom left, rgba(255, 255, 255, 0.08), transparent 40%),
+                rgba(255, 255, 255, 0.04);
         }
 
         .hub-pill {
@@ -36,6 +40,79 @@
             background: rgba(255, 107, 53, 0.16);
             color: #ffd7ca;
             font-size: 0.85rem;
+        }
+
+        .hub-summary {
+            display: grid;
+            gap: 1rem;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            margin-bottom: 1.5rem;
+        }
+
+        .summary-card {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 18px;
+            padding: 1.1rem 1.2rem;
+        }
+
+        .summary-card strong {
+            display: block;
+            font-size: 1.7rem;
+            color: #fff;
+        }
+
+        .summary-card span {
+            color: var(--text-color);
+            font-size: 0.92rem;
+        }
+
+        .hub-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.25rem;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+        }
+
+        .filter-chip-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.72rem 1rem;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: rgba(255, 255, 255, 0.03);
+            color: #fff;
+            cursor: pointer;
+            transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+        }
+
+        .filter-chip-button.active {
+            background: rgba(255, 107, 53, 0.18);
+            border-color: rgba(255, 107, 53, 0.36);
+            color: #ffd7ca;
+        }
+
+        .filter-chip-button:hover:not(:disabled) {
+            transform: translateY(-1px);
+        }
+
+        .filter-chip-button:disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+        }
+
+        .context-note {
+            color: var(--text-color);
+            font-size: 0.95rem;
         }
 
         .hub-sections {
@@ -56,6 +133,11 @@
 
         .tournament-card h3 {
             margin-bottom: 0.75rem;
+        }
+
+        .tournament-card.is-mine {
+            border-color: rgba(255, 107, 53, 0.24);
+            box-shadow: 0 16px 38px rgba(0, 0, 0, 0.14);
         }
 
         .tournament-meta {
@@ -99,6 +181,19 @@
             margin-top: 1rem;
         }
 
+        .registered-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            padding: 0.4rem 0.75rem;
+            border-radius: 999px;
+            background: rgba(34, 197, 94, 0.15);
+            color: #b8f7c9;
+            font-size: 0.82rem;
+            font-weight: 700;
+            margin-bottom: 0.9rem;
+        }
+
         .ghost-button {
             display: inline-flex;
             align-items: center;
@@ -107,6 +202,7 @@
             border-radius: 999px;
             border: 1px solid rgba(255, 255, 255, 0.15);
             color: #fff;
+            background: transparent;
         }
 
         .empty-message {
@@ -114,6 +210,55 @@
             border: 1px dashed rgba(255, 255, 255, 0.12);
             border-radius: 16px;
             color: var(--text-color);
+        }
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(6, 12, 24, 0.8);
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            z-index: 1000;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-card {
+            width: min(420px, 100%);
+            background: #111927;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 18px;
+            padding: 1.5rem;
+        }
+
+        .modal-grid {
+            display: grid;
+            gap: 0.85rem;
+            margin-top: 1rem;
+        }
+
+        .modal-card label {
+            display: block;
+            margin-bottom: 0.35rem;
+        }
+
+        .modal-card input {
+            width: 100%;
+            padding: 0.85rem 1rem;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: rgba(255, 255, 255, 0.04);
+            color: #fff;
+        }
+
+        @media (max-width: 720px) {
+            .hub-controls {
+                align-items: stretch;
+            }
         }
     </style>
 </head>
@@ -148,11 +293,13 @@
                 <div>
                     <h3>What you can do here</h3>
                     <p style="color: var(--text-color); margin-top: 0.75rem;">
-                        Guests can explore public results and live brackets. Players can register when registration is open and jump into detailed tournament views.
+                        Guests can explore public results and live brackets. Signed-in players can register directly, review only their own tournaments, and jump into detailed competition views.
                     </p>
                 </div>
             </div>
 
+            <div id="hub-summary" class="hub-summary"></div>
+            <div id="hub-controls" class="hub-controls"></div>
             <div id="hub-sections" class="hub-sections">
                 <div class="empty-message">Loading tournaments...</div>
             </div>
@@ -163,8 +310,35 @@
         <i class="ri-arrow-up-line"></i>
     </a>
 
+    <div class="modal-overlay" id="registration-modal" aria-hidden="true">
+        <div class="modal-card">
+            <div style="display:flex;justify-content:space-between;gap:1rem;align-items:flex-start;">
+                <div>
+                    <h3>Complete Registration</h3>
+                    <p style="color: var(--text-color); margin-top: 0.5rem;">
+                        Guests can still join public tournaments. Enter the first name and surname that should appear in this bracket or standings list.
+                    </p>
+                </div>
+                <button type="button" class="ghost-button" onclick="closeRegistrationModal()">Close</button>
+            </div>
+            <div class="modal-grid">
+                <div>
+                    <label for="registration-first-name">First Name</label>
+                    <input type="text" id="registration-first-name" autocomplete="given-name">
+                </div>
+                <div>
+                    <label for="registration-surname">Surname</label>
+                    <input type="text" id="registration-surname" autocomplete="family-name">
+                </div>
+            </div>
+            <div class="card-actions">
+                <button type="button" class="button" onclick="submitRegistrationWithName()">Submit Registration</button>
+            </div>
+        </div>
+    </div>
+
     <script src="../js/scrollreveal.min.js"></script>
-    <script src="../js/behaviour.js"></script>
+    <script src="../js/behaviour.js?v=20260402-2"></script>
     <script>
         const sectionConfig = {
             registration_open: { title: 'Upcoming', description: 'Registration is open right now.' },
@@ -174,17 +348,94 @@
             archived: { title: 'Old Tournaments', description: 'Archived history that stays public and read-only.' },
             draft: { title: 'Upcoming', description: 'Draft tournaments that are visible but not open yet.' }
         };
+        const fallbackSessionContext = {
+            logged_in: false,
+            has_player_profile: false,
+            user_name: '',
+            user_role: 'guest'
+        };
+        let sessionContext = { ...fallbackSessionContext };
+        let hubState = {
+            tournaments: [],
+            view: 'all'
+        };
+        let pendingTournamentId = null;
+
+        function statusCount(tournaments, statuses) {
+            return tournaments.filter((tournament) => statuses.includes(tournament.status)).length;
+        }
+
+        function renderSummary(tournaments) {
+            const myCount = tournaments.filter((tournament) => tournament.registered).length;
+            document.getElementById('hub-summary').innerHTML = `
+                <article class="summary-card">
+                    <strong>${tournaments.length}</strong>
+                    <span>Public tournaments</span>
+                </article>
+                <article class="summary-card">
+                    <strong>${statusCount(tournaments, ['registration_open', 'registration_closed', 'draft'])}</strong>
+                    <span>Upcoming</span>
+                </article>
+                <article class="summary-card">
+                    <strong>${statusCount(tournaments, ['in_progress'])}</strong>
+                    <span>Live now</span>
+                </article>
+                <article class="summary-card">
+                    <strong>${statusCount(tournaments, ['completed', 'archived'])}</strong>
+                    <span>Finished</span>
+                </article>
+                ${sessionContext.logged_in ? `
+                    <article class="summary-card">
+                        <strong>${myCount}</strong>
+                        <span>My tournaments</span>
+                    </article>
+                ` : ''}
+            `;
+        }
+
+        function renderControls() {
+            const accountNote = sessionContext.logged_in
+                ? (sessionContext.has_player_profile
+                    ? 'Your account can use quick registration on open tournaments.'
+                    : 'Your account can still register instantly. If no player profile exists yet, we seed a lightweight profile from your account name.')
+                : 'Guests can still register for open tournaments by entering a first name and surname once.';
+
+            document.getElementById('hub-controls').innerHTML = `
+                <div class="filter-group">
+                    <button type="button" class="filter-chip-button ${hubState.view === 'all' ? 'active' : ''}" onclick="setTournamentView('all')">
+                        <i class="ri-apps-line"></i> All tournaments
+                    </button>
+                    ${sessionContext.logged_in ? `
+                        <button type="button" class="filter-chip-button ${hubState.view === 'mine' ? 'active' : ''}" onclick="setTournamentView('mine')">
+                            <i class="ri-user-star-line"></i> My tournaments
+                        </button>
+                    ` : ''}
+                </div>
+                <div class="context-note">${accountNote}</div>
+            `;
+        }
+
+        function filteredTournaments() {
+            if (hubState.view === 'mine') {
+                return hubState.tournaments.filter((tournament) => tournament.registered);
+            }
+
+            return hubState.tournaments;
+        }
 
         function tournamentCard(tournament) {
             const canRegister = tournament.status === 'registration_open' && !tournament.registered;
             const registerDisabled = !canRegister;
             const registerLabel = tournament.registered
                 ? `Registered${tournament.player_status ? ` (${tournament.player_status})` : ''}`
-                : (canRegister ? 'Register' : 'Registration Closed');
+                : (canRegister
+                    ? (sessionContext.logged_in ? 'Quick Register' : 'Register')
+                    : 'Registration Closed');
 
             return `
-                <article class="tournament-card">
+                <article class="tournament-card ${tournament.registered ? 'is-mine' : ''}">
                     <span class="status-chip status-${tournament.status}">${tournament.status.replaceAll('_', ' ')}</span>
+                    ${tournament.registered ? `<div class="registered-chip"><i class="ri-bookmark-3-fill"></i> My tournament</div>` : ''}
                     <h3>${tournament.tour_title}</h3>
                     <div class="tournament-meta">
                         <span><strong>Format:</strong> ${tournament.tour_type}</span>
@@ -228,42 +479,143 @@
                 `)
                 .join('');
 
-            document.getElementById('hub-sections').innerHTML = html || '<div class="empty-message">No public tournaments are available right now.</div>';
+            const emptyMessage = hubState.view === 'mine'
+                ? 'You are not registered in any public tournaments yet.'
+                : 'No public tournaments are available right now.';
+
+            document.getElementById('hub-sections').innerHTML = html || `<div class="empty-message">${emptyMessage}</div>`;
         }
 
-        async function loadTournaments() {
-            const response = await fetch('../services/get_tournaments.php');
-            const data = await response.json();
+        function renderHub() {
+            renderSummary(hubState.tournaments);
+            renderControls();
+            renderSections(filteredTournaments());
+        }
+
+        async function loadHubData() {
+            const [contextResponse, tournamentsResponse] = await Promise.all([
+                fetch('../services/get_session_context.php'),
+                fetch('../services/get_tournaments.php')
+            ]);
+
+            const contextData = await contextResponse.json();
+            sessionContext = contextData && typeof contextData === 'object'
+                ? { ...fallbackSessionContext, ...contextData }
+                : { ...fallbackSessionContext };
+
+            const data = await tournamentsResponse.json();
             if (!Array.isArray(data)) {
                 throw new Error(data.error || 'Failed to load tournaments.');
             }
-            renderSections(data);
+            hubState.tournaments = data;
+            if (!sessionContext.logged_in && hubState.view === 'mine') {
+                hubState.view = 'all';
+            }
+            renderHub();
         }
 
-        async function registerForTournament(tournamentId) {
+        function setTournamentView(view) {
+            hubState.view = view;
+            renderHub();
+        }
+
+        function openRegistrationModal(tournamentId) {
+            pendingTournamentId = tournamentId;
+            document.getElementById('registration-modal').classList.add('active');
+            document.getElementById('registration-modal').setAttribute('aria-hidden', 'false');
+            document.getElementById('registration-first-name').focus();
+        }
+
+        function closeRegistrationModal() {
+            pendingTournamentId = null;
+            document.getElementById('registration-modal').classList.remove('active');
+            document.getElementById('registration-modal').setAttribute('aria-hidden', 'true');
+            document.getElementById('registration-first-name').value = '';
+            document.getElementById('registration-surname').value = '';
+        }
+
+        async function submitTournamentRegistration(payload) {
             const response = await fetch('../services/register_tournament.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ tournament_id: tournamentId })
+                body: JSON.stringify(payload)
             });
-            const data = await response.json();
-            if (!data.success) {
-                window.alert(data.message || 'Registration failed.');
+            return response.json();
+        }
+
+        async function registerForTournament(tournamentId) {
+            try {
+                const data = await submitTournamentRegistration({ tournament_id: tournamentId });
+                if (data.requires_name) {
+                    openRegistrationModal(tournamentId);
+                    return;
+                }
+                if (!data.success) {
+                    window.alert(data.message || 'Registration failed.');
+                    return;
+                }
+
+                window.alert(data.message);
+                loadHubData().catch((error) => {
+                    document.getElementById('hub-sections').innerHTML = `<div class="empty-message">${error.message}</div>`;
+                });
+            } catch (error) {
+                window.alert(error.message || 'Registration failed.');
+            }
+        }
+
+        async function submitRegistrationWithName() {
+            if (!pendingTournamentId) {
+                closeRegistrationModal();
                 return;
             }
 
-            window.alert(data.message);
-            loadTournaments().catch((error) => {
-                document.getElementById('hub-sections').innerHTML = `<div class="empty-message">${error.message}</div>`;
-            });
+            const firstName = document.getElementById('registration-first-name').value.trim();
+            const surname = document.getElementById('registration-surname').value.trim();
+            if (!firstName || !surname) {
+                window.alert('Please enter both first name and surname.');
+                return;
+            }
+
+            try {
+                const data = await submitTournamentRegistration({
+                    tournament_id: pendingTournamentId,
+                    plr_name: firstName,
+                    plr_surname: surname
+                });
+                if (!data.success) {
+                    throw new Error(data.message || 'Registration failed.');
+                }
+
+                closeRegistrationModal();
+                window.alert(data.message);
+                loadHubData().catch((error) => {
+                    document.getElementById('hub-sections').innerHTML = `<div class="empty-message">${error.message}</div>`;
+                });
+            } catch (error) {
+                window.alert(error.message || 'Registration failed.');
+            }
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-            loadTournaments().catch((error) => {
+            loadHubData().catch((error) => {
                 document.getElementById('hub-sections').innerHTML = `<div class="empty-message">${error.message}</div>`;
             });
+
+            document.getElementById('registration-modal').addEventListener('click', (event) => {
+                if (event.target.id === 'registration-modal') {
+                    closeRegistrationModal();
+                }
+            });
+
+            document.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape') {
+                    closeRegistrationModal();
+                }
+            });
         });
+
+        window.setTournamentView = setTournamentView;
     </script>
 </body>
 </html>
-

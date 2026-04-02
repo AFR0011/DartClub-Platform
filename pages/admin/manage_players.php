@@ -42,10 +42,11 @@ $players = $playersQuery ? $playersQuery->fetch_all(MYSQLI_ASSOC) : [];
 
         .summary-card,
         .panel-card {
-            background: #fff;
-            border: 1px solid #d9e0ea;
-            border-radius: 10px;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(245, 248, 255, 0.92));
+            border: 1px solid rgba(37, 99, 235, 0.1);
+            border-radius: 22px;
             padding: 18px;
+            box-shadow: 0 18px 36px rgba(15, 23, 42, 0.06);
         }
 
         .membership-actions {
@@ -66,14 +67,14 @@ $players = $playersQuery ? $playersQuery->fetch_all(MYSQLI_ASSOC) : [];
             padding: 16px;
             background: #f8fbff;
             border: 1px dashed #b6c7dd;
-            border-radius: 8px;
+            border-radius: 16px;
         }
 
         iframe {
             width: 100%;
             min-height: 540px;
-            border: 1px solid #d9e0ea;
-            border-radius: 10px;
+            border: 1px solid rgba(37, 99, 235, 0.1);
+            border-radius: 18px;
             background: #fff;
         }
     </style>
@@ -246,4 +247,3 @@ $players = $playersQuery ? $playersQuery->fetch_all(MYSQLI_ASSOC) : [];
     </script>
 </body>
 </html>
-

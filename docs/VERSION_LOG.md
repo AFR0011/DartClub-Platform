@@ -108,3 +108,94 @@
   - Apache/responsive visual QA
   - SMTP/email delivery verification
   - final browser click-through polish
+
+## JSON Contract Hardening Pass
+- Date: 2026-04-02
+- Status: service contract hardening and cross-file debug cleanup
+- Main changes:
+  - fixed `services/get_session_context.php` so guest shell hydration no longer requires an eager DB connection
+  - added service-only exception/error handling in `services/app_bootstrap.php` so frontend JSON consumers stop receiving raw HTML fatals/warnings
+  - fixed `services/config.php` env parsing so blank DB passwords are preserved instead of silently replaced with `1234`
+  - removed the duplicate legacy navbar fetch/bootstrap from `pages/main.php`
+  - hardened `js/behaviour.js` against missing nav targets, dynamic nav injection, and `href="#"` logout links
+  - fixed `services/delete_user.php` to resolve player records through `players.user_id` before deleting tournament/player data
+- Verification in this pass:
+  - repo-wide PHP lint
+  - guest HTTP check for `services/get_session_context.php` with the default broken DB grant state
+  - DB-backed CLI service checks for `get_tournaments`, `get_blogs`, and `gallery_get` using `putenv(...)` overrides for local root access
+  - static contract review of the admin user-delete path against the schema and identity model
+- Still pending:
+  - browser click-through of the updated shared shell behavior
+  - end-to-end admin user delete mutation under a real authenticated session
+  - environment-level repair/documentation for unhealthy local `dartadmin` grants
+
+## Deferred Tournament Registration Pass
+- Date: 2026-04-02
+- Status: tournament workflow debug pass based on manual verification findings
+- Main changes:
+  - fixed tournament page-data aggregation so summary counts survive lifecycle refreshes
+  - allowed tournaments to be created with zero players or a registration-first roster
+  - stopped forcing immediate fixture/bracket generation during tournament creation and tournament roster edits
+  - added explicit admin structure generation/rebuild from the current non-withdrawn entrant list after registration closes
+  - added public tournament registration fallback for guests and signed-in users without a player profile by collecting first name and surname
+  - added admin-side roster status controls for newly added players during registration
+- Verification in this pass:
+  - targeted PHP lint on all touched tournament/player/admin files
+  - local DB helper checks for:
+    - empty tournament creation
+    - preserved `player_count` and `match_count` values in page data
+    - registration-open structure-generation blocking
+    - registration-closed structure generation and entrant promotion to `Active`
+  - HTTP checks for:
+    - public `register_tournament.php` name-required response
+    - guest tournament registration success
+    - public `get_tournament_details.php` payload after deferred structure generation
+- Still pending:
+  - browser click-through of the new registration modal and admin generate/rebuild button
+  - authenticated browser verification for a signed-in user without an existing player profile
+
+## Tournament Admin UX Pass
+- Date: 2026-04-02
+- Status: tournament management usability polish based on manual verification notes
+- Main changes:
+  - refreshed the shared admin surface styling to reduce abrupt sizing, soften dense layouts, and make actions more compact
+  - upgraded `pages/admin/manage_tournaments.php` with a clearer hero/state summary and searchable player selection during tournament creation
+  - upgraded `pages/admin/show_tournament_details.php` with compact same-page score entry for individual matches
+  - rebuilt the knockout bracket cards so they show match flow, accept drag-and-drop slot swaps, and expose same-card score controls
+  - added `services/match_swap_players.php` to swap seeded players atomically across bracket slots while resetting affected match state safely
+- Verification in this pass:
+  - targeted PHP lint for the touched admin/service files
+  - live HTTP/session checks against the built-in server for:
+    - `match_swap_players.php`
+    - `match_result.php`
+    - `get_tournament_details.php`
+    - `get_tournaments.php`
+  - runtime confirmation that:
+    - bracket slot swaps update player placement
+    - same-page score entry records results
+    - winner propagation advances correctly into the next match
+- Still pending:
+  - full visual browser QA for the redesigned tournament admin screens
+  - real pointer/touch drag-and-drop verification in a browser session
+
+## Bracket Visualization And Public UX Pass
+- Date: 2026-04-02
+- Status: public/admin consistency pass based on the latest manual verification comments
+- Main changes:
+  - added a connected knockout-bracket view on the admin tournament-detail page while keeping the older stacked card layout as a renamed bracket-board view
+  - moved quick-score and drag-and-drop tournament management into the connected bracket layout
+  - upgraded tournament roster controls so add/remove selection works by clicking the whole row instead of tiny raw checkbox targets
+  - added a “My tournaments” filter to the public tournament hub
+  - changed signed-in public registration so users without an existing player row can still register instantly from their account name
+  - refreshed the public tournament-detail page, public blog page, admin landing page, user-management page, and player-management page to match the newer tournament visual language more closely
+- Verification in this pass:
+  - targeted PHP lint for all touched PHP files
+  - live HTTP/source checks for:
+    - `pages/tournaments.html`
+    - `pages/tournament_details.php`
+    - `pages/blog.html`
+    - `pages/admin/show_tournament_details.php`
+  - live signed-in registration verification through `services/register_tournament.php` using a temporary no-profile user, followed by cleanup
+- Still pending:
+  - browser-eye QA for the new public/admin bracket rendering and spacing
+  - real pointer/touch drag-and-drop verification in a browser session
