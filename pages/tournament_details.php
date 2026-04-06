@@ -239,6 +239,25 @@
             background: rgba(255, 124, 77, 0.44);
         }
 
+        .read-bracket-matchup.is-placeholder {
+            cursor: default;
+            border-style: dashed;
+            border-color: rgba(148, 163, 184, 0.34);
+            background:
+                repeating-linear-gradient(
+                    135deg,
+                    rgba(30, 41, 59, 0.9),
+                    rgba(30, 41, 59, 0.9) 10px,
+                    rgba(51, 65, 85, 0.9) 10px,
+                    rgba(51, 65, 85, 0.9) 20px
+                );
+        }
+
+        .read-bracket-matchup.is-placeholder:hover {
+            transform: none;
+            border-color: rgba(148, 163, 184, 0.34);
+        }
+
         .read-bracket-summary {
             display: flex;
             justify-content: space-between;
@@ -363,6 +382,13 @@
             margin-bottom: 1rem;
         }
 
+        .public-bracket-view-toggle {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+            margin-bottom: 1rem;
+        }
+
         .bracket-path-button {
             padding-inline: 1rem;
         }
@@ -377,6 +403,25 @@
         .bracket-group-stack {
             display: grid;
             gap: 1.1rem;
+        }
+
+        .bracket-group-stack--merged {
+            grid-template-columns: minmax(0, 1.12fr) minmax(240px, 0.78fr) minmax(0, 1.12fr);
+            grid-template-areas: "winners final losers";
+            align-items: start;
+        }
+
+        .bracket-group-stack--merged [data-public-bracket-group="Winners Bracket"] {
+            grid-area: winners;
+        }
+
+        .bracket-group-stack--merged [data-public-bracket-group="Losers Bracket"] {
+            grid-area: losers;
+        }
+
+        .bracket-group-stack--merged [data-public-bracket-group="Grand Final"] {
+            grid-area: final;
+            align-self: center;
         }
 
         .bracket-group {
@@ -472,6 +517,12 @@
             color: #fff;
         }
 
+        .detail-button-secondary.is-active {
+            background: rgba(255, 107, 53, 0.16);
+            border-color: rgba(255, 107, 53, 0.32);
+            color: #fff;
+        }
+
         .detail-button-danger {
             background: rgba(220, 38, 38, 0.12);
             border-color: rgba(220, 38, 38, 0.25);
@@ -511,6 +562,11 @@
                 flex-direction: column;
                 align-items: stretch;
             }
+
+            .bracket-group-stack--merged {
+                grid-template-columns: 1fr;
+                grid-template-areas: none;
+            }
         }
     </style>
 </head>
@@ -548,18 +604,19 @@
         const tournamentId = <?php echo $tourId; ?>;
         let currentTournamentData = null;
         let selectedBracketMatchId = null;
+        let selectedPublicBracketView = 'merged';
 
         function roundTitle(roundNumber, totalRounds) {
-            const remainingRounds = totalRounds - roundNumber;
-            if (remainingRounds <= 0) {
+            if (totalRounds <= 1 || roundNumber >= totalRounds) {
                 return 'Final';
             }
-            if (remainingRounds === 1) {
-                return 'Semi Finals';
+            if (roundNumber === totalRounds - 1) {
+                return 'Semifinal';
             }
-            if (remainingRounds === 2) {
-                return 'Quarter Finals';
+            if (roundNumber === totalRounds - 2) {
+                return 'Quarterfinal';
             }
+
             return `Round ${roundNumber}`;
         }
 
@@ -614,7 +671,8 @@
                 'Elimination': 1,
                 'Knockout': 1,
                 'Losers Bracket': 2,
-                'Grand Final': 3
+                'Grand Final': 3,
+                'Third Place Playoff': 4
             };
 
             return order[label] || 99;
@@ -624,10 +682,19 @@
             if (label === 'Grand Final') {
                 return 'Grand Final';
             }
+            if (label === 'Third Place Playoff') {
+                return 'Third Place Playoff';
+            }
             if (label === 'Winners Bracket') {
-                return `Winners Round ${roundNumber}`;
+                return `Winners ${roundTitle(roundNumber, totalRounds)}`;
             }
             if (label === 'Losers Bracket') {
+                if (totalRounds <= 1 || roundNumber >= totalRounds) {
+                    return 'Losers Final';
+                }
+                if (roundNumber === totalRounds - 1) {
+                    return 'Losers Semifinal';
+                }
                 return `Losers Round ${roundNumber}`;
             }
 
@@ -648,8 +715,56 @@
                     <span class="legend-chip"><span class="legend-swatch legend-swatch--ready"></span> Ready to play</span>
                     <span class="legend-chip"><span class="legend-swatch legend-swatch--live"></span> Live or highlighted</span>
                     <span class="legend-chip"><span class="legend-swatch legend-swatch--completed"></span> Result recorded</span>
-                    ${includeBracketPaths ? '<span class="legend-chip">Winners, losers, and grand final sections are rendered separately below.</span>' : ''}
+                    ${includeBracketPaths ? '<span class="legend-chip">Winners, losers, and grand final paths stay in one merged layout below.</span>' : ''}
                 </div>
+            `;
+        }
+
+        function playerPlacementLabel(player) {
+            if (player.placement_label) {
+                return player.placement_label;
+            }
+            if (player.final_rank !== null && player.final_rank !== undefined && player.final_rank !== '') {
+                return `#${player.final_rank}`;
+            }
+            return '';
+        }
+
+        function renderPlacementTable(players) {
+            const rows = (players || [])
+                .filter((player) => playerPlacementLabel(player))
+                .sort((left, right) => {
+                    const leftRank = Number.isFinite(Number(left.final_rank)) ? Number(left.final_rank) : 9999;
+                    const rightRank = Number.isFinite(Number(right.final_rank)) ? Number(right.final_rank) : 9999;
+                    if (leftRank !== rightRank) {
+                        return leftRank - rightRank;
+                    }
+                    return `${left.plr_name} ${left.plr_surname}`.localeCompare(`${right.plr_name} ${right.plr_surname}`, undefined, { sensitivity: 'base' });
+                });
+
+            if (rows.length === 0) {
+                return '<p style="color: var(--text-color);">Placements will appear here once elimination results start settling the bracket.</p>';
+            }
+
+            return `
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Rank</th>
+                            <th>Player</th>
+                            <th>Placement</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rows.map((player) => `
+                            <tr>
+                                <td>${player.final_rank ?? '-'}</td>
+                                <td><a href="player_profile.php?id=${player.plr_idNum}" style="color:#fff; text-decoration:none;">${detailEscapeHtml(player.plr_name)} ${detailEscapeHtml(player.plr_surname)}</a></td>
+                                <td>${detailEscapeHtml(playerPlacementLabel(player))}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
             `;
         }
 
@@ -701,10 +816,16 @@
 
             return `
                 <div class="match-grid">
-                    ${matches.map((match) => `
+                    ${matches.map((match) => {
+                        const teamMeta = match.player1_team_name && match.player2_team_name
+                            ? `<p style="color: var(--text-color); margin-top: 0.55rem;">${detailEscapeHtml(match.player1_team_name)} vs ${detailEscapeHtml(match.player2_team_name)}</p>`
+                            : '';
+
+                        return `
                         <article class="match-card">
                             <div class="pill">${match.bracket || (match.group_number ? `Group ${match.group_number}` : 'Fixture')}</div>
                             <h3>${playerLabel(match, 'player1')} vs ${playerLabel(match, 'player2')}</h3>
+                            ${teamMeta}
                             <p style="color: var(--text-color); margin-top: 0.75rem;">
                                 ${match.match_date} at ${match.match_time}
                             </p>
@@ -712,7 +833,8 @@
                                 ${match.match_status === 'Completed' ? `<strong>${match.player1_score} - ${match.player2_score}</strong>` : 'Scheduled'}
                             </p>
                         </article>
-                    `).join('')}
+                    `;
+                    }).join('')}
                 </div>
             `;
         }
@@ -826,6 +948,36 @@
             `;
         }
 
+        function renderBracketViewToggle(groupEntries, tournamentType) {
+            if (tournamentType !== 'Double Elimination' || !Array.isArray(groupEntries) || groupEntries.length < 2) {
+                return '';
+            }
+
+            const views = [
+                { key: 'merged', label: 'Merged Bracket' },
+                { key: 'Winners Bracket', label: 'Winners Bracket' },
+                { key: 'Losers Bracket', label: 'Losers Bracket' }
+            ];
+
+            if (groupEntries.some((group) => group.rawLabel === 'Grand Final')) {
+                views.push({ key: 'Grand Final', label: 'Grand Final' });
+            }
+
+            return `
+                <div class="public-bracket-view-toggle">
+                    ${views.map((view) => `
+                        <button
+                            type="button"
+                            class="detail-button-secondary bracket-path-button ${selectedPublicBracketView === view.key ? 'is-active' : ''}"
+                            onclick="setPublicBracketView('${detailEscapeHtml(view.key)}')"
+                        >
+                            ${detailEscapeHtml(view.label)}
+                        </button>
+                    `).join('')}
+                </div>
+            `;
+        }
+
         function renderBracket(matches, tournamentType) {
             const knockoutMatches = (matches || []).filter((match) => match.group_number === null);
             if (knockoutMatches.length === 0) {
@@ -835,10 +987,12 @@
             const groupsMap = new Map();
             knockoutMatches.forEach((match) => {
                 const rawLabel = String(match.bracket || '').trim() || 'Elimination';
-                const groupKey = tournamentType === 'Double Elimination' ? rawLabel : 'primary';
+                const groupKey = tournamentType === 'Double Elimination'
+                    ? rawLabel
+                    : (rawLabel === 'Third Place Playoff' ? 'Third Place Playoff' : 'primary');
                 const groupLabel = tournamentType === 'Double Elimination'
                     ? rawLabel
-                    : (rawLabel === 'Knockout' ? 'Knockout Bracket' : 'Tournament Bracket');
+                    : (rawLabel === 'Third Place Playoff' ? 'Third Place Playoff' : (rawLabel === 'Knockout' ? 'Knockout Bracket' : 'Tournament Bracket'));
                 const roundNumber = Number(match.round_number || 1);
 
                 if (!groupsMap.has(groupKey)) {
@@ -873,62 +1027,81 @@
                     return left.label.localeCompare(right.label, undefined, { sensitivity: 'base' });
                 });
 
-            const selectedMatch = knockoutMatches.find((match) => Number(match.match_id) === Number(selectedBracketMatchId)) || knockoutMatches[0];
-            const selectedGroup = groupEntries.find((group) => group.matches.some((match) => Number(match.match_id) === Number(selectedMatch.match_id))) || groupEntries[0];
+            const visibleGroupEntries = tournamentType === 'Double Elimination' && selectedPublicBracketView !== 'merged'
+                ? groupEntries.filter((group) => group.rawLabel === selectedPublicBracketView)
+                : groupEntries;
+            const renderedGroups = visibleGroupEntries.length > 0 ? visibleGroupEntries : groupEntries;
+            const visibleMatches = renderedGroups.flatMap((group) => group.matches);
+            const selectedMatch = visibleMatches.find((match) => Number(match.match_id) === Number(selectedBracketMatchId)) || visibleMatches[0] || knockoutMatches[0];
+            const selectedGroup = renderedGroups.find((group) => group.matches.some((match) => Number(match.match_id) === Number(selectedMatch?.match_id))) || renderedGroups[0];
+            const groupStackClass = tournamentType === 'Double Elimination' && selectedPublicBracketView === 'merged'
+                ? 'bracket-group-stack bracket-group-stack--merged'
+                : 'bracket-group-stack';
 
             return `
                 ${renderBracketLegend(groupEntries.length > 1)}
                 <div class="bracket-toolbar">
                     <p class="bracket-toolbar-copy">
-                        Open focus mode for a larger, scrollable bracket view when the elimination paths get crowded, then jump directly to the path you want to inspect.
+                        ${tournamentType === 'Double Elimination'
+                            ? 'Start from the merged bracket for the full tournament picture, then switch to a single path when you want to inspect just the winners side, losers side, or the final.'
+                            : 'Open focus mode for a larger, scrollable bracket view when the elimination paths get crowded.'}
                     </p>
-                    ${groupEntries.length > 1 ? '<span class="legend-chip">Use the path buttons below to jump between winners, losers, and grand final sections.</span>' : ''}
+                    ${groupEntries.length > 1 ? '<span class="legend-chip">Bracket placeholders keep bye lines visible even when the entrant count is not a power of two.</span>' : ''}
                 </div>
-                ${renderBracketPathNav(groupEntries)}
-                <div class="bracket-group-stack">
-                    ${groupEntries.map((group) => {
+                ${renderBracketViewToggle(groupEntries, tournamentType)}
+                ${tournamentType !== 'Double Elimination' ? renderBracketPathNav(groupEntries) : ''}
+                <div class="${groupStackClass}">
+                    ${renderedGroups.map((group) => {
                         const slotCount = Math.pow(2, group.rounds.length);
                         return `
-                            <div class="bracket-group" id="public-bracket-group-${bracketDomKey(group.key)}">
+                            <div class="bracket-group" id="public-bracket-group-${bracketDomKey(group.key)}" data-public-bracket-group="${detailEscapeHtml(group.rawLabel)}">
                                 <h3>${group.label}</h3>
-                                <p>${group.rawLabel === 'Grand Final' ? 'The winners-bracket champion meets the last survivor from the lower path here.' : 'Follow this path round by round through the connected bracket below.'}</p>
+                                <p>${group.rawLabel === 'Grand Final' ? 'The winners-bracket champion meets the last survivor from the lower path here.' : (group.rawLabel === 'Third Place Playoff' ? 'The semifinal losers meet here to settle third and fourth place.' : 'Follow this path round by round through the connected bracket below.')}</p>
                                 <div class="read-bracket-shell">
                                     <div class="read-bracket">
                                         ${group.rounds.map(([roundNumber, roundMatches], roundIndex) => `
                                             <div class="read-bracket-round">
                                                 <h3>${bracketRoundTitle(group.rawLabel, roundNumber, group.rounds.length)}</h3>
                                                 <div class="read-bracket-lane" style="--slot-count: ${slotCount};">
-                                                    ${roundMatches.map((match, matchIndex) => {
-                                                        const rowSpan = Math.pow(2, roundIndex + 1);
-                                                        const rowStart = (matchIndex * rowSpan) + 1;
-                                                        const rowEnd = rowStart + rowSpan;
-                                                        const isActive = Number(selectedMatch.match_id) === Number(match.match_id);
-                                                        const visualState = bracketVisualState(match);
-                                                        return `
-                                                            <div class="read-bracket-node ${roundIndex > 0 ? 'has-incoming' : ''}" style="grid-row: ${rowStart} / ${rowEnd};">
-                                                                <button
-                                                                    type="button"
-                                                                    class="read-bracket-matchup state-${visualState} ${roundIndex < group.rounds.length - 1 ? 'has-outgoing' : ''} ${isActive ? 'is-active' : ''}"
-                                                                    onclick="showBracketMatch(${match.match_id})"
-                                                                >
-                                                                    <div class="read-bracket-summary">
-                                                                        <span>Match ${match.match_id}</span>
-                                                                        <span>${match.match_status}</span>
-                                                                    </div>
-                                                                    <div class="read-bracket-vs">
-                                                                        <div class="read-bracket-player">
-                                                                            <span>Top</span>
-                                                                            <strong>${playerLabel(match, 'player1')}</strong>
+                                                    ${(() => {
+                                                        const renderRoundMatches = [...roundMatches];
+                                                        const expectedRoundMatches = Math.max(1, Math.floor(slotCount / Math.pow(2, roundIndex + 1)));
+                                                        while (renderRoundMatches.length < expectedRoundMatches) {
+                                                            renderRoundMatches.push({ is_placeholder: true, match_id: `placeholder-${group.key}-${roundNumber}-${renderRoundMatches.length}` });
+                                                        }
+                                                        return renderRoundMatches.map((match, matchIndex) => {
+                                                            const rowSpan = Math.pow(2, roundIndex + 1);
+                                                            const rowStart = (matchIndex * rowSpan) + 1;
+                                                            const rowEnd = rowStart + rowSpan;
+                                                            const isPlaceholder = Boolean(match.is_placeholder);
+                                                            const isActive = !isPlaceholder && Number(selectedMatch?.match_id) === Number(match.match_id);
+                                                            const visualState = isPlaceholder ? 'scheduled' : bracketVisualState(match);
+                                                            return `
+                                                                <div class="read-bracket-node ${roundIndex > 0 ? 'has-incoming' : ''}" style="grid-row: ${rowStart} / ${rowEnd};">
+                                                                    <button
+                                                                        type="button"
+                                                                        class="read-bracket-matchup ${isPlaceholder ? 'is-placeholder' : ''} state-${visualState} ${roundIndex < group.rounds.length - 1 ? 'has-outgoing' : ''} ${isActive ? 'is-active' : ''}"
+                                                                        ${isPlaceholder ? 'disabled' : `onclick="showBracketMatch(${match.match_id})"`}
+                                                                    >
+                                                                        <div class="read-bracket-summary">
+                                                                            <span>${isPlaceholder ? 'Bye Slot' : `Match ${match.match_id}`}</span>
+                                                                            <span>${isPlaceholder ? 'Auto-advance' : match.match_status}</span>
                                                                         </div>
-                                                                        <div class="read-bracket-player">
-                                                                            <span>Bottom</span>
-                                                                            <strong>${playerLabel(match, 'player2')}</strong>
+                                                                        <div class="read-bracket-vs">
+                                                                            <div class="read-bracket-player">
+                                                                                <span>Top</span>
+                                                                                <strong>${isPlaceholder ? 'Bye / no fixture' : playerLabel(match, 'player1')}</strong>
+                                                                            </div>
+                                                                            <div class="read-bracket-player">
+                                                                                <span>Bottom</span>
+                                                                                <strong>${isPlaceholder ? 'Bracket spacer' : playerLabel(match, 'player2')}</strong>
+                                                                            </div>
                                                                         </div>
-                                                                    </div>
-                                                                </button>
-                                                            </div>
-                                                        `;
-                                                    }).join('')}
+                                                                    </button>
+                                                                </div>
+                                                            `;
+                                                        }).join('');
+                                                    })()}
                                                 </div>
                                             </div>
                                         `).join('')}
@@ -938,7 +1111,7 @@
                         `;
                     }).join('')}
                 </div>
-                ${renderSelectedBracketMatch(selectedMatch, selectedGroup)}
+                ${selectedMatch ? renderSelectedBracketMatch(selectedMatch, selectedGroup) : ''}
             `;
         }
 
@@ -946,6 +1119,7 @@
             const tournament = data.tournament;
             const shell = document.getElementById('detail-shell');
             const knockoutBracket = tournament.tour_type !== 'Group' ? renderBracket(data.matches, tournament.tour_type) : '';
+            const hasPlayerPlacements = (data.players || []).some((player) => playerPlacementLabel(player));
 
             shell.innerHTML = `
                 <section class="surface hero-surface">
@@ -975,7 +1149,7 @@
                     ${tournament.tour_type !== 'Group' ? `
                         <div>
                             <strong>Bracket</strong>
-                            <p>${data.matches.some((match) => match.group_number === null) ? (tournament.tour_type === 'Double Elimination' ? 'Winners, losers, and grand final paths are available below' : 'Available below') : 'Will appear after elimination fixtures exist'}</p>
+                            <p>${data.matches.some((match) => match.group_number === null) ? (tournament.tour_type === 'Double Elimination' ? 'Merged, winners-only, losers-only, and grand-final views are available below' : 'Available below') : 'Will appear after elimination fixtures exist'}</p>
                         </div>
                     ` : ''}
                 </div>
@@ -1000,6 +1174,7 @@
                                         <th>Name</th>
                                         <th>Status</th>
                                         <th>Group</th>
+                                        ${hasPlayerPlacements ? '<th>Placement</th>' : ''}
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -1008,6 +1183,7 @@
                                             <td><a href="player_profile.php?id=${player.plr_idNum}" style="color:#fff; text-decoration:none;">${player.plr_name} ${player.plr_surname}</a></td>
                                             <td>${player.player_status}</td>
                                             <td>${player.group_number ?? '-'}</td>
+                                            ${hasPlayerPlacements ? `<td>${detailEscapeHtml(playerPlacementLabel(player) || '-')}</td>` : ''}
                                         </tr>
                                     `).join('')}
                                 </tbody>
@@ -1056,7 +1232,7 @@
                             ? renderLeagueGroupTables(data.group_standings)
                             : tournament.tour_type === 'Group'
                                 ? renderStandingsTable(data.team_standings, 'Team')
-                                : '<p style="color: var(--text-color);">Elimination standings are represented through the bracket and fixture list below.</p>'
+                                : renderPlacementTable(data.players)
                     }
                 </section>
 
@@ -1068,8 +1244,8 @@
                             ${renderTeams(data.teams)}
                         </section>
                         <section class="surface">
-                            <h2>Team Fixtures</h2>
-                            ${renderTeamMatches(data.team_matches)}
+                            <h2>${(data.matches || []).length > 0 ? 'Player Fixtures' : 'Team Fixtures'}</h2>
+                            ${(data.matches || []).length > 0 ? renderIndividualMatches(data.matches) : renderTeamMatches(data.team_matches)}
                         </section>
                       `
                     : `
@@ -1088,6 +1264,27 @@
             }
 
             selectedBracketMatchId = Number(matchId);
+            renderTournamentPage(currentTournamentData);
+        }
+
+        function setPublicBracketView(viewKey) {
+            selectedPublicBracketView = viewKey || 'merged';
+            if (!currentTournamentData) {
+                return;
+            }
+
+            const visibleMatches = (currentTournamentData.matches || []).filter((match) => {
+                if (selectedPublicBracketView === 'merged') {
+                    return match.group_number === null;
+                }
+
+                return match.group_number === null && String(match.bracket || '').trim() === selectedPublicBracketView;
+            });
+
+            if (!visibleMatches.some((match) => Number(match.match_id) === Number(selectedBracketMatchId))) {
+                selectedBracketMatchId = visibleMatches[0] ? Number(visibleMatches[0].match_id) : null;
+            }
+
             renderTournamentPage(currentTournamentData);
         }
 
@@ -1145,6 +1342,7 @@
         });
 
         window.showBracketMatch = showBracketMatch;
+        window.setPublicBracketView = setPublicBracketView;
         window.togglePublicBracketFocus = togglePublicBracketFocus;
         window.focusPublicBracketGroup = focusPublicBracketGroup;
     </script>

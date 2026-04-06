@@ -40,7 +40,7 @@ body {
 
 .container {
     width: 90%;
-    max-width: 1240px;
+    max-width: 1488px;
     margin: 24px auto;
     padding: 28px;
     background: var(--admin-surface);

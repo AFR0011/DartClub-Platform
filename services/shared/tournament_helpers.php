@@ -81,7 +81,7 @@ function tournament_normalize_settings(array $input, int $playerCount = 0): arra
         $advancersPerGroup = max(1, (int) $advancersPerGroup);
         $teamCount = null;
     } elseif ($type === 'Group') {
-        $teamCount = max(2, (int) $teamCount);
+        $teamCount = 2;
         $groupCount = null;
         $advancersPerGroup = null;
     } else {
@@ -127,6 +127,9 @@ function tournament_validate_structure_settings(array $settings, int $playerCoun
 
     if ($settings['tour_type'] === 'Group') {
         $teamCount = max(2, (int) ($settings['team_count'] ?? 0));
+        if ($teamCount !== 2) {
+            throw new InvalidArgumentException('Group tournaments currently support exactly two teams.');
+        }
         if ($teamCount > $playerCount) {
             throw new InvalidArgumentException('Team count cannot exceed the number of tournament entrants.');
         }
@@ -390,6 +393,36 @@ function tournament_schedule_team_round_robin(mysqli $db, int $tourId, array $te
     }
 }
 
+function tournament_schedule_group_cross_team_matches(mysqli $db, int $tourId, array $teamAssignments, string $startDate): void
+{
+    $teams = array_values($teamAssignments);
+    if (count($teams) !== 2) {
+        throw new InvalidArgumentException('Group tournaments currently require exactly two teams.');
+    }
+
+    $teamA = $teams[0];
+    $teamB = $teams[1];
+    $teamAPlayers = array_values(array_map('intval', $teamA['player_ids'] ?? []));
+    $teamBPlayers = array_values(array_map('intval', $teamB['player_ids'] ?? []));
+    $matchClock = new DateTime($startDate . ' 18:00:00');
+
+    foreach ($teamAPlayers as $playerAId) {
+        foreach ($teamBPlayers as $playerBId) {
+            tournament_insert_match($db, [
+                'tour_id' => $tourId,
+                'round_number' => 1,
+                'match_date' => $matchClock->format('Y-m-d'),
+                'match_time' => $matchClock->format('H:i:s'),
+                'player1_id' => $playerAId,
+                'player2_id' => $playerBId,
+                'bracket' => 'Team Stage',
+                'match_status' => 'Scheduled',
+            ]);
+            $matchClock->modify('+30 minutes');
+        }
+    }
+}
+
 function tournament_assign_groups(array $playerIds, int $groupCount): array
 {
     $shuffled = array_values($playerIds);
@@ -599,9 +632,44 @@ function tournament_create_winners_bracket(
     ];
 }
 
+function tournament_create_third_place_match(
+    mysqli $db,
+    int $tourId,
+    array $winnerRounds,
+    string $startDate
+): ?int {
+    if (count($winnerRounds) < 2) {
+        return null;
+    }
+
+    ksort($winnerRounds);
+    $roundNumbers = array_keys($winnerRounds);
+    $semifinalRoundNumber = (int) $roundNumbers[count($roundNumbers) - 2];
+    $semifinalMatchIds = array_values(array_map('intval', $winnerRounds[$semifinalRoundNumber] ?? []));
+    if (count($semifinalMatchIds) < 2) {
+        return null;
+    }
+
+    $clock = tournament_round_clock($startDate, max(0, count($winnerRounds) - 1));
+    $matchId = tournament_insert_match($db, [
+        'tour_id' => $tourId,
+        'round_number' => 1,
+        'match_date' => $clock->format('Y-m-d'),
+        'match_time' => $clock->format('H:i:s'),
+        'match_status' => 'Scheduled',
+        'bracket' => 'Third Place Playoff',
+    ]);
+
+    tournament_link_entry_to_next_match($db, tournament_entry_match_loser($semifinalMatchIds[0]), $matchId, 1);
+    tournament_link_entry_to_next_match($db, tournament_entry_match_loser($semifinalMatchIds[1]), $matchId, 2);
+
+    return $matchId;
+}
+
 function tournament_create_elimination_bracket(mysqli $db, int $tourId, array $playerIds, string $startDate, ?string $bracket = 'Elimination'): void
 {
-    tournament_create_winners_bracket($db, $tourId, $playerIds, $startDate, (string) $bracket);
+    $winnersBracket = tournament_create_winners_bracket($db, $tourId, $playerIds, $startDate, (string) $bracket);
+    tournament_create_third_place_match($db, $tourId, $winnersBracket['rounds'] ?? [], $startDate);
 }
 
 function tournament_create_double_elimination_bracket(mysqli $db, int $tourId, array $playerIds, string $startDate): void
@@ -780,7 +848,7 @@ function tournament_create_team_structure(
     ?array $teamNames = null
 ): void {
     $teamAssignments = tournament_generate_team_assignments($playerIds, $teamCount);
-    $createdTeamIds = [];
+    $createdTeams = [];
 
     $insertTeam = $db->prepare('INSERT INTO tournament_teams (tour_id, team_name, team_seed) VALUES (?, ?, ?)');
     $insertTeamPlayer = $db->prepare('INSERT INTO tournament_team_players (tour_id, team_id, player_id) VALUES (?, ?, ?)');
@@ -795,7 +863,11 @@ function tournament_create_team_structure(
         $insertTeam->bind_param('isi', $tourId, $teamName, $seed);
         $insertTeam->execute();
         $teamId = (int) $db->insert_id;
-        $createdTeamIds[] = $teamId;
+        $createdTeams[] = [
+            'team_id' => $teamId,
+            'team_name' => $teamName,
+            'player_ids' => array_values(array_map('intval', $teamPlayerIds)),
+        ];
 
         foreach ($teamPlayerIds as $playerId) {
             $insertTeamPlayer->bind_param('iii', $tourId, $teamId, $playerId);
@@ -807,7 +879,7 @@ function tournament_create_team_structure(
     $insertTeam->close();
     $insertTeamPlayer->close();
 
-    tournament_schedule_team_round_robin($db, $tourId, $createdTeamIds, $startDate);
+    tournament_schedule_group_cross_team_matches($db, $tourId, $createdTeams, $startDate);
 }
 
 function tournament_rebuild_structure(
@@ -1382,6 +1454,41 @@ function tournament_group_standings(mysqli $db, int $tourId): array
     return $groupStandings;
 }
 
+function tournament_group_has_individual_matches(mysqli $db, int $tourId): bool
+{
+    $stmt = $db->prepare('SELECT COUNT(*) AS match_count FROM matches WHERE tour_id = ?');
+    $stmt->bind_param('i', $tourId);
+    $stmt->execute();
+    $row = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+
+    return ((int) ($row['match_count'] ?? 0)) > 0;
+}
+
+function tournament_group_player_team_map(mysqli $db, int $tourId): array
+{
+    $stmt = $db->prepare(
+        'SELECT ttp.player_id, ttp.team_id, tt.team_name
+         FROM tournament_team_players ttp
+         JOIN tournament_teams tt ON tt.team_id = ttp.team_id
+         WHERE ttp.tour_id = ?'
+    );
+    $stmt->bind_param('i', $tourId);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    $map = [];
+    while ($row = $result->fetch_assoc()) {
+        $map[(int) $row['player_id']] = [
+            'team_id' => (int) $row['team_id'],
+            'team_name' => (string) $row['team_name'],
+        ];
+    }
+    $stmt->close();
+
+    return $map;
+}
+
 function tournament_team_standings(mysqli $db, int $tourId): array
 {
     $teamsStmt = $db->prepare(
@@ -1416,55 +1523,117 @@ function tournament_team_standings(mysqli $db, int $tourId): array
     }
     $teamsStmt->close();
 
-    $matchesStmt = $db->prepare(
-        "SELECT
-            team1_id,
-            team2_id,
-            team1_score,
-            team2_score,
-            winner_team_id,
-            match_status
-         FROM team_matches
-         WHERE tour_id = ?"
-    );
-    $matchesStmt->bind_param('i', $tourId);
-    $matchesStmt->execute();
-    $matchesResult = $matchesStmt->get_result();
+    if (tournament_group_has_individual_matches($db, $tourId)) {
+        $playerTeamMap = tournament_group_player_team_map($db, $tourId);
+        $matchesStmt = $db->prepare(
+            "SELECT
+                player1_id,
+                player2_id,
+                player1_score,
+                player2_score,
+                winner_id,
+                match_status
+             FROM matches
+             WHERE tour_id = ?"
+        );
+        $matchesStmt->bind_param('i', $tourId);
+        $matchesStmt->execute();
+        $matchesResult = $matchesStmt->get_result();
 
-    while ($match = $matchesResult->fetch_assoc()) {
-        if (($match['match_status'] ?? '') !== 'Completed') {
-            continue;
+        while ($match = $matchesResult->fetch_assoc()) {
+            if (($match['match_status'] ?? '') !== 'Completed') {
+                continue;
+            }
+
+            $player1Id = (int) ($match['player1_id'] ?? 0);
+            $player2Id = (int) ($match['player2_id'] ?? 0);
+            if (!isset($playerTeamMap[$player1Id], $playerTeamMap[$player2Id])) {
+                continue;
+            }
+
+            $team1Id = (int) $playerTeamMap[$player1Id]['team_id'];
+            $team2Id = (int) $playerTeamMap[$player2Id]['team_id'];
+            if ($team1Id === $team2Id || !isset($standingsByTeam[$team1Id], $standingsByTeam[$team2Id])) {
+                continue;
+            }
+
+            $team1Score = (int) ($match['player1_score'] ?? 0);
+            $team2Score = (int) ($match['player2_score'] ?? 0);
+            $winnerPlayerId = isset($match['winner_id']) ? (int) $match['winner_id'] : null;
+            $winnerTeamId = $winnerPlayerId !== null && isset($playerTeamMap[$winnerPlayerId])
+                ? (int) $playerTeamMap[$winnerPlayerId]['team_id']
+                : null;
+
+            $standingsByTeam[$team1Id]['matches_played']++;
+            $standingsByTeam[$team2Id]['matches_played']++;
+            $standingsByTeam[$team1Id]['leg_difference'] += $team1Score - $team2Score;
+            $standingsByTeam[$team2Id]['leg_difference'] += $team2Score - $team1Score;
+
+            if ($winnerTeamId === null) {
+                $standingsByTeam[$team1Id]['matches_drawn']++;
+                $standingsByTeam[$team2Id]['matches_drawn']++;
+                $standingsByTeam[$team1Id]['points']++;
+                $standingsByTeam[$team2Id]['points']++;
+                continue;
+            }
+
+            $loserTeamId = $winnerTeamId === $team1Id ? $team2Id : $team1Id;
+            $standingsByTeam[$winnerTeamId]['matches_won']++;
+            $standingsByTeam[$winnerTeamId]['points'] += 3;
+            $standingsByTeam[$loserTeamId]['matches_lost']++;
         }
+        $matchesStmt->close();
+    } else {
+        $matchesStmt = $db->prepare(
+            "SELECT
+                team1_id,
+                team2_id,
+                team1_score,
+                team2_score,
+                winner_team_id,
+                match_status
+             FROM team_matches
+             WHERE tour_id = ?"
+        );
+        $matchesStmt->bind_param('i', $tourId);
+        $matchesStmt->execute();
+        $matchesResult = $matchesStmt->get_result();
 
-        $team1Id = (int) $match['team1_id'];
-        $team2Id = (int) $match['team2_id'];
-        $team1Score = (int) ($match['team1_score'] ?? 0);
-        $team2Score = (int) ($match['team2_score'] ?? 0);
-        $winnerTeamId = isset($match['winner_team_id']) ? (int) $match['winner_team_id'] : null;
+        while ($match = $matchesResult->fetch_assoc()) {
+            if (($match['match_status'] ?? '') !== 'Completed') {
+                continue;
+            }
 
-        if (!isset($standingsByTeam[$team1Id]) || !isset($standingsByTeam[$team2Id])) {
-            continue;
+            $team1Id = (int) $match['team1_id'];
+            $team2Id = (int) $match['team2_id'];
+            $team1Score = (int) ($match['team1_score'] ?? 0);
+            $team2Score = (int) ($match['team2_score'] ?? 0);
+            $winnerTeamId = isset($match['winner_team_id']) ? (int) $match['winner_team_id'] : null;
+
+            if (!isset($standingsByTeam[$team1Id]) || !isset($standingsByTeam[$team2Id])) {
+                continue;
+            }
+
+            $standingsByTeam[$team1Id]['matches_played']++;
+            $standingsByTeam[$team2Id]['matches_played']++;
+            $standingsByTeam[$team1Id]['leg_difference'] += $team1Score - $team2Score;
+            $standingsByTeam[$team2Id]['leg_difference'] += $team2Score - $team1Score;
+
+            if ($winnerTeamId === null) {
+                $standingsByTeam[$team1Id]['matches_drawn']++;
+                $standingsByTeam[$team2Id]['matches_drawn']++;
+                $standingsByTeam[$team1Id]['points']++;
+                $standingsByTeam[$team2Id]['points']++;
+                continue;
+            }
+
+            $loserTeamId = $winnerTeamId === $team1Id ? $team2Id : $team1Id;
+            $standingsByTeam[$winnerTeamId]['matches_won']++;
+            $standingsByTeam[$winnerTeamId]['points'] += 3;
+            $standingsByTeam[$loserTeamId]['matches_lost']++;
         }
-
-        $standingsByTeam[$team1Id]['matches_played']++;
-        $standingsByTeam[$team2Id]['matches_played']++;
-        $standingsByTeam[$team1Id]['leg_difference'] += $team1Score - $team2Score;
-        $standingsByTeam[$team2Id]['leg_difference'] += $team2Score - $team1Score;
-
-        if ($winnerTeamId === null) {
-            $standingsByTeam[$team1Id]['matches_drawn']++;
-            $standingsByTeam[$team2Id]['matches_drawn']++;
-            $standingsByTeam[$team1Id]['points']++;
-            $standingsByTeam[$team2Id]['points']++;
-            continue;
-        }
-
-        $loserTeamId = $winnerTeamId === $team1Id ? $team2Id : $team1Id;
-        $standingsByTeam[$winnerTeamId]['matches_won']++;
-        $standingsByTeam[$winnerTeamId]['points'] += 3;
-        $standingsByTeam[$loserTeamId]['matches_lost']++;
+        $matchesStmt->close();
     }
-    $matchesStmt->close();
 
     $standings = array_values($standingsByTeam);
     usort($standings, static function (array $left, array $right): int {
@@ -1636,6 +1805,309 @@ function tournament_propagate_winner(mysqli $db, array $match, int $winnerId): v
     }
 }
 
+function tournament_match_loser_id(array $match): ?int
+{
+    $winnerId = isset($match['winner_id']) ? (int) $match['winner_id'] : 0;
+    $player1Id = isset($match['player1_id']) ? (int) $match['player1_id'] : 0;
+    $player2Id = isset($match['player2_id']) ? (int) $match['player2_id'] : 0;
+
+    if ($winnerId <= 0 || $player1Id <= 0 || $player2Id <= 0) {
+        return null;
+    }
+
+    return $winnerId === $player1Id ? $player2Id : $player1Id;
+}
+
+function tournament_apply_player_placement(
+    mysqli $db,
+    int $tourId,
+    int $playerId,
+    ?int $rank,
+    ?string $label,
+    ?string $eliminatedAt = null
+): void {
+    $stmt = $db->prepare(
+        'UPDATE tournament_players
+         SET final_rank = ?, placement_label = ?, eliminated_at = ?
+         WHERE tour_id = ? AND plr_id = ?'
+    );
+    $stmt->bind_param('issii', $rank, $label, $eliminatedAt, $tourId, $playerId);
+    $stmt->execute();
+    $stmt->close();
+}
+
+function tournament_elimination_round_placement_label(int $roundPosition, int $roundCount): string
+{
+    $roundLabel = tournament_round_title($roundPosition, $roundCount);
+
+    if ($roundLabel === 'Semifinal') {
+        return 'Semifinalist';
+    }
+
+    if ($roundLabel === 'Quarterfinal') {
+        return 'Quarterfinalist';
+    }
+
+    return 'Eliminated in ' . $roundLabel;
+}
+
+function tournament_sync_single_elimination_placements(mysqli $db, int $tourId): void
+{
+    $stmt = $db->prepare(
+        "SELECT
+            match_id,
+            round_number,
+            bracket,
+            match_date,
+            match_time,
+            player1_id,
+            player2_id,
+            winner_id,
+            match_status
+         FROM matches
+         WHERE tour_id = ? AND group_number IS NULL
+         ORDER BY round_number, match_id"
+    );
+    $stmt->bind_param('i', $tourId);
+    $stmt->execute();
+    $rows = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+    $stmt->close();
+
+    $mainBracketMatches = [];
+    $thirdPlaceMatch = null;
+    foreach ($rows as $row) {
+        $bracketLabel = trim((string) ($row['bracket'] ?? ''));
+        if ($bracketLabel === 'Third Place Playoff') {
+            $thirdPlaceMatch = $row;
+            continue;
+        }
+
+        if ($bracketLabel === 'Grand Final' || $bracketLabel === 'Losers Bracket') {
+            continue;
+        }
+
+        $mainBracketMatches[] = $row;
+    }
+
+    if (empty($mainBracketMatches)) {
+        return;
+    }
+
+    $roundCount = 0;
+    foreach ($mainBracketMatches as $match) {
+        $roundCount = max($roundCount, (int) ($match['round_number'] ?? 0));
+    }
+
+    $assigned = [];
+    $assign = static function (int $playerId, ?int $rank, string $label, ?string $eliminatedAt = null) use ($db, $tourId, &$assigned): void {
+        if ($playerId <= 0 || isset($assigned[$playerId])) {
+            return;
+        }
+
+        $assigned[$playerId] = true;
+        tournament_apply_player_placement($db, $tourId, $playerId, $rank, $label, $eliminatedAt);
+    };
+
+    $finalMatch = null;
+    foreach ($mainBracketMatches as $match) {
+        if ((int) ($match['round_number'] ?? 0) === $roundCount) {
+            $finalMatch = $match;
+        }
+    }
+
+    if ($finalMatch && ($finalMatch['match_status'] ?? '') === 'Completed') {
+        $winnerId = (int) ($finalMatch['winner_id'] ?? 0);
+        $loserId = tournament_match_loser_id($finalMatch) ?? 0;
+        $eliminatedAt = !empty($finalMatch['match_date'])
+            ? trim((string) $finalMatch['match_date'] . ' ' . ($finalMatch['match_time'] ?? '00:00:00'))
+            : null;
+
+        $assign($winnerId, 1, 'Champion');
+        $assign($loserId, 2, 'Runner-up', $eliminatedAt);
+    }
+
+    if ($thirdPlaceMatch && ($thirdPlaceMatch['match_status'] ?? '') === 'Completed') {
+        $winnerId = (int) ($thirdPlaceMatch['winner_id'] ?? 0);
+        $loserId = tournament_match_loser_id($thirdPlaceMatch) ?? 0;
+        $eliminatedAt = !empty($thirdPlaceMatch['match_date'])
+            ? trim((string) $thirdPlaceMatch['match_date'] . ' ' . ($thirdPlaceMatch['match_time'] ?? '00:00:00'))
+            : null;
+
+        $assign($winnerId, 3, '3rd Place');
+        $assign($loserId, 4, '4th Place', $eliminatedAt);
+    }
+
+    foreach ($mainBracketMatches as $match) {
+        if (($match['match_status'] ?? '') !== 'Completed') {
+            continue;
+        }
+
+        $loserId = tournament_match_loser_id($match);
+        if ($loserId === null || isset($assigned[$loserId])) {
+            continue;
+        }
+
+        $roundPosition = (int) ($match['round_number'] ?? 0);
+        if ($roundPosition <= 0 || $roundPosition >= $roundCount) {
+            continue;
+        }
+
+        $eliminatedAt = !empty($match['match_date'])
+            ? trim((string) $match['match_date'] . ' ' . ($match['match_time'] ?? '00:00:00'))
+            : null;
+        $assign(
+            $loserId,
+            null,
+            tournament_elimination_round_placement_label($roundPosition, $roundCount),
+            $eliminatedAt
+        );
+    }
+}
+
+function tournament_sync_double_elimination_placements(mysqli $db, int $tourId): void
+{
+    $stmt = $db->prepare(
+        "SELECT
+            match_id,
+            round_number,
+            bracket,
+            match_date,
+            match_time,
+            player1_id,
+            player2_id,
+            winner_id,
+            next_match_id,
+            match_status
+         FROM matches
+         WHERE tour_id = ?
+         ORDER BY
+            CASE
+                WHEN bracket = 'Winners Bracket' THEN 1
+                WHEN bracket = 'Losers Bracket' THEN 2
+                WHEN bracket = 'Grand Final' THEN 3
+                ELSE 4
+            END,
+            round_number,
+            match_id"
+    );
+    $stmt->bind_param('i', $tourId);
+    $stmt->execute();
+    $rows = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+    $stmt->close();
+
+    $assigned = [];
+    $assign = static function (int $playerId, ?int $rank, string $label, ?string $eliminatedAt = null) use ($db, $tourId, &$assigned): void {
+        if ($playerId <= 0 || isset($assigned[$playerId])) {
+            return;
+        }
+
+        $assigned[$playerId] = true;
+        tournament_apply_player_placement($db, $tourId, $playerId, $rank, $label, $eliminatedAt);
+    };
+
+    $grandFinal = null;
+    $losersMatches = [];
+    foreach ($rows as $row) {
+        $bracketLabel = trim((string) ($row['bracket'] ?? ''));
+        if ($bracketLabel === 'Grand Final') {
+            $grandFinal = $row;
+            continue;
+        }
+
+        if ($bracketLabel === 'Losers Bracket') {
+            $losersMatches[] = $row;
+        }
+    }
+
+    if ($grandFinal && ($grandFinal['match_status'] ?? '') === 'Completed') {
+        $winnerId = (int) ($grandFinal['winner_id'] ?? 0);
+        $loserId = tournament_match_loser_id($grandFinal) ?? 0;
+        $eliminatedAt = !empty($grandFinal['match_date'])
+            ? trim((string) $grandFinal['match_date'] . ' ' . ($grandFinal['match_time'] ?? '00:00:00'))
+            : null;
+
+        $assign($winnerId, 1, 'Champion');
+        $assign($loserId, 2, 'Runner-up', $eliminatedAt);
+    }
+
+    $losersFinal = null;
+    foreach ($losersMatches as $match) {
+        if (($match['match_status'] ?? '') !== 'Completed') {
+            continue;
+        }
+
+        if ($grandFinal && (int) ($match['next_match_id'] ?? 0) === (int) $grandFinal['match_id']) {
+            $losersFinal = $match;
+        }
+    }
+
+    if ($losersFinal) {
+        $loserId = tournament_match_loser_id($losersFinal) ?? 0;
+        $eliminatedAt = !empty($losersFinal['match_date'])
+            ? trim((string) $losersFinal['match_date'] . ' ' . ($losersFinal['match_time'] ?? '00:00:00'))
+            : null;
+        $assign($loserId, 3, '3rd Place', $eliminatedAt);
+
+        foreach ($losersMatches as $match) {
+            if (($match['match_status'] ?? '') !== 'Completed') {
+                continue;
+            }
+
+            if ((int) ($match['next_match_id'] ?? 0) !== (int) $losersFinal['match_id']) {
+                continue;
+            }
+
+            $fourthPlaceLoserId = tournament_match_loser_id($match) ?? 0;
+            $fourthEliminatedAt = !empty($match['match_date'])
+                ? trim((string) $match['match_date'] . ' ' . ($match['match_time'] ?? '00:00:00'))
+                : null;
+            $assign($fourthPlaceLoserId, 4, '4th Place', $fourthEliminatedAt);
+        }
+    }
+
+    foreach ($losersMatches as $match) {
+        if (($match['match_status'] ?? '') !== 'Completed') {
+            continue;
+        }
+
+        $loserId = tournament_match_loser_id($match);
+        if ($loserId === null || isset($assigned[$loserId])) {
+            continue;
+        }
+
+        $eliminatedAt = !empty($match['match_date'])
+            ? trim((string) $match['match_date'] . ' ' . ($match['match_time'] ?? '00:00:00'))
+            : null;
+        $assign($loserId, null, 'Eliminated in Losers Round ' . (int) ($match['round_number'] ?? 0), $eliminatedAt);
+    }
+}
+
+function tournament_sync_player_placements(mysqli $db, array $tournament): void
+{
+    $tourId = (int) ($tournament['tour_id'] ?? 0);
+    if ($tourId <= 0) {
+        return;
+    }
+
+    $clearStmt = $db->prepare(
+        'UPDATE tournament_players
+         SET final_rank = NULL, placement_label = NULL, eliminated_at = NULL
+         WHERE tour_id = ?'
+    );
+    $clearStmt->bind_param('i', $tourId);
+    $clearStmt->execute();
+    $clearStmt->close();
+
+    if ($tournament['tour_type'] === 'Double Elimination') {
+        tournament_sync_double_elimination_placements($db, $tourId);
+        return;
+    }
+
+    if (in_array($tournament['tour_type'], ['Elimination', 'League'], true)) {
+        tournament_sync_single_elimination_placements($db, $tourId);
+    }
+}
+
 function tournament_determine_winner_label(mysqli $db, array $tournament): array
 {
     if ($tournament['tour_type'] === 'Group') {
@@ -1716,13 +2188,23 @@ function tournament_determine_winner_label(mysqli $db, array $tournament): array
 function tournament_all_competition_completed(mysqli $db, array $tournament): bool
 {
     if ($tournament['tour_type'] === 'Group') {
-        $stmt = $db->prepare(
-            "SELECT
-                COUNT(*) AS total_matches,
-                SUM(CASE WHEN match_status = 'Completed' THEN 1 ELSE 0 END) AS completed_matches
-             FROM team_matches
-             WHERE tour_id = ?"
-        );
+        if (tournament_group_has_individual_matches($db, (int) $tournament['tour_id'])) {
+            $stmt = $db->prepare(
+                "SELECT
+                    COUNT(*) AS total_matches,
+                    SUM(CASE WHEN match_status = 'Completed' THEN 1 ELSE 0 END) AS completed_matches
+                 FROM matches
+                 WHERE tour_id = ?"
+            );
+        } else {
+            $stmt = $db->prepare(
+                "SELECT
+                    COUNT(*) AS total_matches,
+                    SUM(CASE WHEN match_status = 'Completed' THEN 1 ELSE 0 END) AS completed_matches
+                 FROM team_matches
+                 WHERE tour_id = ?"
+            );
+        }
     } else {
         $stmt = $db->prepare(
             "SELECT
@@ -1748,11 +2230,19 @@ function tournament_all_competition_completed(mysqli $db, array $tournament): bo
 function tournament_has_started(mysqli $db, array $tournament): bool
 {
     if ($tournament['tour_type'] === 'Group') {
-        $stmt = $db->prepare(
-            "SELECT COUNT(*) AS started_matches
-             FROM team_matches
-             WHERE tour_id = ? AND match_status IN ('Completed', 'In Progress')"
-        );
+        if (tournament_group_has_individual_matches($db, (int) $tournament['tour_id'])) {
+            $stmt = $db->prepare(
+                "SELECT COUNT(*) AS started_matches
+                 FROM matches
+                 WHERE tour_id = ? AND match_status IN ('Completed', 'In Progress')"
+            );
+        } else {
+            $stmt = $db->prepare(
+                "SELECT COUNT(*) AS started_matches
+                 FROM team_matches
+                 WHERE tour_id = ? AND match_status IN ('Completed', 'In Progress')"
+            );
+        }
     } else {
         $stmt = $db->prepare(
             "SELECT COUNT(*) AS started_matches
@@ -1772,6 +2262,8 @@ function tournament_has_started(mysqli $db, array $tournament): bool
 
 function tournament_refresh_lifecycle(mysqli $db, int $tourId): array
 {
+    $tournament = tournament_fetch_settings($db, $tourId);
+    tournament_sync_player_placements($db, $tournament);
     $tournament = tournament_fetch_settings($db, $tourId);
 
     if (!empty($tournament['archived_at'])) {
@@ -1988,6 +2480,10 @@ function tournament_fetch_page_data(mysqli $db, int $tourId): array
                         p1.plr_surname AS player1_surname,
                         p2.plr_name AS player2_name,
                         p2.plr_surname AS player2_surname,
+                        tt1.team_id AS player1_team_id,
+                        tt1.team_name AS player1_team_name,
+                        tt2.team_id AS player2_team_id,
+                        tt2.team_name AS player2_team_name,
                         COALESCE(pmw1.match_id, pml1.match_id) AS prev_match1_id,
                         CASE
                             WHEN pmw1.match_id IS NOT NULL THEN 'winner'
@@ -2003,6 +2499,10 @@ function tournament_fetch_page_data(mysqli $db, int $tourId): array
                    FROM matches m
                    LEFT JOIN players p1 ON p1.plr_idNum = m.player1_id
                    LEFT JOIN players p2 ON p2.plr_idNum = m.player2_id
+                   LEFT JOIN tournament_team_players ttp1 ON ttp1.tour_id = m.tour_id AND ttp1.player_id = m.player1_id
+                   LEFT JOIN tournament_teams tt1 ON tt1.team_id = ttp1.team_id
+                   LEFT JOIN tournament_team_players ttp2 ON ttp2.tour_id = m.tour_id AND ttp2.player_id = m.player2_id
+                   LEFT JOIN tournament_teams tt2 ON tt2.team_id = ttp2.team_id
                    LEFT JOIN matches pmw1 ON pmw1.next_match_id = m.match_id AND pmw1.position_in_next = 1
                    LEFT JOIN matches pml1 ON pml1.loser_next_match_id = m.match_id AND pml1.loser_position_in_next = 1
                    LEFT JOIN matches pmw2 ON pmw2.next_match_id = m.match_id AND pmw2.position_in_next = 2

@@ -51,9 +51,9 @@
 - Current tournament semantics:
   - `Round Robin` = single-table round robin
   - `League` = group-stage plus knockout
-  - `Group` = per-tournament team competition
-  - `Elimination` = single-elimination bracket
-  - `Double Elimination` = winners bracket plus losers bracket plus grand final
+  - `Group` = two-team competition where every player from one team plays every player from the other team
+  - `Elimination` = single-elimination bracket with a third-place playoff and placement sync
+  - `Double Elimination` = winners bracket plus losers bracket plus grand final, with merged and path-filtered public/admin views
 - Current audience model:
   - guests
   - signed-in players
@@ -109,6 +109,13 @@
 - Filtered orphaned blog/gallery media rows with missing files out of the public services so dead image requests no longer leak into browser console output.
 - Removed the standalone featured-post block from `pages/blog.html` so the page now starts directly with the searchable preview-rail workflow.
 - Added focus-mode/full-screen controls plus bracket-path jump buttons on both the public tournament-detail page and the admin connected bracket for large elimination and double-elimination trees.
+- Increased the admin-panel container width by 20% so the denser tournament/admin workflows have enough horizontal room before responsive collapse.
+- Split the admin tournament-detail page into modular toggleable sections for tournament details, players, matches, type-specific standings/teams, connected bracket, and bracket board.
+- Changed `Group` tournaments to generate exactly two teams and schedule player-vs-player cross-team fixtures in `matches`, while still reading older `team_matches` tournaments as legacy fallback data.
+- Corrected knockout round naming so 4-player league knockouts render `Semifinal` and `Final`, and 64-player elimination brackets always finish on `Quarterfinal`, `Semifinal`, and `Final`.
+- Added single-elimination third-place playoff generation plus placement syncing so champion, runner-up, third place, fourth place, and earlier elimination labels now populate automatically as results land.
+- Reworked the public and admin double-elimination bracket views into merged three-lane layouts with explicit winners-only, losers-only, and grand-final filters instead of always dumping every path together.
+- Added bye/placeholder bracket nodes to keep knockout connectors stable when the entrant count is not a power of two.
 - Rebuilt `dart_club.sql` around the productized data model:
   - membership state
   - membership applications
@@ -155,6 +162,7 @@
 - Some local XAMPP/MariaDB installs may still have broken or missing grants for `dartadmin`; the repo now surfaces clean JSON failures in that state, but the DB user itself still needs an environment-level fix.
 - The new guest registration path creates lightweight `players` rows with `user_id = NULL`; long-term cleanup/reporting rules for those guest-only records are still undocumented.
 - The new public player profile intentionally exposes only safe public tournament history and identity labels; broader profile visibility still needs an explicit privacy decision before expanding further.
+- Existing seeded/demo `Group` tournaments created before this pass can still reflect the older multi-team `team_matches` model until they are regenerated under the new two-team player-vs-player rules.
 
 ## Remaining Priorities
 - Use `docs/TESTING_CHECKLIST.md` as the next-session manual verification order.
@@ -170,6 +178,8 @@
   - admin generate/rebuild structure button
   - admin start-tournament button
 - Do a manual browser pass on the upgraded tournament admin UX:
+  - verify the wider admin layout still behaves cleanly at desktop and tablet widths
+  - verify the new sectioned `show_tournament_details` workflow is easier to navigate on desktop and mobile
   - compact match scoring in the table view
   - connected bracket drag-and-drop seeding
   - bracket-board vs connected-bracket readability
@@ -185,10 +195,15 @@
   - console-clean rendering when posts or gallery rows reference files that no longer exist on disk
 - Do a manual browser pass on the new double-elimination workflow:
   - create/update a `Double Elimination` tournament from admin
-  - verify separate winners/losers/grand-final sections on public/admin pages
+  - verify merged, winners-only, losers-only, and grand-final filters on public/admin pages
   - record results deep enough to verify loser-path propagation and the grand final
   - verify the seeded `Scale Test - Double Elimination 64` tournament remains readable across viewport sizes
   - verify the new public/admin bracket focus mode is usable at scale
+- Regenerate and manually QA a fresh `Group` tournament under the new rules:
+  - exactly two teams
+  - player-vs-player cross-team fixtures only
+  - no newly generated `team_matches`
+  - team standings aggregated from player results
 - Do a manual browser pass on the new cross-profile navigation:
   - public bracket detail player links
   - public participant-list player links
@@ -281,8 +296,16 @@
     - `pages/blog.html`
     - `pages/gallery.html`
     - `pages/tournament_details.php?id=8`
+  - public tournament-detail DOM markers confirming:
+    - merged/winners/losers/grand-final bracket filter buttons
+    - bye/placeholder nodes in the rendered bracket
+    - merged double-elimination bracket group layout hooks
   - live HTTP verification that `js/ui_feedback.js?v=20260406-1` now returns `200`
   - live `Double Elimination` payload verification for `services/get_tournament_details.php?id=8`, including winners/losers/grand-final bracket metadata and loser-path source labels
+  - temporary transaction-backed tournament helper verification proving that:
+    - fresh `Group` tournaments now generate exactly two teams, four cross-team player fixtures for a 2x2 sample, and zero `team_matches`
+    - fresh 4-player elimination brackets now generate a third-place playoff and sync `Champion`, `Runner-up`, `3rd Place`, and `4th Place`
+    - round-title helpers now return `Semifinal`/`Final` for 4-player league knockouts and `Quarterfinal`/`Semifinal`/`Final` at the end of 64-player elimination brackets
   - live `get_blogs.php?page=1&pageSize=100` verification after widening the public blog fetch window
   - live orphan-media filtering verification:
     - blog post `4` now returns `0` usable images instead of a dead image path
@@ -293,9 +316,11 @@
     - `Scale Test - Elimination 64`
     - `Scale Test - Double Elimination 64`
   - static admin tournament-detail wiring for:
+    - wider layout plus toggleable details/players/matches/teams/bracket/board sections
     - editable `registration_close_at`
     - `Start Tournament`
     - compact bracket selectors with modal-first match details
+    - shared merged/winners/losers/grand-final filters across both connected bracket and bracket board
     - player-profile links in bracket-driven match details
   - static admin-management page wiring for:
     - role-vs-membership badges in `manage_users.php`
@@ -312,6 +337,7 @@
   - signed-in browser registration flow for a user without a player profile
   - real drag-and-drop interaction under an actual browser pointer/touch session
   - real browser rendering of the new connected public/admin bracket layouts
+  - real browser rendering of the new merged double-elimination bracket layouts and view filters
   - real browser-eye QA for the new click-to-expand public bracket interaction
   - real browser-eye QA for the admin bracket after switching from selected detail cards to a modal-first workflow
   - authenticated browser execution of the new admin `Start Tournament` action

@@ -71,6 +71,7 @@
   - posts to `services/create_tournament.php`
 - `pages/admin/show_tournament_details.php`
   - canonical tournament management screen
+  - split into toggleable details, players, matches, type-specific standings/teams, connected bracket, and bracket-board sections
   - posts to `services/update_tournament.php`
   - uses:
     - `services/match_create.php`
@@ -117,12 +118,13 @@
   - round-robin scheduling
   - league group-stage plus knockout scheduling
   - team tournament generation and standings
-  - elimination bracket generation
+  - two-team `Group` cross-team player-vs-player fixture generation
+  - elimination bracket generation plus third-place playoff creation and placement syncing
   - double-elimination winners/losers/grand-final generation
   - lifecycle refresh and archive guards
   - result propagation and tournament page data loading
 - `services/shared/tournament_view_helpers.php`
-  - status, source-label, and advancement-label helpers for admin/public bracket rendering
+  - status, source-label, advancement-label, and round-title helpers for admin/public bracket rendering
 
 ## Active Data Model
 - `users`
@@ -166,13 +168,14 @@
   - player-to-team membership for `Group`
 - `matches`
   - scheduled/completed player fixtures
+  - also used for the current two-team `Group` player-vs-player format
   - active fields include:
     - `bracket`
     - `group_number`
     - `loser_next_match_id`
     - `loser_position_in_next`
 - `team_matches`
-  - scheduled/completed team fixtures for `Group`
+  - scheduled/completed team fixtures for older legacy `Group` tournaments that have not been regenerated under the current rules
 - `match_legs`
   - per-leg detail
 - `blogs`
@@ -249,7 +252,7 @@
 - Added an explicit `Round Robin` format so the old single-table behavior is no longer overloaded onto `League`.
 - Reassigned tournament semantics to:
   - `League` = player groups plus knockout
-  - `Group` = team tournament mode
+  - `Group` = two-team roster mode with player-vs-player cross-team fixtures
 - Added lifecycle state and archive guards to tournament mutation paths.
 - Added public tournament detail, player dashboard, membership, blog/community, and gallery workflows.
 - Aligned admin UI input names with backend contract:

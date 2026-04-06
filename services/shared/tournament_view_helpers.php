@@ -48,6 +48,10 @@ function tournament_match_advancement_label(array $match, array $matchNumbersByI
         return 'Champion decided here';
     }
 
+    if (($match['bracket'] ?? '') === 'Third Place Playoff') {
+        return '3rd place decided here';
+    }
+
     $parts = [];
 
     if (!empty($match['next_match_id'])) {
@@ -71,14 +75,60 @@ function tournament_match_advancement_label(array $match, array $matchNumbersByI
     return implode(' | ', $parts);
 }
 
-function tournament_round_title(int $roundNumber): string
+function tournament_round_title(int $roundPosition, ?int $roundCount = null): string
 {
-    $labels = [
-        1 => 'Round 1',
-        2 => 'Quarterfinal',
-        3 => 'Semifinal',
-        4 => 'Final',
-    ];
+    if ($roundCount !== null && $roundCount > 0) {
+        if ($roundCount === 1 || $roundPosition >= $roundCount) {
+            return 'Final';
+        }
 
-    return $labels[$roundNumber] ?? ('Round ' . $roundNumber);
+        if ($roundPosition === ($roundCount - 1)) {
+            return 'Semifinal';
+        }
+
+        if ($roundPosition === ($roundCount - 2)) {
+            return 'Quarterfinal';
+        }
+    }
+
+    return 'Round ' . $roundPosition;
+}
+
+function tournament_bracket_round_title(string $bracketLabel, int $roundPosition, int $roundCount): string
+{
+    if ($bracketLabel === 'Grand Final') {
+        return 'Grand Final';
+    }
+
+    if ($bracketLabel === 'Third Place Playoff') {
+        return 'Third Place Playoff';
+    }
+
+    if ($bracketLabel === 'Winners Bracket') {
+        $baseTitle = tournament_round_title($roundPosition, $roundCount);
+
+        if (str_starts_with($baseTitle, 'Round ')) {
+            return 'Winners ' . $baseTitle;
+        }
+
+        return 'Winners ' . $baseTitle;
+    }
+
+    if ($bracketLabel === 'Losers Bracket') {
+        if ($roundCount === 1) {
+            return 'Losers Final';
+        }
+
+        if ($roundPosition === $roundCount) {
+            return 'Losers Final';
+        }
+
+        if ($roundPosition === ($roundCount - 1)) {
+            return 'Losers Semifinal';
+        }
+
+        return 'Losers Round ' . $roundPosition;
+    }
+
+    return tournament_round_title($roundPosition, $roundCount);
 }

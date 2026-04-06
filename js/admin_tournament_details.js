@@ -163,6 +163,30 @@ function readRememberedSection() {
     }
 }
 
+function getBracketViewStorageKey() {
+    return `tournament-admin:${TournamentAdminPage.tourId || 'default'}:bracket-view`;
+}
+
+function rememberBracketView(viewKey) {
+    if (!viewKey) {
+        return;
+    }
+
+    try {
+        window.sessionStorage.setItem(getBracketViewStorageKey(), viewKey);
+    } catch (error) {
+        console.warn('Failed to persist bracket view state:', error);
+    }
+}
+
+function readRememberedBracketView() {
+    try {
+        return window.sessionStorage.getItem(getBracketViewStorageKey());
+    } catch (error) {
+        return null;
+    }
+}
+
 async function postJson(url, payload) {
     const response = await fetch(url, {
         method: 'POST',
@@ -874,6 +898,32 @@ function scrollToBracketGroup(groupId) {
     target.scrollIntoView({ behavior: 'smooth', block: 'start', inline: 'nearest' });
 }
 
+function showBracketView(viewKey) {
+    const groups = Array.from(document.querySelectorAll('[data-bracket-group]'));
+    if (groups.length === 0) {
+        return;
+    }
+
+    const activeView = viewKey || readRememberedBracketView() || 'merged';
+    groups.forEach((group) => {
+        const groupLabel = group.dataset.bracketGroup || '';
+        const shouldShow = activeView === 'merged' ? true : groupLabel === activeView;
+        group.classList.toggle('is-hidden', !shouldShow);
+    });
+
+    document.querySelectorAll('[data-bracket-view-button]').forEach((button) => {
+        button.classList.toggle('active', button.dataset.bracketViewButton === activeView);
+    });
+
+    document.querySelectorAll('[data-bracket-groups-container]').forEach((container) => {
+        const visibleGroups = Array.from(container.querySelectorAll('[data-bracket-group]'))
+            .filter((group) => !group.classList.contains('is-hidden'));
+        container.classList.toggle('is-single-view', activeView !== 'merged' || visibleGroups.length <= 1);
+    });
+
+    rememberBracketView(activeView);
+}
+
 function bindBracketInteraction() {
     const cards = Array.from(document.querySelectorAll('[data-admin-bracket-match]'));
     if (cards.length === 0) {
@@ -1099,7 +1149,8 @@ function initializeTournamentPage(preferredSection = null) {
     bindModalDismissals();
     bindMatchModalInputs();
     refreshSelectionMeta();
-    showSection(preferredSection || readRememberedSection() || getCurrentSectionName() || 'matches');
+    showSection(preferredSection || readRememberedSection() || getCurrentSectionName() || 'details');
+    showBracketView(readRememberedBracketView() || 'merged');
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -1112,6 +1163,7 @@ window.generateStructure = generateStructure;
 window.startTournament = startTournament;
 window.toggleBracketSectionFocus = toggleBracketSectionFocus;
 window.scrollToBracketGroup = scrollToBracketGroup;
+window.showBracketView = showBracketView;
 window.selectAdminBracketMatch = selectAdminBracketMatch;
 window.saveQuickMatchResult = saveQuickMatchResult;
 window.openMatchModal = openMatchModal;

@@ -18,9 +18,17 @@ try {
 
     $recentResults = [];
     if ($tournament['tour_type'] === 'Group') {
-        foreach ($pageData['team_matches'] as $match) {
-            if (($match['match_status'] ?? '') === 'Completed') {
-                $recentResults[] = $match;
+        if (!empty($pageData['matches'])) {
+            foreach ($pageData['matches'] as $match) {
+                if (($match['match_status'] ?? '') === 'Completed') {
+                    $recentResults[] = $match;
+                }
+            }
+        } else {
+            foreach ($pageData['team_matches'] as $match) {
+                if (($match['match_status'] ?? '') === 'Completed') {
+                    $recentResults[] = $match;
+                }
             }
         }
     } else {
@@ -53,4 +61,3 @@ try {
 } catch (Throwable $exception) {
     app_json_response(['success' => false, 'message' => $exception->getMessage()], 404);
 }
-

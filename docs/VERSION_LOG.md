@@ -343,3 +343,34 @@
 - Still pending:
   - real browser QA for the new public/admin bracket focus-mode interactions
   - authenticated browser QA for the updated admin membership-review prompt flow
+
+## Tournament Semantics And Merged Bracket Pass
+- Date: 2026-04-06
+- Status: manual-verification follow-up focused on bracket semantics, sectioned admin workflow, and verified tournament edge cases
+- Main changes:
+  - increased the admin console container width so dense tournament workflows have more usable horizontal space
+  - split `pages/admin/show_tournament_details.php` into toggleable details, players, matches, standings/teams, connected bracket, and bracket-board sections
+  - changed fresh `Group` tournament generation to exactly two teams with player-vs-player cross-team fixtures stored in `matches`
+  - corrected knockout round naming so 4-player league knockouts render `Semifinal` then `Final`, and 64-player elimination brackets always finish on `Quarterfinal`, `Semifinal`, and `Final`
+  - added single-elimination third-place playoff generation plus placement syncing
+  - rebuilt the public/admin double-elimination views into merged layouts with winners-only, losers-only, and grand-final filters, and added placeholder/bye nodes so non-power-of-two brackets keep their connector structure
+- Verification in this pass:
+  - targeted PHP lint for:
+    - `pages/admin/show_tournament_details.php`
+    - `pages/tournament_details.php`
+    - `pages/admin/manage_tournaments.php`
+    - `services/shared/tournament_helpers.php`
+    - `services/shared/tournament_view_helpers.php`
+    - `services/get_tournament_details.php`
+  - live HTTP `200` checks for:
+    - `services/get_tournament_details.php?id=8`
+    - `pages/tournament_details.php?id=8`
+  - Chrome headless DOM verification for `pages/tournament_details.php?id=8`, confirming merged/winners/losers/grand-final filters plus bye placeholders
+  - transaction-backed helper verification confirming:
+    - fresh `Group` tournaments now create exactly two teams, cross-team player fixtures, and zero `team_matches`
+    - fresh 4-player elimination brackets create a third-place playoff and sync `Champion`, `Runner-up`, `3rd Place`, and `4th Place`
+    - round-title helpers return the corrected semifinal/quarterfinal/final labels
+- Still pending:
+  - browser-eye QA for the wider admin layout and the new sectioned tournament-detail workflow
+  - browser rendering QA for the merged double-elimination views on desktop/tablet/mobile
+  - manual regeneration and click-through of an existing `Group` tournament under the new two-team rules

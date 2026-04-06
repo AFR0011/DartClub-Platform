@@ -40,6 +40,12 @@
 - Filtered orphaned blog/gallery media rows out of the public services so missing files no longer produce dead image requests.
 - Removed the standalone featured-post block from the blog page.
 - Added focus-mode/full-screen and path-jump controls to the public and admin elimination brackets for large-tree navigation.
+- Increased the admin console container width and split the tournament-detail page into toggleable operational sections.
+- Changed fresh `Group` tournaments to generate exactly two teams with player-vs-player cross-team fixtures in `matches`, while keeping old `team_matches` tournaments readable as legacy data.
+- Corrected knockout round naming so small league knockouts and large elimination brackets use the right semifinal/quarterfinal/final labels.
+- Added single-elimination third-place playoff generation plus automatic placement syncing.
+- Reworked the public/admin double-elimination views into merged layouts with winners-only, losers-only, and grand-final filters.
+- Added placeholder/bye nodes so non-power-of-two brackets keep a consistent structure instead of dropping connector lines.
 - Added repo mapping docs and repo-local Codex config.
 - Added the global `repo-map` skill scaffold.
 - Centralized DB/bootstrap usage.
@@ -82,6 +88,9 @@
     - tournament roster filter/sort behavior on create/edit pages
     - public player-profile navigation from tournament pages
     - public and admin `Double Elimination` bracket readability plus loser-path progression
+    - merged vs filtered double-elimination bracket behavior on both the connected bracket and bracket-board views
+    - two-team `Group` regeneration under the new player-vs-player rules
+    - elimination third-place playoff and placement labels after recording results
     - seeded `Scale Test - Double Elimination 64` browser-eye pass across desktop/tablet/mobile widths
     - public and admin bracket focus-mode usability at scale
     - preview-rail blog reading flow and multi-image post creation

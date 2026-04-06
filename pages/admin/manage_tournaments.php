@@ -284,7 +284,8 @@ $playerStmt->close();
                 </p>
                 <div class="callout" style="margin-bottom:0;">
                     Supported tournament formats are <strong>Round Robin</strong>, <strong>League</strong>, <strong>Group</strong>, <strong>Elimination</strong>, and <strong>Double Elimination</strong>.
-                    <strong>League</strong> means pool-stage plus knockout, while <strong>Group</strong> is the team-based format. Double-elimination now uses a classic winners-bracket, losers-bracket, and grand-final flow.
+                    <strong>League</strong> means pool-stage plus knockout, while <strong>Group</strong> currently creates exactly two teams and schedules every player from one team against every player from the other team.
+                    Double-elimination now uses dedicated winners-bracket, losers-bracket, and grand-final paths.
                 </div>
             </div>
             <div class="stats-card">
@@ -415,7 +416,7 @@ $playerStmt->close();
             <div id="teamSettings" class="inline-grid" style="display:none;">
                 <div class="form-group">
                     <label for="team_count">Number of Teams</label>
-                    <input type="number" name="team_count" id="team_count" min="2" value="2">
+                    <input type="number" name="team_count" id="team_count" min="2" max="2" value="2" readonly>
                 </div>
             </div>
 
@@ -560,7 +561,7 @@ $playerStmt->close();
             } else if (selectedType === 'League') {
                 typeHint.textContent = 'League tournaments assign players to groups, complete group-stage round robins, and automatically build a knockout bracket from top finishers after the structure exists.';
             } else if (selectedType === 'Group') {
-                typeHint.textContent = 'Group tournaments are team-based. You can create the tournament first, collect registrations, and generate teams and fixtures later.';
+                typeHint.textContent = 'Group tournaments currently use exactly two teams and schedule every player from Team 1 against every player from Team 2 once the structure is generated.';
             } else if (selectedType === 'Elimination') {
                 typeHint.textContent = 'Elimination tournaments generate a single-elimination bracket with deterministic bye carry-forward once you are ready to seed the final entrant list.';
             } else if (selectedType === 'Double Elimination') {
