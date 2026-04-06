@@ -8,7 +8,7 @@ app_start_session();
 
 try {
     $page = isset($_GET['page']) ? max(1, (int) $_GET['page']) : 1;
-    $pageSize = isset($_GET['pageSize']) ? min(25, max(1, (int) $_GET['pageSize'])) : 10;
+    $pageSize = isset($_GET['pageSize']) ? min(100, max(1, (int) $_GET['pageSize'])) : 10;
     $offset = ($page - 1) * $pageSize;
     $userId = get_current_user_id();
 
@@ -36,6 +36,8 @@ try {
                 b.updated_at,
                 b.published_at,
                 b.author_user_id,
+                b.blog_category,
+                b.blog_tags,
                 u.user_name AS author,
                 COALESCE(reactions.like_count, 0) AS like_count,
                 COALESCE(comments.comment_count, 0) AS comment_count
@@ -74,8 +76,18 @@ try {
         );
         $imagesStmt->bind_param('i', $blogId);
         $imagesStmt->execute();
-        $item['images'] = $imagesStmt->get_result()->fetch_all(MYSQLI_ASSOC);
+        $rawImages = $imagesStmt->get_result()->fetch_all(MYSQLI_ASSOC);
         $imagesStmt->close();
+        $item['images'] = [];
+        foreach ($rawImages as $imageRow) {
+            $imagePath = app_existing_public_path($imageRow['file_path'] ?? null);
+            if ($imagePath === null) {
+                continue;
+            }
+
+            $imageRow['file_path'] = $imagePath;
+            $item['images'][] = $imageRow;
+        }
 
         $commentsStmt = $conn->prepare(
             "SELECT
@@ -110,6 +122,9 @@ try {
             $item['viewer_has_liked'] = false;
         }
 
+        $item['blog_category'] = trim((string) ($item['blog_category'] ?? '')) ?: 'Announcement';
+        $item['tags'] = array_values(array_filter(array_map('trim', explode(',', (string) ($item['blog_tags'] ?? '')))));
+
         $item['viewer_can_delete'] = can_publish_blog_posts()
             || ($userId && (int) $item['author_user_id'] === (int) $userId && $item['status'] !== 'published');
         $item['viewer_can_publish'] = can_publish_blog_posts() && $item['status'] !== 'published';
@@ -125,4 +140,3 @@ try {
 } catch (Throwable $exception) {
     app_json_response(['error' => 'Failed to fetch blogs: ' . $exception->getMessage()], 500);
 }
-

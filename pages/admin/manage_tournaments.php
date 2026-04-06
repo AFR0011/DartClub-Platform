@@ -283,8 +283,8 @@ $playerStmt->close();
                     The details view now supports same-page structure management, bracket work, and lighter-weight score handling.
                 </p>
                 <div class="callout" style="margin-bottom:0;">
-                    Supported tournament formats are <strong>Round Robin</strong>, <strong>League</strong>, <strong>Group</strong>, and <strong>Elimination</strong>.
-                    <strong>League</strong> means pool-stage plus knockout, while <strong>Group</strong> is the team-based format. Double-elimination remains deferred until a dedicated bracket engine exists.
+                    Supported tournament formats are <strong>Round Robin</strong>, <strong>League</strong>, <strong>Group</strong>, <strong>Elimination</strong>, and <strong>Double Elimination</strong>.
+                    <strong>League</strong> means pool-stage plus knockout, while <strong>Group</strong> is the team-based format. Double-elimination now uses a classic winners-bracket, losers-bracket, and grand-final flow.
                 </div>
             </div>
             <div class="stats-card">
@@ -310,6 +310,12 @@ $playerStmt->close();
             </div>
         </div>
 
+        <div class="section-toggle">
+            <button type="button" class="active" data-section-button="current_tournaments">Current Tournaments</button>
+            <button type="button" data-section-button="create_tournament">Create Tournament</button>
+        </div>
+
+        <section class="page-section active" data-section="current_tournaments">
         <div class="surface-panel">
             <div class="toolbar-line">
                 <div>
@@ -345,9 +351,9 @@ $playerStmt->close();
             </table>
             </div>
         </div>
-    </div>
+        </section>
 
-    <div class="container">
+        <section class="page-section" data-section="create_tournament">
         <div class="toolbar-line">
             <div>
                 <h1>Create Tournament</h1>
@@ -364,6 +370,7 @@ $playerStmt->close();
                         <option value="League">League</option>
                         <option value="Group">Group</option>
                         <option value="Elimination">Elimination</option>
+                        <option value="Double Elimination">Double Elimination</option>
                     </select>
                 </div>
 
@@ -479,8 +486,10 @@ $playerStmt->close();
                 <input type="reset" value="Reset Form" class="reset-btn">
             </div>
         </form>
+        </section>
     </div>
 
+    <script src="../../js/ui_feedback.js?v=20260406-1"></script>
     <script>
         const typeSelect = document.getElementById('tournamentType');
         const leagueSettings = document.getElementById('leagueSettings');
@@ -489,6 +498,16 @@ $playerStmt->close();
         const playerFilter = document.getElementById('playerFilter');
         const playerSort = document.getElementById('playerSort');
         const playerSelectionCount = document.getElementById('playerSelectionCount');
+
+        function showSection(sectionName) {
+            document.querySelectorAll('[data-section]').forEach((section) => {
+                section.classList.toggle('active', section.dataset.section === sectionName);
+            });
+
+            document.querySelectorAll('[data-section-button]').forEach((button) => {
+                button.classList.toggle('active', button.dataset.sectionButton === sectionName);
+            });
+        }
 
         function syncSelectableRow(row) {
             const checkbox = row.querySelector('input[type="checkbox"]');
@@ -544,6 +563,8 @@ $playerStmt->close();
                 typeHint.textContent = 'Group tournaments are team-based. You can create the tournament first, collect registrations, and generate teams and fixtures later.';
             } else if (selectedType === 'Elimination') {
                 typeHint.textContent = 'Elimination tournaments generate a single-elimination bracket with deterministic bye carry-forward once you are ready to seed the final entrant list.';
+            } else if (selectedType === 'Double Elimination') {
+                typeHint.textContent = 'Double Elimination tournaments build winners-bracket and losers-bracket paths, then finish with one grand final. Use at least four entrants for a stable bracket.';
             } else {
                 typeHint.textContent = 'Select a tournament type to see mode-specific requirements.';
             }
@@ -586,17 +607,21 @@ $playerStmt->close();
 
         playerFilter?.addEventListener('input', applyPlayerListControls);
         playerSort?.addEventListener('change', applyPlayerListControls);
+        document.querySelectorAll('[data-section-button]').forEach((button) => {
+            button.addEventListener('click', () => showSection(button.dataset.sectionButton));
+        });
 
         bindSelectableRows();
         refreshSelectionCount();
         applyPlayerListControls();
+        showSection('current_tournaments');
 
         document.getElementById('tournamentForm').addEventListener('submit', function (event) {
             const startDate = new Date(document.getElementById('tour_startDate').value);
             const endDate = new Date(document.getElementById('tour_endDate').value);
 
             if (endDate < startDate) {
-                alert('End date cannot be before start date.');
+                AppUI?.toast('End date cannot be before start date.', 'warning');
                 event.preventDefault();
                 return;
             }
@@ -604,7 +629,7 @@ $playerStmt->close();
             const registrationOpen = document.getElementById('registration_open_at').value;
             const registrationClose = document.getElementById('registration_close_at').value;
             if (registrationOpen && registrationClose && new Date(registrationClose) < new Date(registrationOpen)) {
-                alert('Registration close date cannot be before the registration open date.');
+                AppUI?.toast('Registration close date cannot be before the registration open date.', 'warning');
                 event.preventDefault();
             }
         });

@@ -190,6 +190,12 @@ $players = $playersQuery ? $playersQuery->fetch_all(MYSQLI_ASSOC) : [];
             </div>
         </div>
 
+        <div class="section-toggle">
+            <button type="button" class="active" data-section-button="membership_applications">Membership Applications</button>
+            <button type="button" data-section-button="player_registry">Player Registry</button>
+        </div>
+
+        <section class="page-section active" data-section="membership_applications">
         <div class="panel-card">
             <h2>Membership Applications</h2>
             <p>Pending applications appear first. Use the buttons to review and change the applicant's membership state.</p>
@@ -217,7 +223,9 @@ $players = $playersQuery ? $playersQuery->fetch_all(MYSQLI_ASSOC) : [];
             <p class="helper-note">PDF files preview inline. DOC and DOCX files open in a new tab or download, depending on the browser.</p>
             <iframe id="application-preview" title="Membership application preview"></iframe>
         </div>
+        </section>
 
+        <section class="page-section" data-section="player_registry">
         <div class="panel-card" style="margin-top: 24px;">
             <h2>Player Registry</h2>
             <div class="toolbar-line">
@@ -269,8 +277,10 @@ $players = $playersQuery ? $playersQuery->fetch_all(MYSQLI_ASSOC) : [];
                 </table>
             </div>
         </div>
+        </section>
     </div>
 
+    <script src="../../js/ui_feedback.js?v=20260406-1"></script>
     <script>
         const previewFrame = document.getElementById('application-preview');
         let membershipApplications = [];
@@ -286,6 +296,47 @@ $players = $playersQuery ? $playersQuery->fetch_all(MYSQLI_ASSOC) : [];
 
         function normalizeText(value) {
             return String(value ?? '').trim().toLowerCase();
+        }
+
+        function playersToast(message, tone = 'info') {
+            if (window.AppUI?.toast) {
+                window.AppUI.toast(message, tone);
+                return;
+            }
+
+            if (tone === 'error' || tone === 'warning') {
+                window.alert(message);
+                return;
+            }
+
+            console.info(message);
+        }
+
+        async function playersPrompt(config) {
+            if (window.AppUI?.prompt) {
+                return window.AppUI.prompt(config);
+            }
+
+            return window.prompt(config?.message || config?.title || '', config?.initialValue || '');
+        }
+
+        async function playersFetchJson(url, options = {}) {
+            if (window.appFetchJson) {
+                return window.appFetchJson(url, options);
+            }
+
+            const response = await fetch(url, options);
+            return response.json();
+        }
+
+        function showSection(sectionName) {
+            document.querySelectorAll('[data-section]').forEach((section) => {
+                section.classList.toggle('active', section.dataset.section === sectionName);
+            });
+
+            document.querySelectorAll('[data-section-button]').forEach((button) => {
+                button.classList.toggle('active', button.dataset.sectionButton === sectionName);
+            });
         }
 
         function renderApplicationRow(item) {
@@ -368,8 +419,7 @@ $players = $playersQuery ? $playersQuery->fetch_all(MYSQLI_ASSOC) : [];
         async function loadApplications() {
             const container = document.getElementById('membership-applications');
             try {
-                const response = await fetch('../../services/get_membership_applications.php');
-                const data = await response.json();
+                const data = await playersFetchJson('../../services/get_membership_applications.php');
                 if (!data.success || !Array.isArray(data.items)) {
                     throw new Error(data.message || 'Failed to load membership applications.');
                 }
@@ -388,7 +438,7 @@ $players = $playersQuery ? $playersQuery->fetch_all(MYSQLI_ASSOC) : [];
 
         function previewApplication(path, originalFilename = '') {
             if (!path) {
-                window.alert('No application file is available for this record.');
+                playersToast('No application file is available for this record.', 'warning');
                 return;
             }
 
@@ -415,30 +465,41 @@ $players = $playersQuery ? $playersQuery->fetch_all(MYSQLI_ASSOC) : [];
         }
 
         async function reviewApplication(applicationId, decision) {
-            const notes = window.prompt(
-                decision === 'approve'
-                    ? 'Optional approval note:'
-                    : 'Add a rejection reason or note:',
-                ''
-            );
-
-            const response = await fetch('../../services/review_membership_application.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    application_id: applicationId,
-                    decision,
-                    reviewer_notes: notes || ''
-                })
+            const notes = await playersPrompt({
+                title: decision === 'approve' ? 'Approve membership application' : 'Reject membership application',
+                message: decision === 'approve'
+                    ? 'Add an optional note for this approval.'
+                    : 'Add a rejection reason or note so the decision is easier to audit later.',
+                initialValue: '',
+                placeholder: decision === 'approve' ? 'Optional approval note' : 'Reason or review note',
+                multiline: true,
+                confirmLabel: decision === 'approve' ? 'Approve application' : 'Reject application',
+                cancelLabel: 'Cancel',
+                tone: decision === 'approve' ? 'primary' : 'danger'
             });
-            const data = await response.json();
-            if (!data.success) {
-                window.alert(data.message || 'Review failed.');
+            if (notes === null) {
                 return;
             }
 
-            await loadApplications();
-            window.alert(`Application ${decision === 'approve' ? 'approved' : 'rejected'} successfully.`);
+            try {
+                const data = await playersFetchJson('../../services/review_membership_application.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        application_id: applicationId,
+                        decision,
+                        reviewer_notes: notes || ''
+                    })
+                });
+                if (!data.success) {
+                    throw new Error(data.message || 'Review failed.');
+                }
+
+                await loadApplications();
+                playersToast(`Application ${decision === 'approve' ? 'approved' : 'rejected'} successfully.`, 'success');
+            } catch (error) {
+                playersToast(error.message, 'error');
+            }
         }
 
         function renderPlayerRegistry() {
@@ -477,10 +538,14 @@ $players = $playersQuery ? $playersQuery->fetch_all(MYSQLI_ASSOC) : [];
         }
 
         document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('[data-section-button]').forEach((button) => {
+                button.addEventListener('click', () => showSection(button.dataset.sectionButton));
+            });
             document.getElementById('applicationFilter')?.addEventListener('input', renderApplications);
             document.getElementById('applicationStatusFilter')?.addEventListener('change', renderApplications);
             document.getElementById('registryFilter')?.addEventListener('input', renderPlayerRegistry);
             document.getElementById('registrySort')?.addEventListener('change', renderPlayerRegistry);
+            showSection('membership_applications');
             renderPlayerRegistry();
             loadApplications();
         });

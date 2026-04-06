@@ -2,9 +2,9 @@
 
 ## Metadata
 - Project: `Dart Club`
-- Last updated: 2026-04-03
+- Last updated: 2026-04-06
 - Repo type: legacy PHP/MySQL website
-- Current repo status: mapped, documented, runtime-tested on XAMPP, and further debug-hardened across the shared public shell, JSON service layer, and admin user management flow
+- Current repo status: mapped, documented, runtime-tested on XAMPP, and further debug-hardened across the shared public shell, JSON service layer, tournament engine, and public content/community surfaces
 
 ## Current Objective
 - Finish the migration from an ad-hoc legacy codebase to a maintainable public club platform.
@@ -47,13 +47,13 @@
   - `League`
   - `Group`
   - `Elimination`
-- Deferred tournament type:
-  - `DoubleElimination`
+  - `Double Elimination`
 - Current tournament semantics:
   - `Round Robin` = single-table round robin
   - `League` = group-stage plus knockout
   - `Group` = per-tournament team competition
   - `Elimination` = single-elimination bracket
+  - `Double Elimination` = winners bracket plus losers bracket plus grand final
 - Current audience model:
   - guests
   - signed-in players
@@ -100,6 +100,15 @@
 - Restored the gallery page to a stable four-column desktop card layout and added linked-post navigation for blog-originated images.
 - Switched admin tournament mutations onto a soft-refresh flow that preserves the active section and page position instead of hard-resetting the whole page after common saves.
 - Expanded `docs/TESTING_CHECKLIST.md` into a fuller section-by-section QA runbook covering home, auth, profile, tournaments, player profiles, blog, gallery, admin, responsive, and abuse-input sweeps.
+- Added active `Double Elimination` support end to end, including winners-bracket, losers-bracket, and grand-final generation plus loser-path propagation.
+- Added bracket-aware display labels and separate bracket-group rendering on both the public tournament page and the admin tournament console for multi-path brackets.
+- Added `scripts/seed_large_tournaments.php` plus deterministic 64-player seed data for `League`, `Group`, `Elimination`, and `Double Elimination` scale verification.
+- Rebuilt `pages/blog.html` into a clean event-delegated implementation so the preview rail, featured announcement, tag/category filters, and multi-image reader all execute reliably in a real browser.
+- Switched the public gallery page and public tournament-detail page onto the shared `window.appFetchJson(...)` helper so service failures stop degrading into raw `.json()` parser crashes.
+- Restored the shared `js/ui_feedback.js` helper and versioned its page includes so stale cached 404s stop breaking blog, gallery, and admin feedback flows.
+- Filtered orphaned blog/gallery media rows with missing files out of the public services so dead image requests no longer leak into browser console output.
+- Removed the standalone featured-post block from `pages/blog.html` so the page now starts directly with the searchable preview-rail workflow.
+- Added focus-mode/full-screen controls plus bracket-path jump buttons on both the public tournament-detail page and the admin connected bracket for large elimination and double-elimination trees.
 - Rebuilt `dart_club.sql` around the productized data model:
   - membership state
   - membership applications
@@ -173,6 +182,13 @@
   - multi-image blog authoring dialog
   - gallery linked-post CTA behavior
   - four-column gallery desktop layout and responsive collapse
+  - console-clean rendering when posts or gallery rows reference files that no longer exist on disk
+- Do a manual browser pass on the new double-elimination workflow:
+  - create/update a `Double Elimination` tournament from admin
+  - verify separate winners/losers/grand-final sections on public/admin pages
+  - record results deep enough to verify loser-path propagation and the grand final
+  - verify the seeded `Scale Test - Double Elimination 64` tournament remains readable across viewport sizes
+  - verify the new public/admin bracket focus mode is usable at scale
 - Do a manual browser pass on the new cross-profile navigation:
   - public bracket detail player links
   - public participant-list player links
@@ -261,6 +277,21 @@
     - upgraded gallery button/input styling hooks
     - preview-rail blog layout hooks
     - linked-post gallery lightbox hooks
+  - runtime browser-engine DOM checks for:
+    - `pages/blog.html`
+    - `pages/gallery.html`
+    - `pages/tournament_details.php?id=8`
+  - live HTTP verification that `js/ui_feedback.js?v=20260406-1` now returns `200`
+  - live `Double Elimination` payload verification for `services/get_tournament_details.php?id=8`, including winners/losers/grand-final bracket metadata and loser-path source labels
+  - live `get_blogs.php?page=1&pageSize=100` verification after widening the public blog fetch window
+  - live orphan-media filtering verification:
+    - blog post `4` now returns `0` usable images instead of a dead image path
+    - `gallery_get.php` now returns only existing image files
+  - seeded large-tournament verification through `scripts/seed_large_tournaments.php` for:
+    - `Scale Test - League 64`
+    - `Scale Test - Group 64`
+    - `Scale Test - Elimination 64`
+    - `Scale Test - Double Elimination 64`
   - static admin tournament-detail wiring for:
     - editable `registration_close_at`
     - `Start Tournament`
@@ -272,6 +303,7 @@
     - filter/sort controls in `manage_tournaments.php` and `show_tournament_details.php`
     - modal-first bracket interaction hooks in `show_tournament_details.php`
     - soft-refresh tournament admin flow in `js/admin_tournament_details.js`
+    - admin bracket focus-mode button and bracket-path jump controls
 - Not verified in this pass:
   - Apache-backed visual QA
   - SMTP/email delivery

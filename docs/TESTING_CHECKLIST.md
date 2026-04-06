@@ -16,7 +16,14 @@ Use this as the full manual QA path for the website. Run it top to bottom after 
 5. Prepare these data states if possible:
    - at least one open tournament
    - at least one closed/archived tournament
-   - at least one tournament of each type: `Round Robin`, `League`, `Group`, `Elimination`
+   - at least one tournament of each type: `Round Robin`, `League`, `Group`, `Elimination`, `Double Elimination`
+6. If local tournament data is sparse, seed the large regression set before starting:
+   - `C:\Users\Ali\xampp\php\php.exe scripts/seed_large_tournaments.php`
+   - verify these titles exist:
+     - `Scale Test - League 64`
+     - `Scale Test - Group 64`
+     - `Scale Test - Elimination 64`
+     - `Scale Test - Double Elimination 64`
    - at least one published blog post
    - at least one draft blog post
    - at least one gallery image linked to a blog post
@@ -91,7 +98,10 @@ For every failure, capture:
 4. Click multiple bracket matchups and confirm the selected matchup detail changes cleanly.
 5. Confirm participant names link to the public player profile page.
 6. Confirm bracket/player links never expose admin-only editing controls.
-7. Try invalid and missing tournament IDs and confirm the page fails gracefully.
+7. For `Double Elimination`, confirm winners, losers, and grand-final sections render separately and stay readable.
+8. Use `Open focus mode` and confirm the bracket expands cleanly and remains scrollable.
+9. If multiple bracket paths exist, use the path-jump buttons and confirm they scroll to the correct section.
+10. Try invalid and missing tournament IDs and confirm the page fails gracefully.
 
 ## 7. Public Player Profile
 1. Open `pages/player_profile.php?id=<valid_player_id>`.
@@ -107,7 +117,8 @@ For every failure, capture:
 3. Click several preview cards and confirm the full article view updates without breaking layout.
 4. Use previous and next post navigation in the article view.
 5. Confirm draft posts are not visible to guests.
-6. Log in as an approved member.
+6. Confirm there is no separate featured-post block above the feed anymore.
+7. Log in as an approved member.
 7. Open the `Create post` dialog and confirm it is visually separated from the reading flow.
 8. Create a draft with:
    - no image
@@ -119,6 +130,7 @@ For every failure, capture:
 12. Add and delete comments.
 13. Delete a draft and confirm the page stays stable.
 14. If opening `blog.html?post=<id>`, confirm the correct post opens directly.
+15. Confirm the page stays console-clean when a post record has no usable image files.
 
 ## 9. Gallery Page
 1. Open `pages/gallery.html`.
@@ -130,6 +142,7 @@ For every failure, capture:
 7. As manager/admin, upload a standalone gallery image.
 8. Delete a standalone image.
 9. Remove a blog-linked image from the gallery and confirm the blog post still keeps its image.
+10. Confirm the page stays console-clean when the database contains gallery rows that reference files missing on disk.
 
 ## 10. Admin Panel And Navigation
 1. Log in as admin.
@@ -147,6 +160,7 @@ For every failure, capture:
 6. Preview a PDF application.
 7. Preview a DOC/DOCX application and confirm the fallback/open-in-new-tab behavior is sane.
 8. Approve an application and confirm membership changes without changing auth role.
+9. Confirm the approve/reject prompt still works and no `AppUI is not defined` error appears.
 9. Reject an application and confirm notes flow works.
 10. Use the player registry filter and sort controls.
 
@@ -195,7 +209,7 @@ For every failure, capture:
 9. Confirm the modal closes and the page state remains stable after save.
 
 ## 16. Admin Tournament Detail - Bracket
-1. Open an elimination or league-knockout tournament.
+1. Open an elimination, league-knockout, or double-elimination tournament.
 2. Confirm connected bracket matchups do not overlap visually.
 3. Confirm matchups have clearer color meaning:
    - scheduled
@@ -206,7 +220,10 @@ For every failure, capture:
 5. Drag and drop seeded players between valid slots.
 6. Confirm invalid drag/drop targets are blocked.
 7. Confirm completed matches cannot be drag-reseeded.
-8. Confirm the bracket board still reflects the latest state after changes.
+8. For `Double Elimination`, confirm loser-path feeds and the grand final are visually understandable.
+9. Confirm the bracket board still reflects the latest state after changes.
+10. Use `Open focus mode` and confirm the connected bracket is easier to navigate at large sizes.
+11. If multiple bracket paths exist, use the jump buttons and confirm they scroll to the correct section.
 
 ## 17. Tournament Type Regression Matrix
 Run these end to end:
@@ -227,6 +244,11 @@ Run these end to end:
    - create even-player and odd-player brackets
    - confirm bye handling
    - confirm winner propagation through the full bracket
+5. `Double Elimination`
+   - create with at least four entrants
+   - confirm separate winners, losers, and grand-final sections
+   - confirm completed winners-bracket matches feed the loser into the correct lower-path match
+   - confirm the last lower-path survivor reaches the grand final
 
 ## 18. Blog And Gallery Cross-Integration
 1. Create a blog post with multiple images.
@@ -245,6 +267,7 @@ For `main`, `tournaments`, `tournament_details`, `profile`, `register`, `blog`, 
 6. Try special characters and quotes.
 7. Try invalid IDs in query strings where applicable.
 8. Confirm no screen throws raw PHP warnings, JSON parse errors, or layout-breaking overflow.
+9. Confirm no screen depends on a missing shared `ui_feedback.js` asset and that toast/confirm/prompt flows still work where present.
 
 ## 20. Legacy And Fallback Pages
 1. Open `pages/admin/manage_blogs.php`.

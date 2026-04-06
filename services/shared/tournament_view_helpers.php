@@ -28,12 +28,47 @@ function tournament_match_label(array $match, string $slot, array $matchNumbersB
     }
 
     $prevKey = $slot === 'player1' ? 'prev_match1_id' : 'prev_match2_id';
+    $sourceKey = $slot === 'player1' ? 'prev_match1_source' : 'prev_match2_source';
     if (!empty($match[$prevKey])) {
         $previousMatchNumber = $matchNumbersById[(int) $match[$prevKey]] ?? null;
+        $source = strtolower((string) ($match[$sourceKey] ?? 'winner'));
+        if ($source === 'loser') {
+            return $previousMatchNumber ? 'Loser of Match ' . $previousMatchNumber : 'Loser TBD';
+        }
+
         return $previousMatchNumber ? 'Winner of Match ' . $previousMatchNumber : 'Winner TBD';
     }
 
     return 'TBD';
+}
+
+function tournament_match_advancement_label(array $match, array $matchNumbersById): string
+{
+    if (($match['bracket'] ?? '') === 'Grand Final') {
+        return 'Champion decided here';
+    }
+
+    $parts = [];
+
+    if (!empty($match['next_match_id'])) {
+        $nextMatchNumber = $matchNumbersById[(int) $match['next_match_id']] ?? null;
+        if ($nextMatchNumber !== null) {
+            $parts[] = 'Winner to Match ' . $nextMatchNumber;
+        }
+    }
+
+    if (!empty($match['loser_next_match_id'])) {
+        $loserNextMatchNumber = $matchNumbersById[(int) $match['loser_next_match_id']] ?? null;
+        if ($loserNextMatchNumber !== null) {
+            $parts[] = 'Loser to Match ' . $loserNextMatchNumber;
+        }
+    }
+
+    if (empty($parts)) {
+        return 'Winner path pending';
+    }
+
+    return implode(' | ', $parts);
 }
 
 function tournament_round_title(int $roundNumber): string
@@ -47,4 +82,3 @@ function tournament_round_title(int $roundNumber): string
 
     return $labels[$roundNumber] ?? ('Round ' . $roundNumber);
 }
-

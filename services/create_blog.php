@@ -19,6 +19,8 @@ function blog_extract_input(): array
             'title' => trim((string) ($payload['title'] ?? '')),
             'content' => trim((string) ($payload['content'] ?? '')),
             'status' => trim((string) ($payload['status'] ?? 'draft')),
+            'category' => trim((string) ($payload['category'] ?? '')),
+            'tags' => trim((string) ($payload['tags'] ?? '')),
         ];
     }
 
@@ -26,6 +28,8 @@ function blog_extract_input(): array
         'title' => trim((string) ($_POST['title'] ?? '')),
         'content' => trim((string) ($_POST['content'] ?? '')),
         'status' => trim((string) ($_POST['status'] ?? 'draft')),
+        'category' => trim((string) ($_POST['category'] ?? '')),
+        'tags' => trim((string) ($_POST['tags'] ?? '')),
     ];
 }
 
@@ -62,6 +66,20 @@ $input = blog_extract_input();
 $blogTitle = $input['title'];
 $blogContent = $input['content'];
 $requestedStatus = $input['status'] !== '' ? $input['status'] : 'draft';
+$blogCategory = strip_tags($input['category'] !== '' ? $input['category'] : 'Announcement');
+$rawTags = array_filter(array_map('trim', explode(',', (string) ($input['tags'] ?? ''))));
+$normalizedTags = [];
+foreach ($rawTags as $tag) {
+    $cleanTag = trim(strip_tags($tag));
+    if ($cleanTag === '') {
+        continue;
+    }
+
+    if (!in_array(mb_strtolower($cleanTag), array_map('mb_strtolower', $normalizedTags), true)) {
+        $normalizedTags[] = $cleanTag;
+    }
+}
+$blogTags = implode(', ', array_slice($normalizedTags, 0, 12));
 
 if ($blogTitle === '' || $blogContent === '') {
     app_json_response(['success' => false, 'message' => 'Title and content are required.'], 422);
@@ -73,6 +91,14 @@ if (mb_strlen($blogTitle) > 200) {
 
 if (mb_strlen($blogContent) > 20000) {
     app_json_response(['success' => false, 'message' => 'Content is too long.'], 422);
+}
+
+if (mb_strlen($blogCategory) > 80) {
+    app_json_response(['success' => false, 'message' => 'Category is too long.'], 422);
+}
+
+if (mb_strlen($blogTags) > 255) {
+    app_json_response(['success' => false, 'message' => 'Too many tags were provided.'], 422);
 }
 
 $blogTitle = strip_tags($blogTitle);
@@ -94,10 +120,10 @@ try {
     $moderatedBy = $status === 'published' && can_publish_blog_posts() ? $userId : null;
 
     $stmt = $conn->prepare(
-        'INSERT INTO blogs (blog_title, blog_content, author_user_id, status, published_at, moderated_by_user_id)
-         VALUES (?, ?, ?, ?, ?, ?)'
+        'INSERT INTO blogs (blog_title, blog_content, author_user_id, status, published_at, moderated_by_user_id, blog_category, blog_tags)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
     );
-    $stmt->bind_param('ssissi', $blogTitle, $blogContent, $userId, $status, $publishedAt, $moderatedBy);
+    $stmt->bind_param('ssississ', $blogTitle, $blogContent, $userId, $status, $publishedAt, $moderatedBy, $blogCategory, $blogTags);
     $stmt->execute();
     $blogId = (int) $conn->insert_id;
     $stmt->close();

@@ -144,7 +144,7 @@
             bottom: 25%;
             width: 2px;
             border-radius: 999px;
-            background: rgba(255, 255, 255, 0.16);
+            background: linear-gradient(180deg, rgba(255, 124, 77, 0.54), rgba(96, 165, 250, 0.48));
         }
 
         .read-bracket-node.has-incoming::after {
@@ -155,7 +155,7 @@
             width: 18px;
             height: 2px;
             border-radius: 999px;
-            background: rgba(255, 255, 255, 0.16);
+            background: rgba(255, 124, 77, 0.44);
         }
 
         .read-bracket-card {
@@ -174,8 +174,8 @@
             gap: 0.4rem;
             padding: 0.7rem 0.8rem;
             border-radius: 16px;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            background: rgba(0, 0, 0, 0.18);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            background: linear-gradient(180deg, rgba(17, 24, 39, 0.92), rgba(12, 18, 29, 0.94));
             text-align: left;
             color: #fff;
             cursor: pointer;
@@ -184,15 +184,48 @@
 
         .read-bracket-matchup:hover {
             transform: translateY(-1px);
-            border-color: rgba(255, 107, 53, 0.28);
+            border-color: rgba(255, 124, 77, 0.4);
         }
 
         .read-bracket-matchup.is-active {
-            border-color: rgba(255, 107, 53, 0.38);
+            border-color: rgba(255, 124, 77, 0.5);
             background:
-                radial-gradient(circle at top right, rgba(255, 107, 53, 0.12), transparent 32%),
-                rgba(255, 255, 255, 0.07);
-            box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.12);
+                radial-gradient(circle at top right, rgba(255, 124, 77, 0.2), transparent 32%),
+                linear-gradient(180deg, rgba(34, 46, 68, 0.96), rgba(15, 23, 42, 0.96));
+            box-shadow: 0 0 0 3px rgba(255, 124, 77, 0.16);
+        }
+
+        .read-bracket-matchup.state-scheduled {
+            border-color: rgba(255, 255, 255, 0.14);
+            background: linear-gradient(180deg, rgba(17, 24, 39, 0.92), rgba(12, 18, 29, 0.94));
+        }
+
+        .read-bracket-matchup.state-waiting {
+            border-color: rgba(96, 165, 250, 0.36);
+            background:
+                radial-gradient(circle at top right, rgba(96, 165, 250, 0.16), transparent 34%),
+                linear-gradient(180deg, rgba(16, 31, 53, 0.94), rgba(11, 22, 37, 0.96));
+        }
+
+        .read-bracket-matchup.state-ready {
+            border-color: rgba(251, 191, 36, 0.44);
+            background:
+                radial-gradient(circle at top right, rgba(251, 191, 36, 0.18), transparent 34%),
+                linear-gradient(180deg, rgba(54, 35, 14, 0.92), rgba(30, 24, 14, 0.96));
+        }
+
+        .read-bracket-matchup.state-live {
+            border-color: rgba(255, 124, 77, 0.52);
+            background:
+                radial-gradient(circle at top right, rgba(255, 124, 77, 0.24), transparent 34%),
+                linear-gradient(180deg, rgba(59, 27, 16, 0.92), rgba(38, 17, 12, 0.96));
+        }
+
+        .read-bracket-matchup.state-completed {
+            border-color: rgba(34, 197, 94, 0.46);
+            background:
+                radial-gradient(circle at top right, rgba(34, 197, 94, 0.2), transparent 34%),
+                linear-gradient(180deg, rgba(18, 44, 29, 0.92), rgba(12, 26, 19, 0.96));
         }
 
         .read-bracket-matchup.has-outgoing::after {
@@ -203,7 +236,7 @@
             width: 18px;
             height: 2px;
             border-radius: 999px;
-            background: rgba(255, 255, 255, 0.16);
+            background: rgba(255, 124, 77, 0.44);
         }
 
         .read-bracket-summary {
@@ -229,8 +262,8 @@
             min-width: 0;
             padding: 0.35rem 0.55rem;
             border-radius: 999px;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.06);
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.12);
         }
 
         .read-bracket-player strong {
@@ -295,6 +328,113 @@
             background: rgba(255, 107, 53, 0.16);
             color: #ffd7ca;
             font-weight: 700;
+        }
+
+        .bracket-section {
+            position: relative;
+        }
+
+        .bracket-section-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .bracket-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-bottom: 1rem;
+        }
+
+        .bracket-toolbar-copy {
+            max-width: 760px;
+            color: var(--text-color);
+        }
+
+        .bracket-path-nav {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+            margin-bottom: 1rem;
+        }
+
+        .bracket-path-button {
+            padding-inline: 1rem;
+        }
+
+        .bracket-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            margin: 0 0 1rem;
+        }
+
+        .bracket-group-stack {
+            display: grid;
+            gap: 1.1rem;
+        }
+
+        .bracket-group {
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 20px;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .bracket-group h3 {
+            margin: 0 0 0.35rem;
+        }
+
+        .bracket-group p {
+            margin: 0 0 0.9rem;
+            color: var(--text-color);
+        }
+
+        .legend-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.55rem;
+            padding: 0.5rem 0.85rem;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: rgba(255, 255, 255, 0.04);
+            color: #fff;
+            font-size: 0.85rem;
+        }
+
+        .legend-swatch {
+            width: 0.85rem;
+            height: 0.85rem;
+            border-radius: 999px;
+            flex-shrink: 0;
+        }
+
+        .legend-swatch--waiting { background: #60a5fa; }
+        .legend-swatch--ready { background: #fbbf24; }
+        .legend-swatch--live { background: #ff7c4d; }
+        .legend-swatch--completed { background: #22c55e; }
+
+        .bracket-section:fullscreen {
+            padding: 1.4rem;
+            overflow: auto;
+            background:
+                radial-gradient(circle at top right, rgba(255, 107, 53, 0.18), transparent 34%),
+                linear-gradient(180deg, rgba(6, 11, 22, 0.99), rgba(2, 6, 18, 0.99));
+        }
+
+        .bracket-section:fullscreen .read-bracket-shell {
+            max-height: calc(100vh - 18rem);
+            overflow: auto;
+            padding-right: 0.6rem;
+        }
+
+        .bracket-section:fullscreen .selected-match-card {
+            margin-bottom: 0.75rem;
         }
 
         .detail-button,
@@ -363,6 +503,14 @@
             border-color: rgba(255, 107, 53, 0.38);
             box-shadow: 0 0 0 4px rgba(255, 107, 53, 0.12);
             background: rgba(0, 0, 0, 0.26);
+        }
+
+        @media (max-width: 820px) {
+            .bracket-section-head,
+            .bracket-toolbar {
+                flex-direction: column;
+                align-items: stretch;
+            }
         }
     </style>
 </head>
@@ -434,9 +582,80 @@
             return `<a href="player_profile.php?id=${playerId}" style="color:#fff; text-decoration:none; font-weight:700;">${label}</a>`;
         }
 
-        function bracketDisplayTitle(match, totalRounds) {
-            const roundName = roundTitle(Number(match.round_number || 1), totalRounds);
-            return `${roundName} • Match ${match.match_id}`;
+        function detailEscapeHtml(value) {
+            return String(value ?? '')
+                .replaceAll('&', '&amp;')
+                .replaceAll('<', '&lt;')
+                .replaceAll('>', '&gt;')
+                .replaceAll('"', '&quot;')
+                .replaceAll("'", '&#39;');
+        }
+
+        function bracketVisualState(match) {
+            const status = String(match.match_status || '').toLowerCase();
+            if (status === 'completed') {
+                return 'completed';
+            }
+            if (status === 'in progress' || status === 'in_progress') {
+                return 'live';
+            }
+            if (match.player1_id && match.player2_id) {
+                return 'ready';
+            }
+            if (match.player1_id || match.player2_id) {
+                return 'waiting';
+            }
+            return 'scheduled';
+        }
+
+        function bracketGroupOrder(label) {
+            const order = {
+                'Winners Bracket': 1,
+                'Elimination': 1,
+                'Knockout': 1,
+                'Losers Bracket': 2,
+                'Grand Final': 3
+            };
+
+            return order[label] || 99;
+        }
+
+        function bracketRoundTitle(label, roundNumber, totalRounds) {
+            if (label === 'Grand Final') {
+                return 'Grand Final';
+            }
+            if (label === 'Winners Bracket') {
+                return `Winners Round ${roundNumber}`;
+            }
+            if (label === 'Losers Bracket') {
+                return `Losers Round ${roundNumber}`;
+            }
+
+            return roundTitle(roundNumber, totalRounds);
+        }
+
+        function bracketDomKey(value) {
+            return String(value || 'group')
+                .toLowerCase()
+                .replace(/[^a-z0-9]+/g, '-')
+                .replace(/^-+|-+$/g, '') || 'group';
+        }
+
+        function renderBracketLegend(includeBracketPaths = false) {
+            return `
+                <div class="bracket-legend">
+                    <span class="legend-chip"><span class="legend-swatch legend-swatch--waiting"></span> Waiting for an opponent</span>
+                    <span class="legend-chip"><span class="legend-swatch legend-swatch--ready"></span> Ready to play</span>
+                    <span class="legend-chip"><span class="legend-swatch legend-swatch--live"></span> Live or highlighted</span>
+                    <span class="legend-chip"><span class="legend-swatch legend-swatch--completed"></span> Result recorded</span>
+                    ${includeBracketPaths ? '<span class="legend-chip">Winners, losers, and grand final sections are rendered separately below.</span>' : ''}
+                </div>
+            `;
+        }
+
+        function bracketDisplayTitle(match, bracketLabel, totalRounds) {
+            const roundName = bracketRoundTitle(bracketLabel, Number(match.round_number || 1), totalRounds);
+            return `${roundName} - Match ${match.match_id}`;
         }
 
         function renderStandingsTable(rows, entityLabel = 'Player') {
@@ -554,7 +773,7 @@
             `;
         }
 
-        function renderSelectedBracketMatch(match, totalRounds) {
+        function renderSelectedBracketMatch(match, group) {
             if (!match) {
                 return '';
             }
@@ -563,7 +782,7 @@
             return `
                 <article class="surface selected-match-card">
                     <div class="read-bracket-meta">
-                        <strong>${bracketDisplayTitle(match, totalRounds)}</strong>
+                        <strong>${bracketDisplayTitle(match, group.label, group.rounds.length)}</strong>
                         <span>${match.match_status}</span>
                     </div>
                     <div class="selected-match-grid">
@@ -578,7 +797,7 @@
                     </div>
                     <div class="selected-match-meta" style="margin-top: 1rem;">
                         <span>${match.match_date} at ${String(match.match_time || '').slice(0, 5)}</span>
-                        <span>${match.bracket || (match.group_number ? `Group ${match.group_number}` : 'Knockout fixture')}</span>
+                        <span>${group.label || (match.bracket || (match.group_number ? `Group ${match.group_number}` : 'Knockout fixture'))}</span>
                     </div>
                     <div style="margin-top: 1rem;">
                         <span class="selected-match-result">${hasScore ? `${match.player1_score} - ${match.player2_score}` : 'Waiting for result'}</span>
@@ -587,75 +806,146 @@
             `;
         }
 
-        function renderBracket(matches) {
+        function renderBracketPathNav(groupEntries) {
+            if (!Array.isArray(groupEntries) || groupEntries.length < 2) {
+                return '';
+            }
+
+            return `
+                <div class="bracket-path-nav">
+                    ${groupEntries.map((group) => `
+                        <button
+                            type="button"
+                            class="detail-button-secondary bracket-path-button"
+                            onclick="focusPublicBracketGroup('${bracketDomKey(group.key)}')"
+                        >
+                            ${detailEscapeHtml(group.label)}
+                        </button>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        function renderBracket(matches, tournamentType) {
             const knockoutMatches = (matches || []).filter((match) => match.group_number === null);
             if (knockoutMatches.length === 0) {
                 return '<p style="color: var(--text-color);">A knockout bracket will appear here once elimination fixtures exist.</p>';
             }
 
-            const roundsMap = new Map();
+            const groupsMap = new Map();
             knockoutMatches.forEach((match) => {
+                const rawLabel = String(match.bracket || '').trim() || 'Elimination';
+                const groupKey = tournamentType === 'Double Elimination' ? rawLabel : 'primary';
+                const groupLabel = tournamentType === 'Double Elimination'
+                    ? rawLabel
+                    : (rawLabel === 'Knockout' ? 'Knockout Bracket' : 'Tournament Bracket');
                 const roundNumber = Number(match.round_number || 1);
-                if (!roundsMap.has(roundNumber)) {
-                    roundsMap.set(roundNumber, []);
+
+                if (!groupsMap.has(groupKey)) {
+                    groupsMap.set(groupKey, {
+                        key: groupKey,
+                        rawLabel,
+                        label: groupLabel,
+                        rounds: new Map(),
+                        matches: []
+                    });
                 }
-                roundsMap.get(roundNumber).push(match);
+
+                const group = groupsMap.get(groupKey);
+                if (!group.rounds.has(roundNumber)) {
+                    group.rounds.set(roundNumber, []);
+                }
+                group.rounds.get(roundNumber).push(match);
+                group.matches.push(match);
             });
 
-            const roundEntries = Array.from(roundsMap.entries()).sort((left, right) => left[0] - right[0]);
-            const slotCount = Math.pow(2, roundEntries.length);
+            const groupEntries = Array.from(groupsMap.values())
+                .map((group) => ({
+                    ...group,
+                    rounds: Array.from(group.rounds.entries()).sort((left, right) => left[0] - right[0])
+                }))
+                .sort((left, right) => {
+                    const orderDelta = bracketGroupOrder(left.rawLabel) - bracketGroupOrder(right.rawLabel);
+                    if (orderDelta !== 0) {
+                        return orderDelta;
+                    }
+
+                    return left.label.localeCompare(right.label, undefined, { sensitivity: 'base' });
+                });
+
             const selectedMatch = knockoutMatches.find((match) => Number(match.match_id) === Number(selectedBracketMatchId)) || knockoutMatches[0];
+            const selectedGroup = groupEntries.find((group) => group.matches.some((match) => Number(match.match_id) === Number(selectedMatch.match_id))) || groupEntries[0];
 
             return `
-                <div class="read-bracket-shell">
-                    <div class="read-bracket">
-                        ${roundEntries.map(([roundNumber, roundMatches], roundIndex) => `
-                            <div class="read-bracket-round">
-                                <h3>${roundTitle(roundNumber, roundEntries.length)}</h3>
-                                <div class="read-bracket-lane" style="--slot-count: ${slotCount};">
-                                    ${roundMatches.map((match, matchIndex) => {
-                                        const rowSpan = Math.pow(2, roundIndex + 1);
-                                        const rowStart = (matchIndex * rowSpan) + 1;
-                                        const rowEnd = rowStart + rowSpan;
-                                        const isActive = Number(selectedMatch.match_id) === Number(match.match_id);
-                                        return `
-                                            <div class="read-bracket-node ${roundIndex > 0 ? 'has-incoming' : ''}" style="grid-row: ${rowStart} / ${rowEnd};">
-                                                <button
-                                                    type="button"
-                                                    class="read-bracket-matchup ${roundIndex < roundEntries.length - 1 ? 'has-outgoing' : ''} ${isActive ? 'is-active' : ''}"
-                                                    onclick="showBracketMatch(${match.match_id})"
-                                                >
-                                                    <div class="read-bracket-summary">
-                                                        <span>Match ${match.match_id}</span>
-                                                        <span>${match.match_status}</span>
-                                                    </div>
-                                                    <div class="read-bracket-vs">
-                                                        <div class="read-bracket-player">
-                                                            <span>Top</span>
-                                                            <strong>${playerLabel(match, 'player1')}</strong>
-                                                        </div>
-                                                        <div class="read-bracket-player">
-                                                            <span>Bottom</span>
-                                                            <strong>${playerLabel(match, 'player2')}</strong>
-                                                        </div>
-                                                    </div>
-                                                </button>
+                ${renderBracketLegend(groupEntries.length > 1)}
+                <div class="bracket-toolbar">
+                    <p class="bracket-toolbar-copy">
+                        Open focus mode for a larger, scrollable bracket view when the elimination paths get crowded, then jump directly to the path you want to inspect.
+                    </p>
+                    ${groupEntries.length > 1 ? '<span class="legend-chip">Use the path buttons below to jump between winners, losers, and grand final sections.</span>' : ''}
+                </div>
+                ${renderBracketPathNav(groupEntries)}
+                <div class="bracket-group-stack">
+                    ${groupEntries.map((group) => {
+                        const slotCount = Math.pow(2, group.rounds.length);
+                        return `
+                            <div class="bracket-group" id="public-bracket-group-${bracketDomKey(group.key)}">
+                                <h3>${group.label}</h3>
+                                <p>${group.rawLabel === 'Grand Final' ? 'The winners-bracket champion meets the last survivor from the lower path here.' : 'Follow this path round by round through the connected bracket below.'}</p>
+                                <div class="read-bracket-shell">
+                                    <div class="read-bracket">
+                                        ${group.rounds.map(([roundNumber, roundMatches], roundIndex) => `
+                                            <div class="read-bracket-round">
+                                                <h3>${bracketRoundTitle(group.rawLabel, roundNumber, group.rounds.length)}</h3>
+                                                <div class="read-bracket-lane" style="--slot-count: ${slotCount};">
+                                                    ${roundMatches.map((match, matchIndex) => {
+                                                        const rowSpan = Math.pow(2, roundIndex + 1);
+                                                        const rowStart = (matchIndex * rowSpan) + 1;
+                                                        const rowEnd = rowStart + rowSpan;
+                                                        const isActive = Number(selectedMatch.match_id) === Number(match.match_id);
+                                                        const visualState = bracketVisualState(match);
+                                                        return `
+                                                            <div class="read-bracket-node ${roundIndex > 0 ? 'has-incoming' : ''}" style="grid-row: ${rowStart} / ${rowEnd};">
+                                                                <button
+                                                                    type="button"
+                                                                    class="read-bracket-matchup state-${visualState} ${roundIndex < group.rounds.length - 1 ? 'has-outgoing' : ''} ${isActive ? 'is-active' : ''}"
+                                                                    onclick="showBracketMatch(${match.match_id})"
+                                                                >
+                                                                    <div class="read-bracket-summary">
+                                                                        <span>Match ${match.match_id}</span>
+                                                                        <span>${match.match_status}</span>
+                                                                    </div>
+                                                                    <div class="read-bracket-vs">
+                                                                        <div class="read-bracket-player">
+                                                                            <span>Top</span>
+                                                                            <strong>${playerLabel(match, 'player1')}</strong>
+                                                                        </div>
+                                                                        <div class="read-bracket-player">
+                                                                            <span>Bottom</span>
+                                                                            <strong>${playerLabel(match, 'player2')}</strong>
+                                                                        </div>
+                                                                    </div>
+                                                                </button>
+                                                            </div>
+                                                        `;
+                                                    }).join('')}
+                                                </div>
                                             </div>
-                                        `;
-                                    }).join('')}
+                                        `).join('')}
+                                    </div>
                                 </div>
                             </div>
-                        `).join('')}
-                    </div>
+                        `;
+                    }).join('')}
                 </div>
-                ${renderSelectedBracketMatch(selectedMatch, roundEntries.length)}
+                ${renderSelectedBracketMatch(selectedMatch, selectedGroup)}
             `;
         }
 
         function renderTournamentPage(data) {
             const tournament = data.tournament;
             const shell = document.getElementById('detail-shell');
-            const knockoutBracket = tournament.tour_type !== 'Group' ? renderBracket(data.matches) : '';
+            const knockoutBracket = tournament.tour_type !== 'Group' ? renderBracket(data.matches, tournament.tour_type) : '';
 
             shell.innerHTML = `
                 <section class="surface hero-surface">
@@ -685,7 +975,7 @@
                     ${tournament.tour_type !== 'Group' ? `
                         <div>
                             <strong>Bracket</strong>
-                            <p>${data.matches.some((match) => match.group_number === null) ? 'Available below' : 'Will appear after elimination fixtures exist'}</p>
+                            <p>${data.matches.some((match) => match.group_number === null) ? (tournament.tour_type === 'Double Elimination' ? 'Winners, losers, and grand final paths are available below' : 'Available below') : 'Will appear after elimination fixtures exist'}</p>
                         </div>
                     ` : ''}
                 </div>
@@ -741,9 +1031,16 @@
                 ${
                   tournament.tour_type !== 'Group'
                     ? `
-                        <section class="surface">
-                            <h2>Tournament Bracket</h2>
-                            <p style="color: var(--text-color); margin-top: 0.6rem; margin-bottom: 1rem;">Follow the knockout structure visually on the main website when elimination fixtures are available.</p>
+                        <section class="surface bracket-section" id="publicBracketSection">
+                            <div class="bracket-section-head">
+                                <div>
+                                    <h2>Tournament Bracket</h2>
+                                    <p style="color: var(--text-color); margin-top: 0.6rem;">${tournament.tour_type === 'Double Elimination' ? 'Follow the winners-bracket, losers-bracket, and grand-final flow visually on the main website.' : 'Follow the knockout structure visually on the main website when elimination fixtures are available.'}</p>
+                                </div>
+                                <button type="button" class="detail-button-secondary" onclick="togglePublicBracketFocus()">
+                                    <i class="ri-fullscreen-line"></i> Open focus mode
+                                </button>
+                            </div>
                             ${knockoutBracket}
                         </section>
                       `
@@ -794,13 +1091,41 @@
             renderTournamentPage(currentTournamentData);
         }
 
+        async function togglePublicBracketFocus() {
+            const bracketSection = document.getElementById('publicBracketSection');
+            if (!bracketSection) {
+                return;
+            }
+
+            try {
+                if (document.fullscreenElement === bracketSection) {
+                    await document.exitFullscreen();
+                    return;
+                }
+
+                if (bracketSection.requestFullscreen) {
+                    await bracketSection.requestFullscreen();
+                }
+            } catch (error) {
+                console.warn('Failed to toggle public bracket focus mode:', error);
+            }
+        }
+
+        function focusPublicBracketGroup(groupKey) {
+            const target = document.getElementById(`public-bracket-group-${groupKey}`);
+            if (!target) {
+                return;
+            }
+
+            target.scrollIntoView({ behavior: 'smooth', block: 'start', inline: 'nearest' });
+        }
+
         async function loadTournamentDetails() {
             if (!tournamentId) {
                 throw new Error('Tournament id is missing.');
             }
 
-            const response = await fetch(`../services/get_tournament_details.php?id=${tournamentId}`);
-            const data = await response.json();
+            const data = await window.appFetchJson(`../services/get_tournament_details.php?id=${tournamentId}`);
             if (!data.success) {
                 throw new Error(data.message || 'Failed to load the tournament.');
             }
@@ -815,11 +1140,13 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             loadTournamentDetails().catch((error) => {
-                document.getElementById('detail-shell').innerHTML = `<div class="surface">${error.message}</div>`;
+                document.getElementById('detail-shell').innerHTML = `<div class="surface">${detailEscapeHtml(error.message)}</div>`;
             });
         });
 
         window.showBracketMatch = showBracketMatch;
+        window.togglePublicBracketFocus = togglePublicBracketFocus;
+        window.focusPublicBracketGroup = focusPublicBracketGroup;
     </script>
 </body>
 </html>

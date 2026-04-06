@@ -1,5 +1,114 @@
 const TournamentAdminPage = { players: [], matches: {} };
 let draggedBracketSlot = null;
+const MatchModalState = {
+    initialValues: null,
+    dirty: false,
+};
+
+function feedbackToast(message, type = "info") {
+    if (window.AppUI?.toast) {
+        window.AppUI.toast(message, type);
+        return;
+    }
+
+    if (type === "error" || type === "warning") {
+        window.alert(message);
+    } else {
+        console.info(message);
+    }
+}
+
+async function confirmAction(config) {
+    if (window.AppUI?.confirm) {
+        return window.AppUI.confirm(config);
+    }
+
+    return window.confirm(config?.message || "Continue?");
+}
+
+async function promptForValue(config) {
+    if (window.AppUI?.prompt) {
+        return window.AppUI.prompt(config);
+    }
+
+    return window.prompt(config?.message || config?.title || "", config?.initialValue || "");
+}
+
+function setModalFeedbackState(tone, badgeLabel, message) {
+    const badge = document.getElementById("mf_feedback_badge");
+    const label = document.getElementById("mf_feedback_text");
+    if (badge) {
+        badge.dataset.tone = tone || "neutral";
+        badge.textContent = badgeLabel || "Ready";
+    }
+    if (label) {
+        label.textContent = message || "No unsaved changes yet.";
+    }
+}
+
+function readModalValues() {
+    return {
+        date: document.getElementById("mf_date")?.value || "",
+        time: document.getElementById("mf_time")?.value || "",
+        player1Score: document.getElementById("mf_p1s")?.value || "",
+        player2Score: document.getElementById("mf_p2s")?.value || "",
+    };
+}
+
+function captureModalInitialState() {
+    MatchModalState.initialValues = readModalValues();
+    MatchModalState.dirty = false;
+    setModalFeedbackState("neutral", "Ready", "No unsaved changes yet.");
+}
+
+function syncModalDirtyState() {
+    if (!MatchModalState.initialValues) {
+        return;
+    }
+
+    const current = readModalValues();
+    const dirty = Object.keys(MatchModalState.initialValues).some((key) => current[key] !== MatchModalState.initialValues[key]);
+    MatchModalState.dirty = dirty;
+
+    if (dirty) {
+        setModalFeedbackState("dirty", "Unsaved", "You have local edits in this modal that have not been saved yet.");
+    } else {
+        setModalFeedbackState("neutral", "Ready", "No unsaved changes yet.");
+    }
+}
+
+function bindMatchModalInputs() {
+    ["mf_date", "mf_time", "mf_p1s", "mf_p2s"].forEach((id) => {
+        const field = document.getElementById(id);
+        if (!field || field.dataset.modalBinding === "true") {
+            return;
+        }
+
+        field.dataset.modalBinding = "true";
+        field.addEventListener("input", syncModalDirtyState);
+        field.addEventListener("change", syncModalDirtyState);
+    });
+}
+
+function setButtonBusy(buttonId, busy, busyLabel, idleLabel) {
+    const button = document.getElementById(buttonId);
+    if (!button) {
+        return;
+    }
+
+    if (!button.dataset.idleLabel) {
+        button.dataset.idleLabel = idleLabel || button.textContent;
+    }
+
+    if (busy) {
+        button.disabled = true;
+        button.textContent = busyLabel;
+        return;
+    }
+
+    button.disabled = false;
+    button.textContent = button.dataset.idleLabel;
+}
 
 function readTournamentPageData(source = document) {
     const dataNode = source.getElementById('tournament-page-data');
@@ -109,6 +218,10 @@ function syncModalResultState(match) {
     resultButton.disabled = !hasBothPlayers;
     player1Input.disabled = !hasBothPlayers;
     player2Input.disabled = !hasBothPlayers;
+
+    if (!hasBothPlayers) {
+        setModalFeedbackState("warning", "Waiting", "This match needs both slots seeded before score entry can be saved.");
+    }
 }
 
 function showSection(sectionName) {
@@ -185,7 +298,7 @@ function saveQuickMatchResult(event, matchId) {
     const player1Raw = formData.get('player1_score');
     const player2Raw = formData.get('player2_score');
     if (player1Raw === '' || player2Raw === '') {
-        window.alert('Enter both scores before saving.');
+        feedbackToast('Enter both scores before saving.', 'warning');
         return false;
     }
 
@@ -202,9 +315,10 @@ function saveQuickMatchResult(event, matchId) {
             if (!data.success) {
                 throw new Error(data.message || 'Failed to record result');
             }
+            feedbackToast('Result saved. Refreshing the tournament view...', 'success');
             await refreshMatches();
         } catch (error) {
-            window.alert(error.message);
+            feedbackToast(error.message, 'error');
         }
     })();
 
@@ -213,7 +327,13 @@ function saveQuickMatchResult(event, matchId) {
 
 async function generateStructure() {
     const actionLabel = TournamentAdminPage.structureGenerated ? 'rebuild' : 'generate';
-    if (!window.confirm(`This will ${actionLabel} the tournament structure from the current non-withdrawn entrants. Continue?`)) {
+    const confirmed = await confirmAction({
+        title: TournamentAdminPage.structureGenerated ? 'Rebuild tournament structure' : 'Generate tournament structure',
+        message: `This will ${actionLabel} the tournament structure from the current non-withdrawn entrants. Continue?`,
+        confirmLabel: TournamentAdminPage.structureGenerated ? 'Rebuild structure' : 'Generate structure',
+        cancelLabel: 'Cancel'
+    });
+    if (!confirmed) {
         return;
     }
 
@@ -227,14 +347,21 @@ async function generateStructure() {
         if (!data.success) {
             throw new Error(data.message || 'Failed to generate structure');
         }
+        feedbackToast('Tournament structure updated. Refreshing the latest bracket and fixture data...', 'success');
         await refreshMatches();
     } catch (error) {
-        window.alert(error.message);
+        feedbackToast(error.message, 'error');
     }
 }
 
 async function startTournament() {
-    if (!window.confirm('This will close registration immediately and build or rebuild the tournament structure from the current non-withdrawn entrants. Continue?')) {
+    const confirmed = await confirmAction({
+        title: 'Start tournament',
+        message: 'This will close registration immediately and build or rebuild the tournament structure from the current non-withdrawn entrants. Continue?',
+        confirmLabel: 'Start tournament',
+        cancelLabel: 'Cancel'
+    });
+    if (!confirmed) {
         return;
     }
 
@@ -251,51 +378,130 @@ async function startTournament() {
         if (!data.success) {
             throw new Error(data.message || 'Failed to start tournament');
         }
+        feedbackToast('Tournament started. Refreshing the updated structure...', 'success');
         await refreshMatches();
     } catch (error) {
-        window.alert(error.message);
+        feedbackToast(error.message, 'error');
     }
 }
 
 async function addMatch() {
-    const matchDate = window.prompt('Match date (YYYY-MM-DD):', new Date().toISOString().slice(0, 10));
-    if (!matchDate) {
+    const matchDate = await promptForValue({
+        title: 'Add manual match',
+        message: 'Choose the match date (YYYY-MM-DD).',
+        initialValue: new Date().toISOString().slice(0, 10),
+        placeholder: 'YYYY-MM-DD',
+        confirmLabel: 'Next',
+        cancelLabel: 'Cancel'
+    });
+    if (matchDate === null || !String(matchDate).trim()) {
         return;
     }
 
-    const matchTime = window.prompt('Match time (HH:MM:SS):', '18:00:00');
-    if (!matchTime) {
+    const matchTime = await promptForValue({
+        title: 'Add manual match',
+        message: 'Choose the match time (HH:MM:SS).',
+        initialValue: '18:00:00',
+        placeholder: 'HH:MM:SS',
+        confirmLabel: 'Next',
+        cancelLabel: 'Cancel'
+    });
+    if (matchTime === null || !String(matchTime).trim()) {
         return;
     }
 
-    const roundNumber = parseInt(window.prompt('Round number:', '1') || '1', 10);
-    const player1Id = window.prompt('Player 1 ID (optional):', '') || null;
-    const player2Id = window.prompt('Player 2 ID (optional):', '') || null;
-    const groupNumber = window.prompt('Group number (optional):', '') || null;
-    const bracket = window.prompt('Bracket (optional):', '') || null;
+    const roundNumberRaw = await promptForValue({
+        title: 'Add manual match',
+        message: 'Enter the round number.',
+        initialValue: '1',
+        placeholder: '1',
+        confirmLabel: 'Next',
+        cancelLabel: 'Cancel'
+    });
+    if (roundNumberRaw === null) {
+        return;
+    }
+
+    const player1Id = await promptForValue({
+        title: 'Add manual match',
+        message: 'Optional: enter Player 1 ID.',
+        initialValue: '',
+        placeholder: 'Player 1 ID',
+        confirmLabel: 'Next',
+        cancelLabel: 'Cancel'
+    });
+    if (player1Id === null) {
+        return;
+    }
+
+    const player2Id = await promptForValue({
+        title: 'Add manual match',
+        message: 'Optional: enter Player 2 ID.',
+        initialValue: '',
+        placeholder: 'Player 2 ID',
+        confirmLabel: 'Next',
+        cancelLabel: 'Cancel'
+    });
+    if (player2Id === null) {
+        return;
+    }
+
+    const groupNumber = await promptForValue({
+        title: 'Add manual match',
+        message: 'Optional: enter a group number.',
+        initialValue: '',
+        placeholder: 'Group number',
+        confirmLabel: 'Next',
+        cancelLabel: 'Cancel'
+    });
+    if (groupNumber === null) {
+        return;
+    }
+
+    const bracket = await promptForValue({
+        title: 'Add manual match',
+        message: 'Optional: enter a bracket label.',
+        initialValue: '',
+        placeholder: 'Bracket label',
+        confirmLabel: 'Create match',
+        cancelLabel: 'Cancel'
+    });
+    if (bracket === null) {
+        return;
+    }
+
+    const roundNumber = parseInt(String(roundNumberRaw || '1'), 10);
 
     try {
         const data = await postJson('../../services/match_create.php', {
             tour_id: TournamentAdminPage.tourId,
-            match_date: matchDate,
-            match_time: matchTime,
+            match_date: String(matchDate).trim(),
+            match_time: String(matchTime).trim(),
             round_number: Number.isFinite(roundNumber) ? roundNumber : 1,
-            player1_id: player1Id ? parseInt(player1Id, 10) : null,
-            player2_id: player2Id ? parseInt(player2Id, 10) : null,
-            group_number: groupNumber ? parseInt(groupNumber, 10) : null,
-            bracket: bracket || null
+            player1_id: player1Id ? parseInt(String(player1Id), 10) : null,
+            player2_id: player2Id ? parseInt(String(player2Id), 10) : null,
+            group_number: groupNumber ? parseInt(String(groupNumber), 10) : null,
+            bracket: String(bracket || '').trim() || null
         });
         if (!data.success) {
             throw new Error(data.message || 'Failed to create match');
         }
+        feedbackToast('Manual match created. Refreshing the tournament view...', 'success');
         await refreshMatches();
     } catch (error) {
-        window.alert(error.message);
+        feedbackToast(error.message, 'error');
     }
 }
 
 async function deleteMatch(matchId) {
-    if (!window.confirm('Delete this match?')) {
+    const confirmed = await confirmAction({
+        title: 'Delete match',
+        message: 'Delete this match from the tournament schedule?',
+        confirmLabel: 'Delete match',
+        cancelLabel: 'Keep match',
+        tone: 'danger'
+    });
+    if (!confirmed) {
         return;
     }
 
@@ -304,15 +510,17 @@ async function deleteMatch(matchId) {
         if (!data.success) {
             throw new Error(data.message || 'Failed to delete match');
         }
+        feedbackToast('Match deleted. Refreshing the current view...', 'success');
         await refreshMatches();
     } catch (error) {
-        window.alert(error.message);
+        feedbackToast(error.message, 'error');
     }
 }
 
 async function openMatchModal(matchId) {
     document.getElementById('mf_match_id').value = matchId;
     document.getElementById('matchModal').style.display = 'flex';
+    setModalFeedbackState('saving', 'Loading', 'Fetching the latest match data for this modal...');
 
     try {
         const response = await fetch(`../../services/match_get.php?id=${matchId}`);
@@ -333,20 +541,41 @@ async function openMatchModal(matchId) {
         setElementText('mf_status_label', match.match_status || matchMeta.status || 'Scheduled');
         setElementText(
             'mf_flow_label',
-            matchMeta.next_match_number ? `Winner to Match ${matchMeta.next_match_number}` : 'Winner path pending'
+            matchMeta.flow_label || (matchMeta.next_match_number ? `Winner to Match ${matchMeta.next_match_number}` : 'Winner path pending')
         );
         syncModalPlayerCard('mf_player1_link', 'mf_player1_label', matchMeta.player1_label, matchMeta.player1_profile_url);
         syncModalPlayerCard('mf_player2_link', 'mf_player2_label', matchMeta.player2_label, matchMeta.player2_profile_url);
         setElementText('mf_score_label_1', `${matchMeta.player1_label || 'Top slot'} score`);
         setElementText('mf_score_label_2', `${matchMeta.player2_label || 'Bottom slot'} score`);
         syncModalResultState(match);
+        bindMatchModalInputs();
+        captureModalInitialState();
+
+        if (!match?.player1_id || !match?.player2_id) {
+            setModalFeedbackState('warning', 'Waiting', 'This match still needs both slots seeded before a result can be recorded.');
+        }
     } catch (error) {
-        closeMatchModal();
-        window.alert(error.message);
+        closeMatchModal(true);
+        feedbackToast(error.message, 'error');
     }
 }
 
-function closeMatchModal() {
+async function closeMatchModal(force = false) {
+    if (!force && MatchModalState.dirty) {
+        const discard = await confirmAction({
+            title: 'Discard unsaved modal changes',
+            message: 'You still have local edits in this match modal. Close it anyway?',
+            confirmLabel: 'Discard changes',
+            cancelLabel: 'Keep editing',
+            tone: 'danger'
+        });
+        if (!discard) {
+            return;
+        }
+    }
+
+    MatchModalState.initialValues = null;
+    MatchModalState.dirty = false;
     document.getElementById('matchModal').style.display = 'none';
 }
 
@@ -358,26 +587,34 @@ async function saveMatchFields() {
     };
 
     try {
+        setButtonBusy('mf_save_schedule', true, 'Saving...', 'Save Schedule');
+        setModalFeedbackState('saving', 'Saving', 'Updating the match schedule and preparing a soft refresh...');
         const data = await postJson('../../services/match_update.php', payload);
         if (!data.success) {
             throw new Error(data.message || 'Failed to update match');
         }
+        setModalFeedbackState('saved', 'Saved', 'Schedule saved. Refreshing the bracket view now...');
+        feedbackToast('Schedule saved successfully.', 'success');
+        await closeMatchModal(true);
         await refreshMatches();
     } catch (error) {
-        window.alert(error.message);
+        setModalFeedbackState('warning', 'Retry', error.message);
+        feedbackToast(error.message, 'error');
+    } finally {
+        setButtonBusy('mf_save_schedule', false, 'Saving...', 'Save Schedule');
     }
 }
 
 async function saveMatchResult() {
     if (document.getElementById('mf_save_result')?.disabled) {
-        window.alert('This match needs both slots seeded before a result can be recorded.');
+        feedbackToast('This match needs both slots seeded before a result can be recorded.', 'warning');
         return;
     }
 
     const player1Raw = document.getElementById('mf_p1s').value;
     const player2Raw = document.getElementById('mf_p2s').value;
     if (player1Raw === '' || player2Raw === '') {
-        window.alert('Enter both scores before recording the result.');
+        feedbackToast('Enter both scores before recording the result.', 'warning');
         return;
     }
 
@@ -388,18 +625,32 @@ async function saveMatchResult() {
     };
 
     try {
+        setButtonBusy('mf_save_result', true, 'Recording...', 'Record Result');
+        setModalFeedbackState('saving', 'Saving', 'Recording the result and preparing the next bracket state...');
         const data = await postJson('../../services/match_result.php', payload);
         if (!data.success) {
             throw new Error(data.message || 'Failed to record result');
         }
+        setModalFeedbackState('saved', 'Saved', 'Result recorded. Refreshing the tournament flow...');
+        feedbackToast('Result recorded successfully.', 'success');
+        await closeMatchModal(true);
         await refreshMatches();
     } catch (error) {
-        window.alert(error.message);
+        setModalFeedbackState('warning', 'Retry', error.message);
+        feedbackToast(error.message, 'error');
+    } finally {
+        setButtonBusy('mf_save_result', false, 'Recording...', 'Record Result');
     }
 }
 
 async function promoteGroups() {
-    if (!window.confirm('Promote the top group-stage players into the knockout bracket?')) {
+    const confirmed = await confirmAction({
+        title: 'Promote group qualifiers',
+        message: 'Promote the top group-stage players into the knockout bracket?',
+        confirmLabel: 'Promote qualifiers',
+        cancelLabel: 'Cancel'
+    });
+    if (!confirmed) {
         return;
     }
 
@@ -408,9 +659,10 @@ async function promoteGroups() {
         if (!data.success) {
             throw new Error(data.message || 'Failed to promote groups');
         }
+        feedbackToast('Group qualifiers promoted. Refreshing the tournament view...', 'success');
         await refreshMatches();
     } catch (error) {
-        window.alert(error.message);
+        feedbackToast(error.message, 'error');
     }
 }
 
@@ -430,9 +682,10 @@ async function saveTeamMatchResult(event, teamMatchId) {
         if (!data.success) {
             throw new Error(data.message || 'Failed to record team result');
         }
+        feedbackToast('Team result saved. Refreshing the latest standings...', 'success');
         await refreshMatches();
     } catch (error) {
-        window.alert(error.message);
+        feedbackToast(error.message, 'error');
     }
 
     return false;
@@ -455,7 +708,7 @@ function closeLeagueToolsModal() {
 async function submitLeagueTools() {
     const startDate = document.getElementById('lt_startdate').value;
     if (!startDate) {
-        window.alert('Please choose a new start date.');
+        feedbackToast('Please choose a new start date.', 'warning');
         return;
     }
 
@@ -467,9 +720,10 @@ async function submitLeagueTools() {
         if (!data.success) {
             throw new Error(data.message || 'Failed to reschedule league');
         }
+        feedbackToast('Structure dates updated. Refreshing the latest schedule...', 'success');
         await refreshMatches();
     } catch (error) {
-        window.alert(error.message);
+        feedbackToast(error.message, 'error');
     }
 }
 
@@ -546,7 +800,7 @@ async function handleBracketDrop(event) {
     };
 
     if (target.matchStatus === 'Completed') {
-        window.alert('Completed matches cannot accept drag-and-drop changes.');
+        feedbackToast('Completed matches cannot accept drag-and-drop changes.', 'warning');
         clearBracketDropTargets();
         return;
     }
@@ -566,9 +820,10 @@ async function handleBracketDrop(event) {
         if (!data.success) {
             throw new Error(data.message || 'Failed to swap players');
         }
+        feedbackToast('Bracket slots updated. Refreshing the connected bracket...', 'success');
         await refreshMatches();
     } catch (error) {
-        window.alert(error.message);
+        feedbackToast(error.message, 'error');
         clearBracketDropTargets();
     }
 }
@@ -585,6 +840,38 @@ function bindBracketSlots() {
 
 function selectAdminBracketMatch(matchId) {
     openMatchModal(matchId);
+}
+
+async function toggleBracketSectionFocus() {
+    const section = document.getElementById('adminBracketSection');
+    if (!section) {
+        return;
+    }
+
+    try {
+        if (document.fullscreenElement === section) {
+            await document.exitFullscreen();
+            return;
+        }
+
+        if (section.requestFullscreen) {
+            await section.requestFullscreen();
+            return;
+        }
+
+        feedbackToast('Focus mode is not available in this browser.', 'warning');
+    } catch (error) {
+        feedbackToast('Could not open focus mode in this browser.', 'warning');
+    }
+}
+
+function scrollToBracketGroup(groupId) {
+    const target = document.getElementById(groupId);
+    if (!target) {
+        return;
+    }
+
+    target.scrollIntoView({ behavior: 'smooth', block: 'start', inline: 'nearest' });
 }
 
 function bindBracketInteraction() {
@@ -798,7 +1085,7 @@ function initializeTournamentPage(preferredSection = null) {
     document.getElementById('generateStructureBtn')?.addEventListener('click', generateStructure);
     document.getElementById('startTournamentBtn')?.addEventListener('click', startTournament);
     document.getElementById('refreshMatchesBtn')?.addEventListener('click', () => {
-        refreshMatches().catch((error) => window.alert(error.message));
+        refreshMatches().catch((error) => feedbackToast(error.message, 'error'));
     });
     document.getElementById('addMatchBtn')?.addEventListener('click', addMatch);
     document.getElementById('promoteGroupsBtn')?.addEventListener('click', promoteGroups);
@@ -810,6 +1097,7 @@ function initializeTournamentPage(preferredSection = null) {
     bindCurrentPlayerControls();
     bindAvailablePlayerFilter();
     bindModalDismissals();
+    bindMatchModalInputs();
     refreshSelectionMeta();
     showSection(preferredSection || readRememberedSection() || getCurrentSectionName() || 'matches');
 }
@@ -822,6 +1110,8 @@ document.addEventListener('DOMContentLoaded', () => {
 window.showSection = showSection;
 window.generateStructure = generateStructure;
 window.startTournament = startTournament;
+window.toggleBracketSectionFocus = toggleBracketSectionFocus;
+window.scrollToBracketGroup = scrollToBracketGroup;
 window.selectAdminBracketMatch = selectAdminBracketMatch;
 window.saveQuickMatchResult = saveQuickMatchResult;
 window.openMatchModal = openMatchModal;

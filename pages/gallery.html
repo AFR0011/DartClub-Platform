@@ -270,9 +270,41 @@
 
   <script src="../js/scrollreveal.min.js"></script>
   <script src="../js/behaviour.js?v=20260402-2"></script>
+  <script src="../js/ui_feedback.js?v=20260406-1"></script>
   <script>
     let galleryContext = null;
     let galleryImages = [];
+
+    function galleryEscapeHtml(value) {
+      return String(value ?? "")
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
+    }
+
+    function galleryToast(message, tone = 'info') {
+      if (window.AppUI?.toast) {
+        window.AppUI.toast(message, tone);
+        return;
+      }
+
+      if (tone === 'error' || tone === 'warning') {
+        window.alert(message);
+        return;
+      }
+
+      console.info(message);
+    }
+
+    async function requestGalleryConfirm(config) {
+      if (window.AppUI?.confirm) {
+        return window.AppUI.confirm(config);
+      }
+
+      return window.confirm(config?.message || 'Continue?');
+    }
 
     function renderGallery(images) {
       return `
@@ -280,13 +312,13 @@
           ${images.map((image) => `
             <article class="gallery-card">
               <img
-                src="${escapeHtml(image.file_path)}"
-                alt="${escapeHtml(image.title || 'Gallery image')}"
+                src="${galleryEscapeHtml(image.file_path)}"
+                alt="${galleryEscapeHtml(image.title || 'Gallery image')}"
                 onclick="openLightboxById(${Number(image.id)})"
               >
               <div class="gallery-card__body">
-                <strong class="gallery-card__title">${escapeHtml(image.title || 'Club memory')}</strong>
-                <span class="gallery-card__meta">${escapeHtml(image.source_blog_id ? `Linked to blog post: ${image.source_blog_title || `#${image.source_blog_id}`}` : 'Standalone gallery image')}</span>
+                <strong class="gallery-card__title">${galleryEscapeHtml(image.title || 'Club memory')}</strong>
+                <span class="gallery-card__meta">${galleryEscapeHtml(image.source_blog_id ? `Linked to blog post: ${image.source_blog_title || `#${image.source_blog_id}`}` : 'Standalone gallery image')}</span>
                 ${
                   galleryContext?.can_manage_club && Number(image.id) > 0
                     ? `<button type="button" class="ui-button-danger" onclick="deleteImage(${image.id}, ${image.source_blog_id ? 'true' : 'false'})">${image.source_blog_id ? 'Remove from gallery' : 'Delete'}</button>`
@@ -300,13 +332,12 @@
     }
 
     async function loadGalleryPage() {
-      const [contextResponse, galleryResponse] = await Promise.all([
-        fetch('../services/get_session_context.php'),
-        fetch('../services/gallery_get.php')
+      const [context, images] = await Promise.all([
+        window.appFetchJson('../services/get_session_context.php'),
+        window.appFetchJson('../services/gallery_get.php')
       ]);
 
-      galleryContext = await contextResponse.json();
-      const images = await galleryResponse.json();
+      galleryContext = context;
       if (!Array.isArray(images)) {
         throw new Error(images.error || 'Failed to load gallery images.');
       }
@@ -361,17 +392,16 @@
 
     async function uploadImage(event) {
       event.preventDefault();
-      const formData = new FormData(event.currentTarget);
-      const response = await fetch('../services/gallery_upload.php', {
+      const data = await window.appFetchJson('../services/gallery_upload.php', {
         method: 'POST',
-        body: formData
+        body: new FormData(event.currentTarget)
       });
-      const data = await response.json();
       if (!data.success) {
-        window.alert(data.message || 'Upload failed.');
+        galleryToast(data.message || 'Upload failed.', 'error');
         return;
       }
 
+      galleryToast('Image uploaded successfully.', 'success');
       await loadGalleryPage();
     }
 
@@ -380,25 +410,34 @@
         ? 'Remove this image from the gallery? The blog post will keep its image.'
         : 'Delete this image from the gallery?';
 
-      if (!window.confirm(message)) {
+      const confirmed = await requestGalleryConfirm({
+        title: linkedToBlog ? 'Remove linked gallery image' : 'Delete gallery image',
+        message,
+        confirmLabel: linkedToBlog ? 'Remove from gallery' : 'Delete image',
+        cancelLabel: 'Cancel',
+        tone: 'danger'
+      });
+      if (!confirmed) {
         return;
       }
 
-      const response = await fetch('../services/gallery_delete.php', {
+      const data = await window.appFetchJson('../services/gallery_delete.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id })
       });
-      const data = await response.json();
       if (!data.success) {
-        window.alert(data.message || 'Delete failed.');
+        galleryToast(data.message || 'Delete failed.', 'error');
         return;
       }
 
       if (data.removed_from_gallery_only) {
-        window.alert('Image removed from the gallery. The blog post keeps its image.');
+        galleryToast('Image removed from the gallery. The blog post keeps its image.', 'success');
       }
 
+      if (!data.removed_from_gallery_only) {
+        galleryToast('Image deleted successfully.', 'success');
+      }
       await loadGalleryPage();
     }
 
@@ -428,7 +467,7 @@
 
     document.addEventListener('DOMContentLoaded', () => {
       loadGalleryPage().catch((error) => {
-        document.getElementById('gallery-shell').innerHTML = `<div class="surface">${error.message}</div>`;
+        document.getElementById('gallery-shell').innerHTML = `<div class="surface">${galleryEscapeHtml(error.message)}</div>`;
       });
     });
 

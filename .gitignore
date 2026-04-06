@@ -1,0 +1,31 @@
+# Local runtime logs
+php-server.log
+php-server-error.log
+*.log
+
+# Local Codex workspace state
+.codex/*
+!.codex/config.toml
+
+# Runtime-generated uploads from local/dev usage
+files/applications/membership/[0-9]*_[0-9a-f]*.pdf
+files/applications/membership/[0-9]*_[0-9a-f]*.doc
+files/applications/membership/[0-9]*_[0-9a-f]*.docx
+files/media/images/blog/[0-9a-f]*.jpg
+files/media/images/blog/[0-9a-f]*.jpeg
+files/media/images/blog/[0-9a-f]*.png
+files/media/images/blog/[0-9a-f]*.gif
+files/media/images/blog/[0-9a-f]*.webp
+files/media/images/gallery/[0-9a-f]*.jpg
+files/media/images/gallery/[0-9a-f]*.jpeg
+files/media/images/gallery/[0-9a-f]*.png
+files/media/images/gallery/[0-9a-f]*.gif
+files/media/images/gallery/[0-9a-f]*.webp
+files/media/Other Images/
+
+# Local scratch notes
+Manual Verification.txt
+
+# OS/editor noise
+.DS_Store
+Thumbs.db

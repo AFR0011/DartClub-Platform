@@ -5,6 +5,7 @@
 - `services/`: backend request handlers plus shared helpers
 - `css/`: site/admin styles
 - `js/`: public/admin client-side logic
+- `scripts/`: local seed and verification helpers
 - `files/`: media assets and uploaded/static image content
 - `other/`: forms, logs, and local helper artifacts
 - `vendor/`: Composer dependencies
@@ -29,6 +30,10 @@
     - `services/get_player_dashboard.php`
     - `services/save_profile.php`
     - `services/get_my_tournaments.php`
+- `pages/player_profile.php`
+  - read-only public player profile
+  - calls:
+    - `services/get_public_player_profile.php`
 - `pages/register.html`
   - club membership workflow
   - calls:
@@ -62,6 +67,7 @@
     - `League`
     - `Group`
     - `Elimination`
+    - `Double Elimination`
   - posts to `services/create_tournament.php`
 - `pages/admin/show_tournament_details.php`
   - canonical tournament management screen
@@ -112,10 +118,11 @@
   - league group-stage plus knockout scheduling
   - team tournament generation and standings
   - elimination bracket generation
+  - double-elimination winners/losers/grand-final generation
   - lifecycle refresh and archive guards
   - result propagation and tournament page data loading
 - `services/shared/tournament_view_helpers.php`
-  - status and display-label helpers for admin rendering
+  - status, source-label, and advancement-label helpers for admin/public bracket rendering
 
 ## Active Data Model
 - `users`
@@ -226,6 +233,8 @@
 - Shared site/admin JS:
   - `js/behaviour.js`
   - `js/admin_nav.js`
+  - `js/ui_feedback.js`
+    - shared toast, confirm, and prompt helpers used by blog, gallery, and admin workflows
 - Media:
   - `files/media/images/`
   - `files/media/images/gallery/`
@@ -236,7 +245,7 @@
 - Removed request-path schema mutation from active handlers.
 - Removed mixed direct DB credentials from pages/services.
 - Removed steady-state username-based identity resolution from public/profile/tournament reads.
-- Removed `DoubleElimination` from the active create flow.
+- Restored active `Double Elimination` creation support with a real winners/losers/grand-final engine.
 - Added an explicit `Round Robin` format so the old single-table behavior is no longer overloaded onto `League`.
 - Reassigned tournament semantics to:
   - `League` = player groups plus knockout

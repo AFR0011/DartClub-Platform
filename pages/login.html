@@ -35,7 +35,7 @@
             <input type="password" id="password" placeholder="Password..." required>
             <input type="submit" value="Sign In">
           </form>
-          <div id="error-message" style="color: red;"></div>
+          <div id="error-message"></div>
           <div class="group">
             <a href="reset_password.html">Forgot Password?</a>
             <a href="sign_up.html">Sign Up</a>
@@ -68,12 +68,8 @@
         },
         body: JSON.stringify({ email: email, password: password })
       })
-      .then(response => {
-        console.log('Raw response:', response);
-        return response.json();
-      })
+      .then(response => response.json())
       .then(data => {
-        console.log('Parsed data:', data);
         if (data.success) {
           window.location.href = 'main.php';
         } else {

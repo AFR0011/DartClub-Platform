@@ -128,6 +128,22 @@ if (!defined('APP_BOOTSTRAPPED')) {
         return $normalized;
     }
 
+    function app_existing_public_path(?string $path): ?string
+    {
+        $publicPath = app_public_path($path);
+        if ($publicPath === null) {
+            return null;
+        }
+
+        if (preg_match('#^https?://#i', $publicPath) === 1) {
+            return $publicPath;
+        }
+
+        $absolutePath = dirname(__DIR__) . $publicPath;
+
+        return is_file($absolutePath) ? $publicPath : null;
+    }
+
     if (app_is_service_request()) {
         ini_set('display_errors', '0');
 

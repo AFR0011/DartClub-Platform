@@ -43,7 +43,7 @@ foreach ($matches as $index => $match) {
 }
 
 $groupMatches = [];
-$knockoutRounds = [];
+$knockoutBracketGroups = [];
 foreach ($matches as $match) {
     if ($match['group_number'] !== null) {
         $groupNumber = (int) $match['group_number'];
@@ -54,31 +54,97 @@ foreach ($matches as $match) {
         continue;
     }
 
-    $roundNumber = (int) $match['round_number'];
-    if (!isset($knockoutRounds[$roundNumber])) {
-        $knockoutRounds[$roundNumber] = [];
+    $rawBracketLabel = trim((string) ($match['bracket'] ?? ''));
+    if ($rawBracketLabel === '') {
+        $rawBracketLabel = 'Elimination';
     }
-    $knockoutRounds[$roundNumber][] = $match;
+    $bracketKey = $tournament['tour_type'] === 'Double Elimination'
+        ? $rawBracketLabel
+        : 'primary';
+    $displayLabel = $tournament['tour_type'] === 'Double Elimination'
+        ? $rawBracketLabel
+        : ($rawBracketLabel === 'Knockout' ? 'Knockout Bracket' : 'Tournament Bracket');
+
+    if (!isset($knockoutBracketGroups[$bracketKey])) {
+        $knockoutBracketGroups[$bracketKey] = [
+            'key' => $bracketKey,
+            'source_label' => $rawBracketLabel,
+            'display_label' => $displayLabel,
+            'rounds' => [],
+            'round_numbers' => [],
+            'round_positions' => [],
+            'round_count' => 0,
+            'slot_count' => 0,
+        ];
+    }
+
+    $roundNumber = (int) $match['round_number'];
+    if (!isset($knockoutBracketGroups[$bracketKey]['rounds'][$roundNumber])) {
+        $knockoutBracketGroups[$bracketKey]['rounds'][$roundNumber] = [];
+    }
+    $knockoutBracketGroups[$bracketKey]['rounds'][$roundNumber][] = $match;
 }
 
 ksort($groupMatches);
-ksort($knockoutRounds);
+$knockoutBracketPriority = [
+    'Winners Bracket' => 1,
+    'Elimination' => 1,
+    'Knockout' => 1,
+    'Losers Bracket' => 2,
+    'Grand Final' => 3,
+];
+uasort($knockoutBracketGroups, static function (array $left, array $right) use ($knockoutBracketPriority): int {
+    $leftPriority = $knockoutBracketPriority[$left['source_label']] ?? 99;
+    $rightPriority = $knockoutBracketPriority[$right['source_label']] ?? 99;
+    if ($leftPriority !== $rightPriority) {
+        return $leftPriority <=> $rightPriority;
+    }
 
-$knockoutRoundNumbers = array_keys($knockoutRounds);
-$knockoutRoundCount = count($knockoutRoundNumbers);
-$interactiveBracketSlotCount = $knockoutRoundCount > 0 ? (int) pow(2, $knockoutRoundCount) : 0;
-$roundPositionByNumber = [];
-foreach ($knockoutRoundNumbers as $index => $roundNumber) {
-    $roundPositionByNumber[(int) $roundNumber] = $index + 1;
+    return strcmp((string) $left['display_label'], (string) $right['display_label']);
+});
+
+$bracketRoundCountByLabel = [];
+foreach ($knockoutBracketGroups as $groupKey => $group) {
+    ksort($group['rounds']);
+    $roundNumbers = array_keys($group['rounds']);
+    $roundPositions = [];
+    foreach ($roundNumbers as $index => $roundNumber) {
+        $roundPositions[(int) $roundNumber] = $index + 1;
+    }
+    $group['round_numbers'] = $roundNumbers;
+    $group['round_positions'] = $roundPositions;
+    $group['round_count'] = count($roundNumbers);
+    $group['slot_count'] = $group['round_count'] > 0 ? (int) pow(2, $group['round_count']) : 0;
+    $knockoutBracketGroups[$groupKey] = $group;
+    $bracketRoundCountByLabel[$group['source_label']] = $group['round_count'];
 }
+
 $selectedBracketMatchId = 0;
-if (!empty($knockoutRoundNumbers)) {
-    $firstRoundNumber = (int) $knockoutRoundNumbers[0];
-    if (!empty($knockoutRounds[$firstRoundNumber][0]['match_id'])) {
-        $selectedBracketMatchId = (int) $knockoutRounds[$firstRoundNumber][0]['match_id'];
+if (!empty($knockoutBracketGroups)) {
+    $firstBracketGroup = reset($knockoutBracketGroups);
+    $firstRoundNumber = (int) ($firstBracketGroup['round_numbers'][0] ?? 0);
+    if ($firstRoundNumber > 0 && !empty($firstBracketGroup['rounds'][$firstRoundNumber][0]['match_id'])) {
+        $selectedBracketMatchId = (int) $firstBracketGroup['rounds'][$firstRoundNumber][0]['match_id'];
     }
 }
 $canStartTournament = in_array((string) ($tournament['status'] ?? ''), ['draft', 'registration_open', 'registration_closed'], true);
+
+function tournament_admin_round_title(string $bracketLabel, int $roundNumber, int $roundCount): string
+{
+    if ($bracketLabel === 'Grand Final') {
+        return 'Grand Final';
+    }
+
+    if ($bracketLabel === 'Winners Bracket') {
+        return 'Winners Round ' . $roundNumber;
+    }
+
+    if ($bracketLabel === 'Losers Bracket') {
+        return 'Losers Round ' . $roundNumber;
+    }
+
+    return tournament_round_title($roundNumber);
+}
 
 function tournament_match_visual_state(array $match): array
 {
@@ -128,17 +194,32 @@ foreach ($matches as $match) {
     if (!empty($match['next_match_id']) && isset($matchNumbersById[(int) $match['next_match_id']])) {
         $nextMatchNumber = (int) $matchNumbersById[(int) $match['next_match_id']];
     }
+    $loserNextMatchNumber = null;
+    if (!empty($match['loser_next_match_id']) && isset($matchNumbersById[(int) $match['loser_next_match_id']])) {
+        $loserNextMatchNumber = (int) $matchNumbersById[(int) $match['loser_next_match_id']];
+    }
+    $bracketLabel = trim((string) ($match['bracket'] ?? ''));
+    if ($bracketLabel === '') {
+        $bracketLabel = 'Elimination';
+    }
 
     $matchesForJs[$matchId] = [
         'id' => $matchId,
         'number' => (int) ($matchNumbersById[$matchId] ?? 0),
         'status' => (string) ($match['match_status'] ?? 'Scheduled'),
-        'round_title' => tournament_round_title((int) ($match['round_number'] ?? 1)),
+        'bracket' => $bracketLabel,
+        'round_title' => tournament_admin_round_title(
+            $bracketLabel,
+            (int) ($match['round_number'] ?? 1),
+            (int) ($bracketRoundCountByLabel[$bracketLabel] ?? 1)
+        ),
         'player1_label' => tournament_match_label($match, 'player1', $matchNumbersById),
         'player2_label' => tournament_match_label($match, 'player2', $matchNumbersById),
         'player1_profile_url' => !empty($match['player1_id']) ? '../player_profile.php?id=' . (int) $match['player1_id'] : '',
         'player2_profile_url' => !empty($match['player2_id']) ? '../player_profile.php?id=' . (int) $match['player2_id'] : '',
         'next_match_number' => $nextMatchNumber,
+        'loser_next_match_number' => $loserNextMatchNumber,
+        'flow_label' => tournament_match_advancement_label($match, $matchNumbersById),
     ];
 }
 ?>
@@ -244,6 +325,19 @@ foreach ($matches as $match) {
             align-items: start;
             min-width: max-content;
             padding-right: 12px;
+        }
+
+        .bracket-focus-toolbar,
+        .bracket-jump-nav {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .bracket-focus-toolbar {
+            justify-content: space-between;
+            margin-bottom: 14px;
         }
 
         .connected-bracket-round {
@@ -356,6 +450,22 @@ foreach ($matches as $match) {
             height: 2px;
             border-radius: 999px;
             background: rgba(37, 99, 235, 0.32);
+        }
+
+        .page-section[data-section="bracket"]:fullscreen {
+            padding: 20px;
+            overflow: auto;
+            background: linear-gradient(180deg, #edf4ff, #f8fbff);
+        }
+
+        .page-section[data-section="bracket"]:fullscreen .connected-bracket-shell {
+            max-height: calc(100vh - 15rem);
+            overflow: auto;
+            padding-right: 16px;
+        }
+
+        .page-section[data-section="bracket"]:fullscreen .section-grid {
+            align-items: start;
         }
 
         .connected-bracket-summary {
@@ -785,6 +895,52 @@ foreach ($matches as $match) {
             gap: 16px;
         }
 
+        .match-modal-state {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+            padding: 12px 14px;
+            border-radius: 16px;
+            background: rgba(37, 99, 235, 0.06);
+            border: 1px solid rgba(37, 99, 235, 0.12);
+        }
+
+        .match-modal-state-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 999px;
+            background: rgba(15, 23, 42, 0.08);
+            color: #334155;
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .match-modal-state-badge[data-tone="dirty"] {
+            background: rgba(245, 158, 11, 0.16);
+            color: #b45309;
+        }
+
+        .match-modal-state-badge[data-tone="saving"] {
+            background: rgba(37, 99, 235, 0.16);
+            color: #1d4ed8;
+        }
+
+        .match-modal-state-badge[data-tone="saved"] {
+            background: rgba(22, 163, 74, 0.16);
+            color: #15803d;
+        }
+
+        .match-modal-state-badge[data-tone="warning"] {
+            background: rgba(220, 38, 38, 0.12);
+            color: #b91c1c;
+        }
+
         .match-modal-section {
             padding: 18px;
             border-radius: 22px;
@@ -1107,7 +1263,7 @@ foreach ($matches as $match) {
             <?php if ($tournament['tour_type'] === 'Group'): ?>
                 <button type="button" data-section-button="teams">Teams</button>
             <?php endif; ?>
-            <?php if (!empty($knockoutRounds)): ?>
+            <?php if (!empty($knockoutBracketGroups)): ?>
                 <button type="button" data-section-button="bracket">Tournament Bracket</button>
                 <button type="button" data-section-button="bracket_board">Bracket Board</button>
             <?php endif; ?>
@@ -1362,91 +1518,114 @@ foreach ($matches as $match) {
             </section>
         <?php endif; ?>
 
-        <?php if (!empty($knockoutRounds)): ?>
-            <section class="page-section" data-section="bracket">
+        <?php if (!empty($knockoutBracketGroups)): ?>
+            <section class="page-section" data-section="bracket" id="adminBracketSection">
                 <div class="header-actions">
                     <div>
                         <h2>Tournament Bracket</h2>
-                        <p class="surface-note">Use the connected knockout bracket for drag-and-drop reseeding, quick scoring, and visual round flow. Once a match is completed, its slots stay locked.</p>
+                        <p class="surface-note">
+                            <?php if ($tournament['tour_type'] === 'Double Elimination'): ?>
+                                Winners-bracket, losers-bracket, and grand-final paths are rendered separately so the full double-elimination flow stays readable.
+                            <?php else: ?>
+                                Use the connected knockout bracket for drag-and-drop reseeding, quick scoring, and visual round flow. Once a match is completed, its slots stay locked.
+                            <?php endif; ?>
+                        </p>
+                    </div>
+                    <div class="dense-actions">
+                        <button type="button" class="action-btn" onclick="toggleBracketSectionFocus()">Open focus mode</button>
                     </div>
                 </div>
-                <div class="connected-bracket-shell">
-                    <div class="connected-bracket">
-                    <?php foreach ($knockoutRounds as $roundNumber => $roundMatches): ?>
-                        <?php $roundIndex = (int) ($roundPositionByNumber[(int) $roundNumber] ?? 1); ?>
-                        <div class="connected-bracket-round">
-                            <h3><?php echo htmlspecialchars(tournament_round_title($roundNumber)); ?></h3>
-                            <div class="connected-bracket-lane" style="--slot-count: <?php echo $interactiveBracketSlotCount; ?>;">
-                            <?php foreach ($roundMatches as $matchIndex => $roundMatch): ?>
-                                <?php
-                                $nextMatchNumber = null;
-                                if (!empty($roundMatch['next_match_id']) && isset($matchNumbersById[(int) $roundMatch['next_match_id']])) {
-                                    $nextMatchNumber = (int) $matchNumbersById[(int) $roundMatch['next_match_id']];
-                                }
-                                $visualState = tournament_match_visual_state($roundMatch);
-                                $canQuickScore = !empty($roundMatch['player1_id']) && !empty($roundMatch['player2_id']);
-                                $rowSpan = (int) pow(2, $roundIndex);
-                                $rowStart = ($matchIndex * $rowSpan) + 1;
-                                $rowEnd = $rowStart + $rowSpan;
-                                ?>
-                                <div
-                                    class="connected-bracket-node <?php echo $roundIndex > 1 ? 'has-incoming' : ''; ?>"
-                                    style="grid-row: <?php echo $rowStart; ?> / <?php echo $rowEnd; ?>;"
-                                >
-                                    <div
-                                        class="connected-bracket-matchup <?php echo $roundIndex < $knockoutRoundCount ? 'has-outgoing' : ''; ?> <?php echo htmlspecialchars($visualState['card']); ?>"
-                                        data-admin-bracket-match
-                                        data-match-id="<?php echo (int) $roundMatch['match_id']; ?>"
-                                        tabindex="0"
-                                        role="button"
-                                        aria-label="Open match <?php echo (int) $matchNumbersById[(int) $roundMatch['match_id']]; ?> details"
-                                        onclick="openMatchModal(<?php echo (int) $roundMatch['match_id']; ?>)"
-                                    >
-                                        <div class="connected-bracket-summary">
-                                            <span>Match <?php echo (int) $matchNumbersById[(int) $roundMatch['match_id']]; ?></span>
-                                            <span><?php echo htmlspecialchars($roundMatch['match_status']); ?></span>
-                                        </div>
-
-                                        <div class="connected-bracket-slot-stack">
-                                            <button
-                                                type="button"
-                                                class="bracket-slot bracket-slot--compact <?php echo htmlspecialchars($visualState['player1']); ?>"
-                                                draggable="<?php echo (!empty($roundMatch['player1_id']) && $roundMatch['match_status'] !== 'Completed') ? 'true' : 'false'; ?>"
-                                                data-bracket-slot
-                                                data-match-id="<?php echo (int) $roundMatch['match_id']; ?>"
-                                                data-match-status="<?php echo htmlspecialchars($roundMatch['match_status']); ?>"
-                                                data-slot="player1"
-                                                data-player-id="<?php echo !empty($roundMatch['player1_id']) ? (int) $roundMatch['player1_id'] : ''; ?>"
-                                                data-player-name="<?php echo htmlspecialchars(tournament_match_label($roundMatch, 'player1', $matchNumbersById)); ?>"
+                <?php if (count($knockoutBracketGroups) > 1): ?>
+                    <div class="bracket-focus-toolbar">
+                        <p class="surface-note">Jump directly between bracket paths when the tournament gets large, then open focus mode for a wider connected view.</p>
+                        <div class="bracket-jump-nav">
+                            <?php foreach ($knockoutBracketGroups as $jumpGroup): ?>
+                                <?php $jumpGroupDomId = 'admin-bracket-group-' . preg_replace('/[^a-z0-9]+/i', '-', strtolower((string) $jumpGroup['key'])); ?>
+                                <button type="button" class="action-btn" onclick="scrollToBracketGroup('<?php echo htmlspecialchars($jumpGroupDomId, ENT_QUOTES); ?>')"><?php echo htmlspecialchars($jumpGroup['display_label']); ?></button>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                <?php endif; ?>
+                <div class="section-grid">
+                    <?php foreach ($knockoutBracketGroups as $bracketGroup): ?>
+                        <?php $bracketGroupDomId = 'admin-bracket-group-' . preg_replace('/[^a-z0-9]+/i', '-', strtolower((string) $bracketGroup['key'])); ?>
+                        <div class="section-card" id="<?php echo htmlspecialchars($bracketGroupDomId); ?>">
+                            <h3><?php echo htmlspecialchars($bracketGroup['display_label']); ?></h3>
+                            <div class="connected-bracket-shell">
+                                <div class="connected-bracket">
+                                <?php foreach ($bracketGroup['rounds'] as $roundNumber => $roundMatches): ?>
+                                    <?php $roundIndex = (int) ($bracketGroup['round_positions'][(int) $roundNumber] ?? 1); ?>
+                                    <div class="connected-bracket-round">
+                                        <h3><?php echo htmlspecialchars(tournament_admin_round_title($bracketGroup['source_label'], (int) $roundNumber, (int) $bracketGroup['round_count'])); ?></h3>
+                                        <div class="connected-bracket-lane" style="--slot-count: <?php echo (int) $bracketGroup['slot_count']; ?>;">
+                                        <?php foreach ($roundMatches as $matchIndex => $roundMatch): ?>
+                                            <?php
+                                            $visualState = tournament_match_visual_state($roundMatch);
+                                            $rowSpan = (int) pow(2, $roundIndex);
+                                            $rowStart = ($matchIndex * $rowSpan) + 1;
+                                            $rowEnd = $rowStart + $rowSpan;
+                                            ?>
+                                            <div
+                                                class="connected-bracket-node <?php echo $roundIndex > 1 ? 'has-incoming' : ''; ?>"
+                                                style="grid-row: <?php echo $rowStart; ?> / <?php echo $rowEnd; ?>;"
                                             >
-                                                <span class="bracket-slot-label">Top</span>
-                                                <span class="bracket-slot-name"><?php echo htmlspecialchars(tournament_match_label($roundMatch, 'player1', $matchNumbersById)); ?></span>
-                                                <span class="bracket-slot-hint"><?php echo !empty($roundMatch['player1_id']) ? 'Drag' : 'Drop'; ?></span>
-                                            </button>
+                                                <div
+                                                    class="connected-bracket-matchup <?php echo $roundIndex < $bracketGroup['round_count'] ? 'has-outgoing' : ''; ?> <?php echo htmlspecialchars($visualState['card']); ?>"
+                                                    data-admin-bracket-match
+                                                    data-match-id="<?php echo (int) $roundMatch['match_id']; ?>"
+                                                    tabindex="0"
+                                                    role="button"
+                                                    aria-label="Open match <?php echo (int) $matchNumbersById[(int) $roundMatch['match_id']]; ?> details"
+                                                    onclick="openMatchModal(<?php echo (int) $roundMatch['match_id']; ?>)"
+                                                >
+                                                    <div class="connected-bracket-summary">
+                                                        <span>Match <?php echo (int) $matchNumbersById[(int) $roundMatch['match_id']]; ?></span>
+                                                        <span><?php echo htmlspecialchars($roundMatch['match_status']); ?></span>
+                                                    </div>
 
-                                            <button
-                                                type="button"
-                                                class="bracket-slot bracket-slot--compact <?php echo htmlspecialchars($visualState['player2']); ?>"
-                                                draggable="<?php echo (!empty($roundMatch['player2_id']) && $roundMatch['match_status'] !== 'Completed') ? 'true' : 'false'; ?>"
-                                                data-bracket-slot
-                                                data-match-id="<?php echo (int) $roundMatch['match_id']; ?>"
-                                                data-match-status="<?php echo htmlspecialchars($roundMatch['match_status']); ?>"
-                                                data-slot="player2"
-                                                data-player-id="<?php echo !empty($roundMatch['player2_id']) ? (int) $roundMatch['player2_id'] : ''; ?>"
-                                                data-player-name="<?php echo htmlspecialchars(tournament_match_label($roundMatch, 'player2', $matchNumbersById)); ?>"
-                                            >
-                                                <span class="bracket-slot-label">Bottom</span>
-                                                <span class="bracket-slot-name"><?php echo htmlspecialchars(tournament_match_label($roundMatch, 'player2', $matchNumbersById)); ?></span>
-                                                <span class="bracket-slot-hint"><?php echo !empty($roundMatch['player2_id']) ? 'Drag' : 'Drop'; ?></span>
-                                            </button>
+                                                    <div class="connected-bracket-slot-stack">
+                                                        <button
+                                                            type="button"
+                                                            class="bracket-slot bracket-slot--compact <?php echo htmlspecialchars($visualState['player1']); ?>"
+                                                            draggable="<?php echo (!empty($roundMatch['player1_id']) && $roundMatch['match_status'] !== 'Completed') ? 'true' : 'false'; ?>"
+                                                            data-bracket-slot
+                                                            data-match-id="<?php echo (int) $roundMatch['match_id']; ?>"
+                                                            data-match-status="<?php echo htmlspecialchars($roundMatch['match_status']); ?>"
+                                                            data-slot="player1"
+                                                            data-player-id="<?php echo !empty($roundMatch['player1_id']) ? (int) $roundMatch['player1_id'] : ''; ?>"
+                                                            data-player-name="<?php echo htmlspecialchars(tournament_match_label($roundMatch, 'player1', $matchNumbersById)); ?>"
+                                                        >
+                                                            <span class="bracket-slot-label">Top</span>
+                                                            <span class="bracket-slot-name"><?php echo htmlspecialchars(tournament_match_label($roundMatch, 'player1', $matchNumbersById)); ?></span>
+                                                            <span class="bracket-slot-hint"><?php echo !empty($roundMatch['player1_id']) ? 'Drag' : 'Drop'; ?></span>
+                                                        </button>
+
+                                                        <button
+                                                            type="button"
+                                                            class="bracket-slot bracket-slot--compact <?php echo htmlspecialchars($visualState['player2']); ?>"
+                                                            draggable="<?php echo (!empty($roundMatch['player2_id']) && $roundMatch['match_status'] !== 'Completed') ? 'true' : 'false'; ?>"
+                                                            data-bracket-slot
+                                                            data-match-id="<?php echo (int) $roundMatch['match_id']; ?>"
+                                                            data-match-status="<?php echo htmlspecialchars($roundMatch['match_status']); ?>"
+                                                            data-slot="player2"
+                                                            data-player-id="<?php echo !empty($roundMatch['player2_id']) ? (int) $roundMatch['player2_id'] : ''; ?>"
+                                                            data-player-name="<?php echo htmlspecialchars(tournament_match_label($roundMatch, 'player2', $matchNumbersById)); ?>"
+                                                        >
+                                                            <span class="bracket-slot-label">Bottom</span>
+                                                            <span class="bracket-slot-name"><?php echo htmlspecialchars(tournament_match_label($roundMatch, 'player2', $matchNumbersById)); ?></span>
+                                                            <span class="bracket-slot-hint"><?php echo !empty($roundMatch['player2_id']) ? 'Drag' : 'Drop'; ?></span>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        <?php endforeach; ?>
                                         </div>
                                     </div>
+                                <?php endforeach; ?>
                                 </div>
-                            <?php endforeach; ?>
                             </div>
                         </div>
                     <?php endforeach; ?>
-                    </div>
                 </div>
             </section>
 
@@ -1457,58 +1636,60 @@ foreach ($matches as $match) {
                         <p class="bracket-board-note">This keeps the compact card stack from the previous view for quick scanning by round, while the connected bracket handles live reseeding and scoring.</p>
                     </div>
                 </div>
-                <div class="bracket-grid">
-                    <?php foreach ($knockoutRounds as $roundNumber => $roundMatches): ?>
-                        <div class="bracket-round">
-                            <h3><?php echo htmlspecialchars(tournament_round_title($roundNumber)); ?></h3>
-                            <?php foreach ($roundMatches as $roundMatch): ?>
-                                <?php
-                                $nextMatchNumber = null;
-                                if (!empty($roundMatch['next_match_id']) && isset($matchNumbersById[(int) $roundMatch['next_match_id']])) {
-                                    $nextMatchNumber = (int) $matchNumbersById[(int) $roundMatch['next_match_id']];
-                                }
-                                $visualState = tournament_match_visual_state($roundMatch);
-                                $canQuickScore = !empty($roundMatch['player1_id']) && !empty($roundMatch['player2_id']);
-                                ?>
-                                <div class="match-card bracket-card <?php echo htmlspecialchars($visualState['card']); ?>" data-match-card data-match-id="<?php echo (int) $roundMatch['match_id']; ?>">
-                                    <div class="bracket-card-head">
-                                        <span class="tag">Match <?php echo (int) $matchNumbersById[(int) $roundMatch['match_id']]; ?></span>
-                                        <span class="tag"><?php echo htmlspecialchars($roundMatch['match_status']); ?></span>
-                                    </div>
-                                    <div class="bracket-card-meta">
-                                        <span><?php echo htmlspecialchars($roundMatch['match_date']); ?> at <?php echo htmlspecialchars(substr((string) $roundMatch['match_time'], 0, 5)); ?></span>
-                                        <?php if ($nextMatchNumber !== null): ?>
-                                            <span class="bracket-link-chip">Winner to Match <?php echo $nextMatchNumber; ?></span>
-                                        <?php endif; ?>
-                                    </div>
+                <div class="section-grid">
+                    <?php foreach ($knockoutBracketGroups as $bracketGroup): ?>
+                        <div class="section-card">
+                            <h3><?php echo htmlspecialchars($bracketGroup['display_label']); ?></h3>
+                            <div class="bracket-grid">
+                                <?php foreach ($bracketGroup['rounds'] as $roundNumber => $roundMatches): ?>
+                                    <div class="bracket-round">
+                                        <h3><?php echo htmlspecialchars(tournament_admin_round_title($bracketGroup['source_label'], (int) $roundNumber, (int) $bracketGroup['round_count'])); ?></h3>
+                                        <?php foreach ($roundMatches as $roundMatch): ?>
+                                            <?php
+                                            $visualState = tournament_match_visual_state($roundMatch);
+                                            $canQuickScore = !empty($roundMatch['player1_id']) && !empty($roundMatch['player2_id']);
+                                            $pathLabel = tournament_match_advancement_label($roundMatch, $matchNumbersById);
+                                            ?>
+                                            <div class="match-card bracket-card <?php echo htmlspecialchars($visualState['card']); ?>" data-match-card data-match-id="<?php echo (int) $roundMatch['match_id']; ?>">
+                                                <div class="bracket-card-head">
+                                                    <span class="tag">Match <?php echo (int) $matchNumbersById[(int) $roundMatch['match_id']]; ?></span>
+                                                    <span class="tag"><?php echo htmlspecialchars($roundMatch['match_status']); ?></span>
+                                                </div>
+                                                <div class="bracket-card-meta">
+                                                    <span><?php echo htmlspecialchars($roundMatch['match_date']); ?> at <?php echo htmlspecialchars(substr((string) $roundMatch['match_time'], 0, 5)); ?></span>
+                                                    <span class="bracket-link-chip"><?php echo htmlspecialchars($pathLabel); ?></span>
+                                                </div>
 
-                                    <div class="bracket-slot <?php echo htmlspecialchars($visualState['player1']); ?>">
-                                        <span class="bracket-slot-label">Top Slot</span>
-                                        <span class="bracket-slot-name"><?php echo htmlspecialchars(tournament_match_label($roundMatch, 'player1', $matchNumbersById)); ?></span>
-                                        <span class="bracket-slot-hint"><?php echo !empty($roundMatch['player1_id']) ? 'Seeded' : 'Waiting'; ?></span>
-                                    </div>
+                                                <div class="bracket-slot <?php echo htmlspecialchars($visualState['player1']); ?>">
+                                                    <span class="bracket-slot-label">Top Slot</span>
+                                                    <span class="bracket-slot-name"><?php echo htmlspecialchars(tournament_match_label($roundMatch, 'player1', $matchNumbersById)); ?></span>
+                                                    <span class="bracket-slot-hint"><?php echo !empty($roundMatch['player1_id']) ? 'Seeded' : 'Waiting'; ?></span>
+                                                </div>
 
-                                    <div class="bracket-slot <?php echo htmlspecialchars($visualState['player2']); ?>">
-                                        <span class="bracket-slot-label">Bottom Slot</span>
-                                        <span class="bracket-slot-name"><?php echo htmlspecialchars(tournament_match_label($roundMatch, 'player2', $matchNumbersById)); ?></span>
-                                        <span class="bracket-slot-hint"><?php echo !empty($roundMatch['player2_id']) ? 'Seeded' : 'Waiting'; ?></span>
-                                    </div>
+                                                <div class="bracket-slot <?php echo htmlspecialchars($visualState['player2']); ?>">
+                                                    <span class="bracket-slot-label">Bottom Slot</span>
+                                                    <span class="bracket-slot-name"><?php echo htmlspecialchars(tournament_match_label($roundMatch, 'player2', $matchNumbersById)); ?></span>
+                                                    <span class="bracket-slot-hint"><?php echo !empty($roundMatch['player2_id']) ? 'Seeded' : 'Waiting'; ?></span>
+                                                </div>
 
-                                    <div class="bracket-card-footer">
-                                        <div class="bracket-status">
-                                            <?php if ($canQuickScore && $roundMatch['player1_score'] !== null && $roundMatch['player2_score'] !== null): ?>
-                                                Score: <?php echo (int) $roundMatch['player1_score']; ?> - <?php echo (int) $roundMatch['player2_score']; ?>
-                                            <?php else: ?>
-                                                Waiting for result
-                                            <?php endif; ?>
-                                        </div>
-                                        <div class="dense-actions">
-                                            <button type="button" class="action-btn" onclick="openMatchModal(<?php echo (int) $roundMatch['match_id']; ?>)">Details</button>
-                                            <button type="button" class="cancel-btn" onclick="deleteMatch(<?php echo (int) $roundMatch['match_id']; ?>)">Delete</button>
-                                        </div>
+                                                <div class="bracket-card-footer">
+                                                    <div class="bracket-status">
+                                                        <?php if ($canQuickScore && $roundMatch['player1_score'] !== null && $roundMatch['player2_score'] !== null): ?>
+                                                            Score: <?php echo (int) $roundMatch['player1_score']; ?> - <?php echo (int) $roundMatch['player2_score']; ?>
+                                                        <?php else: ?>
+                                                            Waiting for result
+                                                        <?php endif; ?>
+                                                    </div>
+                                                    <div class="dense-actions">
+                                                        <button type="button" class="action-btn" onclick="openMatchModal(<?php echo (int) $roundMatch['match_id']; ?>)">Details</button>
+                                                        <button type="button" class="cancel-btn" onclick="deleteMatch(<?php echo (int) $roundMatch['match_id']; ?>)">Delete</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        <?php endforeach; ?>
                                     </div>
-                                </div>
-                            <?php endforeach; ?>
+                                <?php endforeach; ?>
+                            </div>
                         </div>
                     <?php endforeach; ?>
                 </div>
@@ -1549,6 +1730,10 @@ foreach ($matches as $match) {
                         <strong id="mf_player2_label">TBD</strong>
                     </div>
                 </div>
+            </div>
+            <div class="match-modal-state">
+                <span class="match-modal-state-badge" id="mf_feedback_badge" data-tone="neutral">Ready</span>
+                <span class="surface-note" id="mf_feedback_text">No unsaved changes yet.</span>
             </div>
             <div class="match-modal-body">
                 <section class="match-modal-section">
@@ -1615,6 +1800,7 @@ foreach ($matches as $match) {
             'matches' => $matchesForJs,
         ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
     ?></script>
+    <script src="../../js/ui_feedback.js?v=20260406-1"></script>
     <script src="../../js/admin_tournament_details.js"></script>
 </body>
 </html>

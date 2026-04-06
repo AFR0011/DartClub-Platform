@@ -1,265 +1,1223 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Club Blog - Famagusta Dart Club</title>
-    <link href="https://cdn.jsdelivr.net/npm/remixicon@4.1.0/fonts/remixicon.css" rel="stylesheet">
-    <link rel="shortcut icon" href="../files/media/images/logo.png">
-    <link rel="stylesheet" href="../css/style.css">
-    <style>
-        .blog-shell{padding:7rem 0 3rem;display:grid;gap:1.5rem}
-        .surface,.preview-card,.comment-card,.composer-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:24px;padding:1.5rem}
-        .hero-surface,.summary-strip,.blog-layout,.preview-list,.detail-panel,.comment-list,.composer-form{display:grid;gap:1rem}
-        .hero-surface{grid-template-columns:repeat(auto-fit,minmax(220px,1fr));background:radial-gradient(circle at top right,rgba(255,107,53,.14),transparent 34%),rgba(255,255,255,.04)}
-        .summary-strip{grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}
-        .summary-card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:1rem 1.1rem}
-        .summary-card strong{display:block;color:#fff;font-size:1.45rem}
-        .summary-card span,.meta-line,.helper-text,.preview-excerpt,.comment-meta{color:var(--text-color)}
-        .chip,.status-chip,.detail-chip{display:inline-flex;align-items:center;gap:.4rem;padding:.45rem .85rem;border-radius:999px;font-size:.88rem;font-weight:600}
-        .chip{background:rgba(255,107,53,.18);color:#ffd7ca}
-        .status-chip{background:rgba(255,255,255,.08);color:#fff}
-        .status-draft{background:rgba(245,158,11,.18);color:#fde68a}
-        .status-published{background:rgba(34,197,94,.18);color:#bbf7d0}
-        .detail-chip{background:rgba(255,255,255,.06);color:var(--text-color)}
-        .blog-toolbar,.preview-head,.meta-line,.detail-actions,.detail-nav,.detail-owner-actions,.detail-reactions,.comment-meta,.composer-head{display:flex;gap:.75rem;flex-wrap:wrap;align-items:center}
-        .blog-toolbar,.detail-actions,.detail-nav,.composer-head{justify-content:space-between}
-        .blog-layout{grid-template-columns:minmax(280px,360px) minmax(0,1fr);align-items:start}
-        .preview-rail{display:grid;gap:1rem;position:sticky;top:6.5rem}
-        .preview-card{display:grid;gap:.85rem;cursor:pointer;transition:transform .18s ease,border-color .18s ease,background-color .18s ease}
-        .preview-card:hover,.preview-card.is-active{transform:translateY(-1px);border-color:rgba(255,107,53,.24);background:rgba(255,255,255,.06)}
-        .preview-thumb,.stage-image{width:100%;object-fit:cover;display:block}
-        .preview-thumb{aspect-ratio:16/10;border-radius:18px}
-        .stage-image{max-height:420px;border-radius:20px}
-        .detail-panel{line-height:1.8}
-        .detail-content{display:grid;gap:.9rem;color:#fff}
-        .detail-content p,.detail-content ul,.detail-content ol,.detail-content blockquote,.detail-content pre,.detail-content h1,.detail-content h2,.detail-content h3,.detail-content h4{margin:0}
-        .gallery-strip{display:grid;gap:.65rem;grid-template-columns:repeat(auto-fit,minmax(90px,1fr))}
-        .thumb-button{border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);border-radius:16px;padding:.3rem;cursor:pointer}
-        .thumb-button.is-active,.thumb-button:hover{border-color:rgba(255,107,53,.26)}
-        .thumb-button img{width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:12px;display:block}
-        .detail-actions,.blog-comments{border-top:1px solid rgba(255,255,255,.08);padding-top:1rem}
-        .comment-card{padding:1rem 1.1rem}
-        .empty-state{text-align:center;padding:2rem;border-radius:24px;border:1px dashed rgba(255,255,255,.12);color:var(--text-color)}
-        .ui-input,.ui-select,.ui-textarea{width:100%;padding:.95rem 1rem;border-radius:16px;border:1px solid rgba(255,255,255,.14);background:rgba(0,0,0,.2);color:#fff}
-        .ui-input:focus,.ui-select:focus,.ui-textarea:focus{outline:none;border-color:rgba(255,107,53,.38);box-shadow:0 0 0 4px rgba(255,107,53,.12)}
-        .ui-button,.ui-button-secondary,.ui-button-danger{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;padding:.85rem 1.15rem;border-radius:999px;border:1px solid transparent;cursor:pointer;font:inherit}
-        .ui-button{background:linear-gradient(180deg,#ff7c4d,#ef5a29);color:#fff}
-        .ui-button-secondary{background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.12);color:#fff}
-        .ui-button-danger{background:rgba(220,38,38,.12);border-color:rgba(220,38,38,.25);color:#fecaca}
-        .composer-overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:1.5rem;background:rgba(5,10,18,.74);z-index:1000}
-        .composer-card{width:min(820px,100%);max-height:90vh;overflow:auto;background:radial-gradient(circle at top right,rgba(255,107,53,.12),transparent 34%),rgba(15,23,42,.96)}
-        @media (max-width:980px){.blog-layout{grid-template-columns:1fr}.preview-rail{position:static}}
-        @media (max-width:760px){.blog-toolbar,.detail-actions,.detail-nav,.composer-head{flex-direction:column;align-items:flex-start}}
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Club Blog - Famagusta Dart Club</title>
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@4.1.0/fonts/remixicon.css" rel="stylesheet">
+  <link rel="shortcut icon" href="../files/media/images/logo.png">
+  <link rel="stylesheet" href="../css/style.css">
+  <style>
+    .blog-shell {
+      padding: 7rem 0 3rem;
+      display: grid;
+      gap: 1.5rem;
+    }
+
+    .surface,
+    .preview-card,
+    .comment-card,
+    .composer-card {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 24px;
+      padding: 1.5rem;
+    }
+
+    .hero-surface,
+    .summary-strip,
+    .blog-layout,
+    .preview-list,
+    .detail-panel,
+    .comment-list,
+    .composer-form,
+    .filter-grid {
+      display: grid;
+      gap: 1rem;
+    }
+
+    .hero-surface {
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      background:
+        radial-gradient(circle at top right, rgba(255, 107, 53, 0.16), transparent 34%),
+        rgba(255, 255, 255, 0.04);
+    }
+
+    .summary-strip {
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    }
+
+    .summary-card {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 18px;
+      padding: 1rem 1.1rem;
+    }
+
+    .summary-card strong {
+      display: block;
+      color: #fff;
+      font-size: 1.45rem;
+    }
+
+    .summary-card span,
+    .meta-line,
+    .helper-text,
+    .preview-excerpt,
+    .comment-meta {
+      color: var(--text-color);
+    }
+
+    .chip,
+    .status-chip,
+    .detail-chip,
+    .category-chip,
+    .tag-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.45rem 0.85rem;
+      border-radius: 999px;
+      font-size: 0.86rem;
+      font-weight: 600;
+    }
+
+    .chip,
+    .category-chip {
+      background: rgba(255, 107, 53, 0.18);
+      color: #ffd7ca;
+    }
+
+    .status-chip {
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+    }
+
+    .status-draft {
+      background: rgba(245, 158, 11, 0.18);
+      color: #fde68a;
+    }
+
+    .status-published {
+      background: rgba(34, 197, 94, 0.18);
+      color: #bbf7d0;
+    }
+
+    .detail-chip {
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text-color);
+    }
+
+    .tag-pill {
+      background: rgba(96, 165, 250, 0.12);
+      color: #bfdbfe;
+      border: 1px solid rgba(96, 165, 250, 0.18);
+      cursor: pointer;
+    }
+
+    .tag-pill.is-active {
+      background: rgba(255, 107, 53, 0.18);
+      color: #ffd7ca;
+      border-color: rgba(255, 107, 53, 0.28);
+    }
+
+    .blog-toolbar,
+    .preview-head,
+    .meta-line,
+    .detail-actions,
+    .detail-nav,
+    .detail-owner-actions,
+    .detail-reactions,
+    .comment-meta,
+    .composer-head,
+    .featured-meta,
+    .tag-row {
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .blog-toolbar,
+    .detail-actions,
+    .detail-nav,
+    .composer-head {
+      justify-content: space-between;
+    }
+
+    .blog-layout {
+      grid-template-columns: minmax(300px, 380px) minmax(0, 1fr);
+      align-items: start;
+    }
+
+    .preview-rail {
+      display: grid;
+      gap: 1rem;
+      position: sticky;
+      top: 6.5rem;
+    }
+
+    .preview-card {
+      display: grid;
+      gap: 0.85rem;
+      cursor: pointer;
+      transition: transform 0.18s ease, border-color 0.18s ease, background-color 0.18s ease;
+    }
+
+    .preview-card:hover,
+    .preview-card.is-active {
+      transform: translateY(-1px);
+      border-color: rgba(255, 107, 53, 0.24);
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    .preview-thumb,
+    .stage-image {
+      width: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .preview-thumb {
+      aspect-ratio: 16 / 10;
+      border-radius: 18px;
+    }
+
+    .stage-image {
+      max-height: 420px;
+      border-radius: 20px;
+    }
+
+    .detail-panel {
+      line-height: 1.8;
+    }
+
+    .detail-content {
+      display: grid;
+      gap: 0.9rem;
+      color: #fff;
+    }
+
+    .detail-content p,
+    .detail-content ul,
+    .detail-content ol,
+    .detail-content blockquote,
+    .detail-content pre,
+    .detail-content h1,
+    .detail-content h2,
+    .detail-content h3,
+    .detail-content h4 {
+      margin: 0;
+    }
+
+    .gallery-strip {
+      display: grid;
+      gap: 0.65rem;
+      grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+    }
+
+    .thumb-button {
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(255, 255, 255, 0.04);
+      border-radius: 16px;
+      padding: 0.3rem;
+      cursor: pointer;
+    }
+
+    .thumb-button.is-active,
+    .thumb-button:hover {
+      border-color: rgba(255, 107, 53, 0.26);
+    }
+
+    .thumb-button img {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      object-fit: cover;
+      border-radius: 12px;
+      display: block;
+    }
+
+    .detail-actions,
+    .blog-comments {
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      padding-top: 1rem;
+    }
+
+    .comment-card {
+      padding: 1rem 1.1rem;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 2rem;
+      border-radius: 24px;
+      border: 1px dashed rgba(255, 255, 255, 0.12);
+      color: var(--text-color);
+    }
+
+    .ui-input,
+    .ui-select,
+    .ui-textarea {
+      width: 100%;
+      padding: 0.95rem 1rem;
+      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      background: rgba(0, 0, 0, 0.2);
+      color: #fff;
+    }
+
+    .ui-input:focus,
+    .ui-select:focus,
+    .ui-textarea:focus {
+      outline: none;
+      border-color: rgba(255, 107, 53, 0.38);
+      box-shadow: 0 0 0 4px rgba(255, 107, 53, 0.12);
+    }
+
+    .ui-button,
+    .ui-button-secondary,
+    .ui-button-danger {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.85rem 1.15rem;
+      border-radius: 999px;
+      border: 1px solid transparent;
+      cursor: pointer;
+      font: inherit;
+    }
+
+    .ui-button {
+      background: linear-gradient(180deg, #ff7c4d, #ef5a29);
+      color: #fff;
+    }
+
+    .ui-button-secondary {
+      background: rgba(255, 255, 255, 0.04);
+      border-color: rgba(255, 255, 255, 0.12);
+      color: #fff;
+    }
+
+    .ui-button-danger {
+      background: rgba(220, 38, 38, 0.12);
+      border-color: rgba(220, 38, 38, 0.25);
+      color: #fecaca;
+    }
+
+    .filter-grid {
+      grid-template-columns: minmax(220px, 1fr) minmax(180px, 220px);
+      align-items: end;
+    }
+
+    .composer-overlay {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+      background: rgba(5, 10, 18, 0.74);
+      z-index: 1000;
+    }
+
+    .composer-card {
+      width: min(820px, 100%);
+      max-height: 90vh;
+      overflow: auto;
+      background:
+        radial-gradient(circle at top right, rgba(255, 107, 53, 0.12), transparent 34%),
+        rgba(15, 23, 42, 0.96);
+    }
+
+    @media (max-width: 980px) {
+      .blog-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .preview-rail {
+        position: static;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .blog-toolbar,
+      .detail-actions,
+      .detail-nav,
+      .composer-head,
+      .featured-meta {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .filter-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
 </head>
 <body>
-    <header class="header" id="header">
-        <nav class="nav container">
-            <a href="main.php" class="nav__logo"><img src="../files/media/images/logo.png" alt="logo"> Famagusta Dart Club</a>
-            <div class="nav__menu" id="nav-menu"><ul class="nav__list"></ul><div class="nav__close" id="nav-close"><i class="ri-close-line"></i></div></div>
-            <div class="nav__toggle" id="nav-toggle"><i class="ri-menu-line"></i></div>
-        </nav>
-    </header>
+  <header class="header" id="header">
+    <nav class="nav container">
+      <a href="main.php" class="nav__logo">
+        <img src="../files/media/images/logo.png" alt="logo"> Famagusta Dart Club
+      </a>
+      <div class="nav__menu" id="nav-menu">
+        <ul class="nav__list"></ul>
+        <div class="nav__close" id="nav-close">
+          <i class="ri-close-line"></i>
+        </div>
+      </div>
+      <div class="nav__toggle" id="nav-toggle">
+        <i class="ri-menu-line"></i>
+      </div>
+    </nav>
+  </header>
 
-    <main class="main">
-        <section class="blog-shell container" id="blog-shell"><div class="surface">Loading the club blog...</div></section>
-    </main>
+  <main class="main">
+    <section class="blog-shell container" id="blog-shell">
+      <div class="surface">Loading the club blog...</div>
+    </section>
+  </main>
 
-    <a href="#top" class="scrollup" id="scroll-up"><i class="ri-arrow-up-line"></i></a>
+  <a href="#top" class="scrollup" id="scroll-up">
+    <i class="ri-arrow-up-line"></i>
+  </a>
 
-    <script src="../js/scrollreveal.min.js"></script>
-    <script src="../js/behaviour.js?v=20260402-2"></script>
-    <script>
-        let sessionContext=null;
-        const blogState={posts:[],selectedBlogId:null,selectedImageIndexes:{},composerOpen:false};
+  <script src="../js/scrollreveal.min.js"></script>
+  <script src="../js/behaviour.js?v=20260402-2"></script>
+  <script src="../js/ui_feedback.js?v=20260406-1"></script>
+  <script>
+    let sessionContext = null;
 
-        function escapeHtml(value){return String(value??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#39;');}
-        function htmlToText(html){const temp=document.createElement('div');temp.innerHTML=html||'';return temp.textContent||temp.innerText||'';}
-        function formatDate(value){return value?new Date(value).toLocaleString():'Not published yet';}
-        function excerpt(post){const text=htmlToText(post.blog_content||'').trim();return text.length>180?`${text.slice(0,177)}...`:text;}
-        function heroImage(post){return post.images?.[0]?.file_path||'../files/media/images/logo.png';}
-        function selectedPost(){return blogState.posts.find((post)=>Number(post.blog_id)===Number(blogState.selectedBlogId))||null;}
-        function selectedImageIndex(post){const raw=Number(blogState.selectedImageIndexes[post.blog_id]||0);return Math.max(0,Math.min(raw,(post.images?.length||1)-1));}
-        function resolveSelectedBlogId(preferredId=null){const urlId=Number(new URL(window.location.href).searchParams.get('post')||0);const preferred=Number(preferredId||blogState.selectedBlogId||urlId||0);if(preferred&&blogState.posts.some((post)=>Number(post.blog_id)===preferred)){return preferred;}return blogState.posts.length?Number(blogState.posts[0].blog_id):null;}
-        function syncBlogUrl(blogId){const url=new URL(window.location.href);if(blogId){url.searchParams.set('post',String(blogId));}else{url.searchParams.delete('post');}window.history.replaceState({},'',url.toString());}
-        function selectBlogPost(blogId){blogState.selectedBlogId=Number(blogId);syncBlogUrl(blogState.selectedBlogId);renderBlogPage();}
-        function selectPostImage(blogId,index){blogState.selectedImageIndexes[blogId]=index;renderBlogPage();}
-        function openComposer(){blogState.composerOpen=true;renderBlogPage();}
-        function closeComposer(){blogState.composerOpen=false;renderBlogPage();}
-        function handleComposerOverlay(event){if(event.target===event.currentTarget){closeComposer();}}
+    const blogState = {
+      posts: [],
+      selectedBlogId: null,
+      selectedImageIndexes: {},
+      composerOpen: false,
+      search: "",
+      category: "all",
+      tag: "all",
+    };
 
-        function renderPreview(post){
-            const active=Number(post.blog_id)===Number(blogState.selectedBlogId);
-            return `<article class="preview-card ${active?'is-active':''}" onclick="selectBlogPost(${Number(post.blog_id)})">
-                <div class="preview-head"><span class="status-chip status-${escapeHtml(post.status)}">${escapeHtml(post.status)}</span><span class="helper-text">${escapeHtml(formatDate(post.published_at||post.created_at))}</span></div>
-                <img class="preview-thumb" src="${escapeHtml(heroImage(post))}" alt="${escapeHtml(post.blog_title)}">
-                <div class="meta-line"><span>By ${escapeHtml(post.author||'Club staff')}</span><span>${Number(post.like_count||0)} likes</span><span>${Number(post.comment_count||0)} comments</span></div>
-                <div><h3>${escapeHtml(post.blog_title)}</h3><p class="preview-excerpt" style="margin-top:.75rem;">${escapeHtml(excerpt(post)||'Open this post to read the full story.')}</p></div>
-            </article>`;
-        }
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#39;");
+    }
 
-        function renderGallery(post){
-            if(!Array.isArray(post.images)||post.images.length===0){return '';}
-            const index=selectedImageIndex(post);
-            const current=post.images[index]||post.images[0];
-            return `<div class="detail-gallery">
-                <img class="stage-image" src="${escapeHtml(current.file_path)}" alt="${escapeHtml(current.title||post.blog_title)}">
-                ${post.images.length>1?`<div class="gallery-strip">${post.images.map((image,imageIndex)=>`<button type="button" class="thumb-button ${imageIndex===index?'is-active':''}" onclick="selectPostImage(${Number(post.blog_id)},${imageIndex})"><img src="${escapeHtml(image.file_path)}" alt="${escapeHtml(image.title||`${post.blog_title} image ${imageIndex+1}`)}"></button>`).join('')}</div>`:''}
-            </div>`;
-        }
+    function htmlToText(html) {
+      const temp = document.createElement("div");
+      temp.innerHTML = html || "";
+      return temp.textContent || temp.innerText || "";
+    }
 
-        function renderComments(post){
-            if(!Array.isArray(post.comments)||post.comments.length===0){return '<p class="helper-text">No comments yet.</p>';}
-            return `<div class="comment-list">${post.comments.map((comment)=>`<article class="comment-card"><div class="comment-meta"><strong>${escapeHtml(comment.user_name)}</strong><span>${escapeHtml(formatDate(comment.created_at))}</span></div><p>${escapeHtml(comment.comment_content)}</p>${sessionContext?.logged_in&&(sessionContext.can_publish_blog||Number(comment.user_id)===Number(sessionContext.user_id))?`<div><button type="button" class="ui-button-danger" onclick="deleteComment(${Number(comment.comment_id)})">Delete comment</button></div>`:''}</article>`).join('')}</div>`;
-        }
+    function encodeData(value) {
+      return encodeURIComponent(String(value ?? ""));
+    }
 
-        function renderDetail(post,index){
-            const previous=blogState.posts[index-1]||null;
-            const next=blogState.posts[index+1]||null;
-            return `<article class="surface detail-panel">
-                <div class="meta-line"><span class="status-chip status-${escapeHtml(post.status)}">${escapeHtml(post.status)}</span><span>By ${escapeHtml(post.author||'Club staff')}</span><span>${escapeHtml(formatDate(post.published_at||post.created_at))}</span></div>
-                <h2>${escapeHtml(post.blog_title)}</h2>
-                <div class="detail-nav">
-                    <button type="button" class="ui-button-secondary" ${previous?`onclick="selectBlogPost(${Number(previous.blog_id)})"`:'disabled'}><i class="ri-arrow-left-line"></i> Previous post</button>
-                    <button type="button" class="ui-button-secondary" ${next?`onclick="selectBlogPost(${Number(next.blog_id)})"`:'disabled'}>Next post <i class="ri-arrow-right-line"></i></button>
-                </div>
-                ${renderGallery(post)}
-                <div class="detail-content">${post.blog_content||''}</div>
-                <div class="detail-actions">
-                    <div class="detail-reactions">
-                        <button type="button" class="ui-button-secondary" onclick="toggleLike(${Number(post.blog_id)})"><i class="ri-thumb-up-line"></i> ${post.viewer_has_liked?'Unlike':'Like'} (${Number(post.like_count||0)})</button>
-                        <span class="detail-chip"><i class="ri-message-3-line"></i> ${Number(post.comment_count||0)} comments</span>
+    function decodeData(value) {
+      return decodeURIComponent(String(value ?? ""));
+    }
+
+    function blogToast(message, tone = "info") {
+      if (window.AppUI?.toast) {
+        window.AppUI.toast(message, tone);
+        return;
+      }
+
+      if (tone === "error" || tone === "warning") {
+        window.alert(message);
+        return;
+      }
+
+      console.info(message);
+    }
+
+    async function requestBlogConfirm(config) {
+      if (window.AppUI?.confirm) {
+        return window.AppUI.confirm(config);
+      }
+
+      return window.confirm(config?.message || "Continue?");
+    }
+
+    function formatDate(value) {
+      return value ? new Date(value).toLocaleString() : "Not published yet";
+    }
+
+    function excerpt(post) {
+      const text = htmlToText(post.blog_content || "").trim();
+      return text.length > 180 ? `${text.slice(0, 177)}...` : text;
+    }
+
+    function heroImage(post) {
+      return post.images?.[0]?.file_path || "../files/media/images/logo.png";
+    }
+
+    function normalizedCategory(post) {
+      return String(post.blog_category || "Announcement").trim() || "Announcement";
+    }
+
+    function normalizedTags(post) {
+      return Array.isArray(post.tags) ? post.tags : [];
+    }
+
+    function availableCategories() {
+      return Array.from(
+        new Set(["Announcement", ...blogState.posts.map((post) => normalizedCategory(post))])
+      ).sort((left, right) => left.localeCompare(right, undefined, { sensitivity: "base" }));
+    }
+
+    function availableTags() {
+      return Array.from(
+        new Set(blogState.posts.flatMap((post) => normalizedTags(post)))
+      ).sort((left, right) => left.localeCompare(right, undefined, { sensitivity: "base" }));
+    }
+
+    function filteredPosts() {
+      const query = blogState.search.trim().toLowerCase();
+      return blogState.posts.filter((post) => {
+        const searchOk =
+          !query ||
+          [
+            post.blog_title,
+            htmlToText(post.blog_content),
+            post.author,
+            normalizedCategory(post),
+            normalizedTags(post).join(" "),
+          ]
+            .join(" ")
+            .toLowerCase()
+            .includes(query);
+
+        const categoryOk =
+          blogState.category === "all" || normalizedCategory(post) === blogState.category;
+        const tagOk = blogState.tag === "all" || normalizedTags(post).includes(blogState.tag);
+        return searchOk && categoryOk && tagOk;
+      });
+    }
+
+    function selectedImageIndex(post) {
+      const raw = Number(blogState.selectedImageIndexes[post.blog_id] || 0);
+      return Math.max(0, Math.min(raw, (post.images?.length || 1) - 1));
+    }
+
+    function resolveSelectedBlogId(preferredId = null) {
+      const urlId = Number(new URL(window.location.href).searchParams.get("post") || 0);
+      const visible = filteredPosts();
+      const preferred = Number(preferredId || blogState.selectedBlogId || urlId || 0);
+
+      if (preferred && visible.some((post) => Number(post.blog_id) === preferred)) {
+        return preferred;
+      }
+
+      return visible.length ? Number(visible[0].blog_id) : null;
+    }
+
+    function selectedPost() {
+      const visible = filteredPosts();
+      return (
+        visible.find((post) => Number(post.blog_id) === Number(blogState.selectedBlogId)) ||
+        visible[0] ||
+        null
+      );
+    }
+
+    function syncBlogUrl(blogId) {
+      const url = new URL(window.location.href);
+      if (blogId) {
+        url.searchParams.set("post", String(blogId));
+      } else {
+        url.searchParams.delete("post");
+      }
+      window.history.replaceState({}, "", url.toString());
+    }
+
+    function selectBlogPost(blogId) {
+      blogState.selectedBlogId = Number(blogId);
+      syncBlogUrl(blogState.selectedBlogId);
+      renderBlogPage();
+    }
+
+    function setBlogSearch(value) {
+      blogState.search = String(value || "");
+      blogState.selectedBlogId = resolveSelectedBlogId();
+      syncBlogUrl(blogState.selectedBlogId);
+      renderBlogPage();
+    }
+
+    function setBlogCategory(value) {
+      blogState.category = String(value || "all");
+      blogState.selectedBlogId = resolveSelectedBlogId();
+      syncBlogUrl(blogState.selectedBlogId);
+      renderBlogPage();
+    }
+
+    function setBlogTag(value) {
+      blogState.tag = String(value || "all");
+      blogState.selectedBlogId = resolveSelectedBlogId();
+      syncBlogUrl(blogState.selectedBlogId);
+      renderBlogPage();
+    }
+
+    function selectPostImage(blogId, index) {
+      blogState.selectedImageIndexes[blogId] = index;
+      renderBlogPage();
+    }
+
+    function openComposer() {
+      blogState.composerOpen = true;
+      renderBlogPage();
+    }
+
+    function closeComposer() {
+      blogState.composerOpen = false;
+      renderBlogPage();
+    }
+
+    function renderTagRow(tags, includeAllTag = false) {
+      const rendered = tags.map((tag) => {
+        const active = blogState.tag === tag ? "is-active" : "";
+        return `
+          <button
+            type="button"
+            class="tag-pill ${active}"
+            data-set-tag="${escapeHtml(encodeData(tag))}"
+          >${escapeHtml(tag)}</button>
+        `;
+      });
+
+      if (includeAllTag) {
+        rendered.push(`
+          <button
+            type="button"
+            class="tag-pill ${blogState.tag === "all" ? "is-active" : ""}"
+            data-set-tag="${escapeHtml(encodeData("all"))}"
+          >All tags</button>
+        `);
+      }
+
+      return rendered.length ? `<div class="tag-row">${rendered.join("")}</div>` : "";
+    }
+
+    function renderPreview(post) {
+      const active = Number(post.blog_id) === Number(blogState.selectedBlogId);
+      const tags = normalizedTags(post).slice(0, 2);
+
+      return `
+        <article class="preview-card ${active ? "is-active" : ""}" data-select-post="${Number(post.blog_id)}">
+          <div class="preview-head">
+            <span class="status-chip status-${escapeHtml(post.status)}">${escapeHtml(post.status)}</span>
+            <span class="category-chip">${escapeHtml(normalizedCategory(post))}</span>
+          </div>
+          <img
+            class="preview-thumb"
+            src="${escapeHtml(heroImage(post))}"
+            alt="${escapeHtml(post.blog_title)}"
+          >
+          <div class="meta-line">
+            <span>By ${escapeHtml(post.author || "Club staff")}</span>
+            <span>${Number(post.like_count || 0)} likes</span>
+            <span>${Number(post.comment_count || 0)} comments</span>
+          </div>
+          <div>
+            <h3>${escapeHtml(post.blog_title)}</h3>
+            <p class="preview-excerpt" style="margin-top: 0.75rem;">
+              ${escapeHtml(excerpt(post) || "Open this post to read the full story.")}
+            </p>
+          </div>
+          ${tags.length ? `<div class="tag-row">${tags.map((tag) => `<span class="detail-chip">${escapeHtml(tag)}</span>`).join("")}</div>` : ""}
+        </article>
+      `;
+    }
+
+    function renderGallery(post) {
+      if (!Array.isArray(post.images) || post.images.length === 0) {
+        return "";
+      }
+
+      const currentIndex = selectedImageIndex(post);
+      const currentImage = post.images[currentIndex] || post.images[0];
+
+      return `
+        <div class="detail-gallery">
+          <img
+            class="stage-image"
+            src="${escapeHtml(currentImage.file_path)}"
+            alt="${escapeHtml(currentImage.title || post.blog_title)}"
+          >
+          ${post.images.length > 1 ? `
+            <div class="gallery-strip">
+              ${post.images.map((image, imageIndex) => `
+                <button
+                  type="button"
+                  class="thumb-button ${imageIndex === currentIndex ? "is-active" : ""}"
+                  data-select-image="${Number(post.blog_id)}:${imageIndex}"
+                >
+                  <img
+                    src="${escapeHtml(image.file_path)}"
+                    alt="${escapeHtml(image.title || `${post.blog_title} image ${imageIndex + 1}`)}"
+                  >
+                </button>
+              `).join("")}
+            </div>
+          ` : ""}
+        </div>
+      `;
+    }
+
+    function renderComments(post) {
+      if (!Array.isArray(post.comments) || post.comments.length === 0) {
+        return '<p class="helper-text">No comments yet.</p>';
+      }
+
+      return `
+        <div class="comment-list">
+          ${post.comments.map((comment) => `
+            <article class="comment-card">
+              <div class="comment-meta">
+                <strong>${escapeHtml(comment.user_name)}</strong>
+                <span>${escapeHtml(formatDate(comment.created_at))}</span>
+              </div>
+              <p>${escapeHtml(comment.comment_content)}</p>
+              ${
+                sessionContext?.logged_in &&
+                (sessionContext.can_publish_blog || Number(comment.user_id) === Number(sessionContext.user_id))
+                  ? `
+                    <div>
+                      <button
+                        type="button"
+                        class="ui-button-danger"
+                        data-delete-comment="${Number(comment.comment_id)}"
+                      >Delete comment</button>
                     </div>
-                    <div class="detail-owner-actions">
-                        ${post.viewer_can_publish?`<button type="button" class="ui-button" onclick="publishPost(${Number(post.blog_id)})">Publish post</button>`:''}
-                        ${post.viewer_can_delete?`<button type="button" class="ui-button-danger" onclick="deletePost(${Number(post.blog_id)})">Delete post</button>`:''}
-                    </div>
-                </div>
-                <section class="blog-comments">
-                    <h3>Comments</h3>
-                    ${renderComments(post)}
-                    ${sessionContext?.logged_in?`<form class="composer-form" onsubmit="submitComment(event,${Number(post.blog_id)})"><textarea name="content" rows="4" class="ui-textarea" placeholder="Write your reply..." required></textarea><button type="submit" class="ui-button">Add comment</button></form>`:'<p class="helper-text">Sign in to comment and react.</p>'}
-                </section>
-            </article>`;
-        }
+                  `
+                  : ""
+              }
+            </article>
+          `).join("")}
+        </div>
+      `;
+    }
 
-        function renderComposer(){
-            if(!blogState.composerOpen||!sessionContext?.can_author_blog){return '';}
-            return `<div class="composer-overlay" onclick="handleComposerOverlay(event)"><div class="composer-card">
-                <div class="composer-head">
-                    <div><div class="chip"><i class="ri-edit-2-line"></i> Write a post</div><h2 style="margin-top:1rem;">Create a club update</h2><p class="helper-text" style="margin-top:.75rem;">${sessionContext.can_publish_blog?'Managers and admins can save drafts or publish directly.':'Approved members create drafts. Managers and admins review and publish them.'}</p></div>
-                    <button type="button" class="ui-button-secondary" onclick="closeComposer()">Close</button>
-                </div>
-                <form id="blog-create-form" class="composer-form">
-                    <input name="title" type="text" class="ui-input" placeholder="Headline" maxlength="200" required>
-                    <textarea name="content" rows="10" class="ui-textarea" placeholder="Write the full story here..." required></textarea>
-                    <label><span class="helper-text" style="display:block; margin-bottom:.5rem;">Add images</span><input name="images[]" type="file" class="ui-input" accept="image/*" multiple></label>
-                    ${sessionContext.can_publish_blog?`<select name="status" class="ui-select"><option value="draft">Save draft</option><option value="published">Publish now</option></select>`:'<input type="hidden" name="status" value="draft">'}
-                    <div class="detail-actions" style="border-top:none;padding-top:0;"><span class="helper-text">Multiple images appear as a gallery in the post and can also be opened from the gallery page.</span><button type="submit" class="ui-button">Save post</button></div>
-                </form>
-            </div></div>`;
-        }
+    function renderDetail(post, index, visiblePosts) {
+      const previous = visiblePosts[index - 1] || null;
+      const next = visiblePosts[index + 1] || null;
+      const tags = normalizedTags(post);
 
-        function renderBlogPage(){
-            const shell=document.getElementById('blog-shell');
-            const post=selectedPost();
-            const selectedIndex=post?blogState.posts.findIndex((item)=>Number(item.blog_id)===Number(post.blog_id)):-1;
-            shell.innerHTML=`<section class="surface hero-surface">
-                    <div><div class="chip"><i class="ri-article-line"></i> Club stories</div><h1 style="margin-top:1rem;">Club Blog</h1><p class="helper-text" style="margin-top:.85rem;">Browse quick post previews on the left, then read the full story on the right with easier navigation between updates.</p></div>
-                    <div><h3>Publishing flow</h3><p class="helper-text" style="margin-top:.75rem;">Approved members can write drafts. Managers and admins can publish, moderate, and keep the public feed tidy.</p></div>
-                </section>
-                <section class="summary-strip">
-                    <article class="summary-card"><strong>${blogState.posts.length}</strong><span>Visible posts</span></article>
-                    <article class="summary-card"><strong>${blogState.posts.reduce((total,postItem)=>total+Number(postItem.comment_count||0),0)}</strong><span>Total comments</span></article>
-                    <article class="summary-card"><strong>${blogState.posts.reduce((total,postItem)=>total+Number(postItem.like_count||0),0)}</strong><span>Total likes</span></article>
-                    <article class="summary-card"><strong>${sessionContext?.can_author_blog?'Yes':'No'}</strong><span>You can draft posts</span></article>
-                </section>
-                <section class="surface blog-toolbar">
-                    <div><h2 style="margin:0;">Browse the feed</h2><p class="helper-text" style="margin-top:.55rem;">The preview rail keeps posts clearly separated, while the main panel focuses on one article at a time.</p></div>
-                    ${sessionContext?.can_author_blog?'<button type="button" class="ui-button" onclick="openComposer()"><i class="ri-quill-pen-line"></i> Create post</button>':''}
-                </section>
-                <section class="blog-layout">
-                    <aside class="surface preview-rail"><div><h3 style="margin:0;">Latest posts</h3><p class="helper-text" style="margin-top:.55rem;">Click any preview card to open the full article.</p></div><div class="preview-list">${blogState.posts.length?blogState.posts.map(renderPreview).join(''):'<div class="empty-state">No posts are available yet.</div>'}</div></aside>
-                    <div>${post?renderDetail(post,selectedIndex):'<div class="empty-state">Choose a post preview to read the full article.</div>'}</div>
-                </section>
-                ${renderComposer()}`;
-            const createForm=document.getElementById('blog-create-form');
-            if(createForm){createForm.addEventListener('submit',submitPost);}
-        }
+      return `
+        <article class="surface detail-panel">
+          <div class="featured-meta">
+            <span class="status-chip status-${escapeHtml(post.status)}">${escapeHtml(post.status)}</span>
+            <span class="category-chip">${escapeHtml(normalizedCategory(post))}</span>
+            <span>By ${escapeHtml(post.author || "Club staff")}</span>
+            <span>${escapeHtml(formatDate(post.published_at || post.created_at))}</span>
+          </div>
+          <h2>${escapeHtml(post.blog_title)}</h2>
+          ${renderTagRow(tags, false)}
+          <div class="detail-nav">
+            <button
+              type="button"
+              class="ui-button-secondary"
+              ${previous ? `data-select-post="${Number(previous.blog_id)}"` : "disabled"}
+            >
+              <i class="ri-arrow-left-line"></i> Previous post
+            </button>
+            <button
+              type="button"
+              class="ui-button-secondary"
+              ${next ? `data-select-post="${Number(next.blog_id)}"` : "disabled"}
+            >
+              Next post <i class="ri-arrow-right-line"></i>
+            </button>
+          </div>
+          ${renderGallery(post)}
+          <div class="detail-content">${post.blog_content || ""}</div>
+          <div class="detail-actions">
+            <div class="detail-reactions">
+              <button
+                type="button"
+                class="ui-button-secondary"
+                data-toggle-like="${Number(post.blog_id)}"
+              >
+                <i class="ri-thumb-up-line"></i>
+                ${post.viewer_has_liked ? "Unlike" : "Like"} (${Number(post.like_count || 0)})
+              </button>
+              <span class="detail-chip">
+                <i class="ri-message-3-line"></i> ${Number(post.comment_count || 0)} comments
+              </span>
+            </div>
+            <div class="detail-owner-actions">
+              ${post.viewer_can_publish ? `
+                <button
+                  type="button"
+                  class="ui-button"
+                  data-publish-post="${Number(post.blog_id)}"
+                >Publish post</button>
+              ` : ""}
+              ${post.viewer_can_delete ? `
+                <button
+                  type="button"
+                  class="ui-button-danger"
+                  data-delete-post="${Number(post.blog_id)}"
+                >Delete post</button>
+              ` : ""}
+            </div>
+          </div>
+          <section class="blog-comments">
+            <h3>Comments</h3>
+            ${renderComments(post)}
+            ${
+              sessionContext?.logged_in
+                ? `
+                  <form class="composer-form" data-comment-form="${Number(post.blog_id)}">
+                    <textarea
+                      name="content"
+                      rows="4"
+                      class="ui-textarea"
+                      placeholder="Write your reply..."
+                      required
+                    ></textarea>
+                    <button type="submit" class="ui-button">Add comment</button>
+                  </form>
+                `
+                : '<p class="helper-text">Sign in to comment and react.</p>'
+            }
+          </section>
+        </article>
+      `;
+    }
 
-        async function loadBlogPage(options={}){
-            const [contextResponse,postsResponse]=await Promise.all([fetch('../services/get_session_context.php'),fetch('../services/get_blogs.php?page=1&pageSize=20')]);
-            sessionContext=await contextResponse.json();
-            const payload=await postsResponse.json();
-            if(!Array.isArray(payload.items)){throw new Error(payload.error||'Failed to load blog posts.');}
-            blogState.posts=payload.items;
-            blogState.selectedBlogId=resolveSelectedBlogId(options.preferredPostId??null);
-            syncBlogUrl(blogState.selectedBlogId);
-            renderBlogPage();
-        }
+    function renderComposer() {
+      if (!blogState.composerOpen || !sessionContext?.can_author_blog) {
+        return "";
+      }
 
-        async function submitPost(event){
-            event.preventDefault();
-            const response=await fetch('../services/create_blog.php',{method:'POST',body:new FormData(event.currentTarget)});
-            const data=await response.json();
-            if(!data.success){window.alert(data.message||'Failed to save post.');return;}
-            blogState.composerOpen=false;
-            window.alert(data.message);
-            await loadBlogPage({preferredPostId:data.blog_id});
-        }
+      return `
+        <div class="composer-overlay" data-close-composer-overlay>
+          <div class="composer-card">
+            <div class="composer-head">
+              <div>
+                <div class="chip"><i class="ri-edit-2-line"></i> Write a post</div>
+                <h2 style="margin-top: 1rem;">Create a club update</h2>
+                <p class="helper-text" style="margin-top: 0.75rem;">
+                  ${
+                    sessionContext.can_publish_blog
+                      ? "Managers and admins can save drafts or publish directly."
+                      : "Approved members create drafts. Managers and admins review and publish them."
+                  }
+                </p>
+              </div>
+              <button type="button" class="ui-button-secondary" data-close-composer>Close</button>
+            </div>
+            <form class="composer-form" data-create-post-form>
+              <input
+                name="title"
+                type="text"
+                class="ui-input"
+                placeholder="Headline"
+                maxlength="200"
+                required
+              >
+              <div class="filter-grid">
+                <label>
+                  <span class="helper-text" style="display: block; margin-bottom: 0.5rem;">Category</span>
+                  <select name="category" class="ui-select">
+                    <option value="Announcement">Announcement</option>
+                    <option value="Tournament">Tournament</option>
+                    <option value="Results">Results</option>
+                    <option value="Community">Community</option>
+                    <option value="Gallery">Gallery</option>
+                    <option value="General">General</option>
+                  </select>
+                </label>
+                <label>
+                  <span class="helper-text" style="display: block; margin-bottom: 0.5rem;">Tags</span>
+                  <input name="tags" type="text" class="ui-input" placeholder="Comma-separated tags">
+                </label>
+              </div>
+              <textarea
+                name="content"
+                rows="10"
+                class="ui-textarea"
+                placeholder="Write the full story here..."
+                required
+              ></textarea>
+              <label>
+                <span class="helper-text" style="display: block; margin-bottom: 0.5rem;">Add images</span>
+                <input name="images[]" type="file" class="ui-input" accept="image/*" multiple>
+              </label>
+              ${
+                sessionContext.can_publish_blog
+                  ? `
+                    <select name="status" class="ui-select">
+                      <option value="draft">Save draft</option>
+                      <option value="published">Publish now</option>
+                    </select>
+                  `
+                  : '<input type="hidden" name="status" value="draft">'
+              }
+              <div class="detail-actions" style="border-top: none; padding-top: 0;">
+                <span class="helper-text">
+                  Use categories and tags so people can filter club updates more easily. Multiple images appear as a gallery in the post and can also be opened from the gallery page.
+                </span>
+                <button type="submit" class="ui-button">Save post</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      `;
+    }
 
-        async function publishPost(blogId){
-            const response=await fetch('../services/update_blog_status.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({blog_id:blogId,status:'published'})});
-            const data=await response.json();
-            if(!data.success){window.alert(data.message||'Failed to publish post.');return;}
-            await loadBlogPage({preferredPostId:blogId});
-        }
+    function renderBlogPage() {
+      const shell = document.getElementById("blog-shell");
+      const visiblePosts = filteredPosts();
+      blogState.selectedBlogId = resolveSelectedBlogId(blogState.selectedBlogId);
 
-        async function deletePost(blogId){
-            if(!window.confirm('Delete this blog post?')){return;}
-            const response=await fetch('../services/delete_blog.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({blog_id:blogId})});
-            const data=await response.json();
-            if(!data.success){window.alert(data.message||'Failed to delete post.');return;}
-            const currentIndex=blogState.posts.findIndex((post)=>Number(post.blog_id)===Number(blogId));
-            const fallback=blogState.posts[currentIndex+1]||blogState.posts[currentIndex-1]||null;
-            await loadBlogPage({preferredPostId:fallback?fallback.blog_id:null});
-        }
+      const post = selectedPost();
+      const selectedIndex = post
+        ? visiblePosts.findIndex((item) => Number(item.blog_id) === Number(post.blog_id))
+        : -1;
+      const categories = availableCategories();
+      const tags = availableTags();
 
-        async function submitComment(event,blogId){
-            event.preventDefault();
-            const content=new FormData(event.currentTarget).get('content');
-            const response=await fetch('../services/create_blog_comment.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({blog_id:blogId,content})});
-            const data=await response.json();
-            if(!data.success){window.alert(data.message||'Failed to add comment.');return;}
-            await loadBlogPage({preferredPostId:blogId});
-        }
+      shell.innerHTML = `
+        <section class="surface hero-surface">
+          <div>
+            <div class="chip"><i class="ri-article-line"></i> Club stories</div>
+            <h1 style="margin-top: 1rem;">Club Blog</h1>
+            <p class="helper-text" style="margin-top: 0.85rem;">
+              Browse quick previews, filter by topic, and move through the latest club updates without losing the wider feed.
+            </p>
+          </div>
+          <div>
+            <h3>Publishing flow</h3>
+            <p class="helper-text" style="margin-top: 0.75rem;">
+              Approved members can write drafts. Managers and admins can publish, moderate, and keep the public feed tidy.
+            </p>
+          </div>
+        </section>
+        <section class="summary-strip">
+          <article class="summary-card"><strong>${visiblePosts.length}</strong><span>Matching posts</span></article>
+          <article class="summary-card"><strong>${blogState.posts.reduce((total, postItem) => total + Number(postItem.comment_count || 0), 0)}</strong><span>Total comments</span></article>
+          <article class="summary-card"><strong>${categories.length}</strong><span>Categories in use</span></article>
+          <article class="summary-card"><strong>${sessionContext?.can_author_blog ? "Yes" : "No"}</strong><span>You can draft posts</span></article>
+        </section>
+        <section class="surface blog-toolbar">
+          <div>
+            <h2 style="margin: 0;">Browse the feed</h2>
+            <p class="helper-text" style="margin-top: 0.55rem;">
+              Search by headline, author, category, or tag, then read one article at a time in the main panel.
+            </p>
+          </div>
+          ${sessionContext?.can_author_blog ? `
+            <button type="button" class="ui-button" data-open-composer>
+              <i class="ri-quill-pen-line"></i> Create post
+            </button>
+          ` : ""}
+        </section>
+        <section class="surface">
+          <div class="filter-grid">
+            <label>
+              <span class="helper-text" style="display: block; margin-bottom: 0.5rem;">Search posts</span>
+              <input
+                type="search"
+                class="ui-input"
+                placeholder="Search titles, tags, authors, or content"
+                value="${escapeHtml(blogState.search)}"
+                data-blog-search
+              >
+            </label>
+            <label>
+              <span class="helper-text" style="display: block; margin-bottom: 0.5rem;">Filter by category</span>
+              <select class="ui-select" data-blog-category>
+                <option value="all">All categories</option>
+                ${categories.map((category) => `
+                  <option
+                    value="${escapeHtml(category)}"
+                    ${blogState.category === category ? "selected" : ""}
+                  >${escapeHtml(category)}</option>
+                `).join("")}
+              </select>
+            </label>
+          </div>
+          ${renderTagRow(tags, true)}
+        </section>
+        <section class="blog-layout">
+          <aside class="surface preview-rail">
+            <div>
+              <h3 style="margin: 0;">Latest posts</h3>
+              <p class="helper-text" style="margin-top: 0.55rem;">Click any preview card to open the full article.</p>
+            </div>
+            <div class="preview-list">
+              ${visiblePosts.length ? visiblePosts.map(renderPreview).join("") : '<div class="empty-state">No posts match the current filters.</div>'}
+            </div>
+          </aside>
+          <div>
+            ${post ? renderDetail(post, selectedIndex, visiblePosts) : '<div class="empty-state">Choose a post preview to read the full article.</div>'}
+          </div>
+        </section>
+        ${renderComposer()}
+      `;
+    }
 
-        async function deleteComment(commentId){
-            const response=await fetch('../services/delete_blog_comment.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({comment_id:commentId})});
-            const data=await response.json();
-            if(!data.success){window.alert(data.message||'Failed to delete comment.');return;}
-            await loadBlogPage({preferredPostId:blogState.selectedBlogId});
-        }
+    async function loadBlogPage(options = {}) {
+      const [context, payload] = await Promise.all([
+        window.appFetchJson("../services/get_session_context.php"),
+        window.appFetchJson("../services/get_blogs.php?page=1&pageSize=100"),
+      ]);
 
-        async function toggleLike(blogId){
-            const response=await fetch('../services/toggle_blog_reaction.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({blog_id:blogId})});
-            const data=await response.json();
-            if(!data.success){window.alert(data.message||'Failed to update reaction.');return;}
-            await loadBlogPage({preferredPostId:blogId});
-        }
+      sessionContext = context;
+      if (!Array.isArray(payload.items)) {
+        throw new Error(payload.error || "Failed to load blog posts.");
+      }
 
-        document.addEventListener('DOMContentLoaded',()=>{loadBlogPage().catch((error)=>{document.getElementById('blog-shell').innerHTML=`<div class="surface">${escapeHtml(error.message)}</div>`;});});
-        window.selectBlogPost=selectBlogPost;
-        window.selectPostImage=selectPostImage;
-        window.openComposer=openComposer;
-        window.closeComposer=closeComposer;
-        window.handleComposerOverlay=handleComposerOverlay;
-        window.publishPost=publishPost;
-        window.deletePost=deletePost;
-        window.submitComment=submitComment;
-        window.deleteComment=deleteComment;
-        window.toggleLike=toggleLike;
-    </script>
+      blogState.posts = payload.items;
+      blogState.selectedBlogId = resolveSelectedBlogId(options.preferredPostId ?? null);
+      syncBlogUrl(blogState.selectedBlogId);
+      renderBlogPage();
+    }
+
+    async function submitPost(form) {
+      const data = await window.appFetchJson("../services/create_blog.php", {
+        method: "POST",
+        body: new FormData(form),
+      });
+
+      if (!data.success) {
+        throw new Error(data.message || "Failed to save post.");
+      }
+
+      blogState.composerOpen = false;
+      blogToast(data.message || "Post saved successfully.", "success");
+      await loadBlogPage({ preferredPostId: data.blog_id });
+    }
+
+    async function publishPost(blogId) {
+      const data = await window.appFetchJson("../services/update_blog_status.php", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ blog_id: blogId, status: "published" }),
+      });
+
+      if (!data.success) {
+        throw new Error(data.message || "Failed to publish post.");
+      }
+
+      blogToast("Post published successfully.", "success");
+      await loadBlogPage({ preferredPostId: blogId });
+    }
+
+    async function deletePost(blogId) {
+      const confirmed = await requestBlogConfirm({
+        title: "Delete blog post",
+        message: "Delete this blog post from the public feed?",
+        confirmLabel: "Delete post",
+        cancelLabel: "Keep post",
+        tone: "danger",
+      });
+
+      if (!confirmed) {
+        return;
+      }
+
+      const data = await window.appFetchJson("../services/delete_blog.php", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ blog_id: blogId }),
+      });
+
+      if (!data.success) {
+        throw new Error(data.message || "Failed to delete post.");
+      }
+
+      const index = blogState.posts.findIndex((post) => Number(post.blog_id) === Number(blogId));
+      const fallback = blogState.posts[index + 1] || blogState.posts[index - 1] || null;
+      blogToast("Post deleted successfully.", "success");
+      await loadBlogPage({ preferredPostId: fallback ? fallback.blog_id : null });
+    }
+
+    async function submitComment(form, blogId) {
+      const content = new FormData(form).get("content");
+      const data = await window.appFetchJson("../services/create_blog_comment.php", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ blog_id: blogId, content }),
+      });
+
+      if (!data.success) {
+        throw new Error(data.message || "Failed to add comment.");
+      }
+
+      blogToast("Comment added successfully.", "success");
+      await loadBlogPage({ preferredPostId: blogId });
+    }
+
+    async function deleteComment(commentId) {
+      const confirmed = await requestBlogConfirm({
+        title: "Delete comment",
+        message: "Remove this comment from the thread?",
+        confirmLabel: "Delete comment",
+        cancelLabel: "Keep comment",
+        tone: "danger",
+      });
+
+      if (!confirmed) {
+        return;
+      }
+
+      const data = await window.appFetchJson("../services/delete_blog_comment.php", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ comment_id: commentId }),
+      });
+
+      if (!data.success) {
+        throw new Error(data.message || "Failed to delete comment.");
+      }
+
+      blogToast("Comment removed successfully.", "success");
+      await loadBlogPage({ preferredPostId: blogState.selectedBlogId });
+    }
+
+    async function toggleLike(blogId) {
+      const data = await window.appFetchJson("../services/toggle_blog_reaction.php", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ blog_id: blogId }),
+      });
+
+      if (!data.success) {
+        throw new Error(data.message || "Failed to update reaction.");
+      }
+
+      blogToast("Reaction updated.", "success");
+      await loadBlogPage({ preferredPostId: blogId });
+    }
+
+    document.getElementById("blog-shell").addEventListener("click", async (event) => {
+      const openComposerButton = event.target.closest("[data-open-composer]");
+      if (openComposerButton) {
+        openComposer();
+        return;
+      }
+
+      const closeComposerButton = event.target.closest("[data-close-composer]");
+      if (closeComposerButton) {
+        closeComposer();
+        return;
+      }
+
+      if (event.target.matches("[data-close-composer-overlay]")) {
+        closeComposer();
+        return;
+      }
+
+      const selectPostButton = event.target.closest("[data-select-post]");
+      if (selectPostButton) {
+        selectBlogPost(Number(selectPostButton.dataset.selectPost));
+        return;
+      }
+
+      const selectImageButton = event.target.closest("[data-select-image]");
+      if (selectImageButton) {
+        const [blogId, imageIndex] = String(selectImageButton.dataset.selectImage || "0:0")
+          .split(":")
+          .map((value) => Number(value));
+        selectPostImage(blogId, imageIndex);
+        return;
+      }
+
+      const setTagButton = event.target.closest("[data-set-tag]");
+      if (setTagButton) {
+        setBlogTag(decodeData(setTagButton.dataset.setTag || "all"));
+        return;
+      }
+
+      const publishButton = event.target.closest("[data-publish-post]");
+      if (publishButton) {
+        try {
+          await publishPost(Number(publishButton.dataset.publishPost));
+        } catch (error) {
+          blogToast(error.message, "error");
+        }
+        return;
+      }
+
+      const deletePostButton = event.target.closest("[data-delete-post]");
+      if (deletePostButton) {
+        try {
+          await deletePost(Number(deletePostButton.dataset.deletePost));
+        } catch (error) {
+          blogToast(error.message, "error");
+        }
+        return;
+      }
+
+      const deleteCommentButton = event.target.closest("[data-delete-comment]");
+      if (deleteCommentButton) {
+        try {
+          await deleteComment(Number(deleteCommentButton.dataset.deleteComment));
+        } catch (error) {
+          blogToast(error.message, "error");
+        }
+        return;
+      }
+
+      const likeButton = event.target.closest("[data-toggle-like]");
+      if (likeButton) {
+        try {
+          await toggleLike(Number(likeButton.dataset.toggleLike));
+        } catch (error) {
+          blogToast(error.message, "error");
+        }
+      }
+    });
+
+    document.getElementById("blog-shell").addEventListener("input", (event) => {
+      if (event.target.matches("[data-blog-search]")) {
+        setBlogSearch(event.target.value);
+      }
+    });
+
+    document.getElementById("blog-shell").addEventListener("change", (event) => {
+      if (event.target.matches("[data-blog-category]")) {
+        setBlogCategory(event.target.value);
+      }
+    });
+
+    document.getElementById("blog-shell").addEventListener("submit", async (event) => {
+      const createPostForm = event.target.closest("[data-create-post-form]");
+      if (createPostForm) {
+        event.preventDefault();
+        try {
+          await submitPost(createPostForm);
+        } catch (error) {
+          blogToast(error.message, "error");
+        }
+        return;
+      }
+
+      const commentForm = event.target.closest("[data-comment-form]");
+      if (commentForm) {
+        event.preventDefault();
+        try {
+          await submitComment(commentForm, Number(commentForm.dataset.commentForm));
+        } catch (error) {
+          blogToast(error.message, "error");
+        }
+      }
+    });
+
+    document.addEventListener("DOMContentLoaded", () => {
+      loadBlogPage().catch((error) => {
+        document.getElementById("blog-shell").innerHTML = `<div class="surface">${escapeHtml(error.message)}</div>`;
+      });
+    });
+  </script>
 </body>
 </html>

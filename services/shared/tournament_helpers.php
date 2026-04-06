@@ -5,7 +5,7 @@ require_once __DIR__ . '/player_helpers.php';
 
 function tournament_supported_types(): array
 {
-    return ['Round Robin', 'League', 'Group', 'Elimination'];
+    return ['Round Robin', 'League', 'Group', 'Elimination', 'Double Elimination'];
 }
 
 function tournament_unique_player_ids(array $playerIds): array
@@ -130,6 +130,10 @@ function tournament_validate_structure_settings(array $settings, int $playerCoun
         if ($teamCount > $playerCount) {
             throw new InvalidArgumentException('Team count cannot exceed the number of tournament entrants.');
         }
+    }
+
+    if ($settings['tour_type'] === 'Double Elimination' && $playerCount < 4) {
+        throw new InvalidArgumentException('Double-elimination tournaments need at least four entrants.');
     }
 }
 
@@ -418,8 +422,42 @@ function tournament_grouped_player_ids(array $groupAssignments): array
     return $grouped;
 }
 
+function tournament_entry_player(int $playerId): array
+{
+    return ['entry_type' => 'player', 'player_id' => $playerId];
+}
+
+function tournament_entry_match_winner(int $matchId): array
+{
+    return ['entry_type' => 'winner_match', 'match_id' => $matchId];
+}
+
+function tournament_entry_match_loser(int $matchId): array
+{
+    return ['entry_type' => 'loser_match', 'match_id' => $matchId];
+}
+
+function tournament_round_clock(string $startDate, int $dayOffset = 0): DateTime
+{
+    $clock = new DateTime($startDate . ' 18:00:00');
+    if ($dayOffset > 0) {
+        $clock->modify('+' . $dayOffset . ' day');
+    }
+
+    return $clock;
+}
+
 function tournament_link_entry_to_next_match(mysqli $db, array $entry, int $nextMatchId, int $position): void
 {
+    if (($entry['entry_type'] ?? '') === 'loser_match' && isset($entry['match_id'])) {
+        $stmt = $db->prepare('UPDATE matches SET loser_next_match_id = ?, loser_position_in_next = ? WHERE match_id = ?');
+        $matchId = (int) $entry['match_id'];
+        $stmt->bind_param('iii', $nextMatchId, $position, $matchId);
+        $stmt->execute();
+        $stmt->close();
+        return;
+    }
+
     if (isset($entry['match_id'])) {
         $stmt = $db->prepare('UPDATE matches SET next_match_id = ?, position_in_next = ? WHERE match_id = ?');
         $matchId = (int) $entry['match_id'];
@@ -437,63 +475,241 @@ function tournament_link_entry_to_next_match(mysqli $db, array $entry, int $next
     $stmt->close();
 }
 
-function tournament_create_elimination_bracket(mysqli $db, int $tourId, array $playerIds, string $startDate, ?string $bracket = 'Elimination'): void
-{
-    $entries = [];
-    $players = array_values($playerIds);
-    shuffle($players);
-    $clock = new DateTime($startDate . ' 18:00:00');
+function tournament_build_entry_round(
+    mysqli $db,
+    int $tourId,
+    array $entries,
+    int $roundNumber,
+    string $startDate,
+    string $bracket,
+    int $dayOffset = 0
+): array {
+    $nextEntries = [];
+    $matchIds = [];
+    $clock = tournament_round_clock($startDate, $dayOffset);
 
-    for ($i = 0; $i < count($players); $i += 2) {
-        if (!isset($players[$i + 1])) {
-            $entries[] = ['player_id' => $players[$i]];
+    for ($index = 0; $index < count($entries); $index += 2) {
+        if (!isset($entries[$index + 1])) {
+            $nextEntries[] = $entries[$index];
             continue;
         }
 
         $matchId = tournament_insert_match($db, [
             'tour_id' => $tourId,
-            'round_number' => 1,
+            'round_number' => $roundNumber,
             'match_date' => $clock->format('Y-m-d'),
             'match_time' => $clock->format('H:i:s'),
-            'player1_id' => $players[$i],
-            'player2_id' => $players[$i + 1],
             'match_status' => 'Scheduled',
             'bracket' => $bracket,
         ]);
-        $entries[] = ['match_id' => $matchId];
+
+        tournament_link_entry_to_next_match($db, $entries[$index], $matchId, 1);
+        tournament_link_entry_to_next_match($db, $entries[$index + 1], $matchId, 2);
+
+        $matchIds[] = $matchId;
+        $nextEntries[] = tournament_entry_match_winner($matchId);
         $clock->modify('+30 minutes');
     }
 
-    $roundNumber = 2;
-    while (count($entries) > 1) {
-        $nextEntries = [];
-        $roundClock = new DateTime($startDate . ' 18:00:00');
-        $roundClock->modify('+' . ($roundNumber - 1) . ' day');
+    return [
+        'matches' => $matchIds,
+        'entries' => $nextEntries,
+    ];
+}
 
-        for ($i = 0; $i < count($entries); $i += 2) {
-            if (!isset($entries[$i + 1])) {
-                $nextEntries[] = $entries[$i];
+function tournament_build_zipped_entry_round(
+    mysqli $db,
+    int $tourId,
+    array $leftEntries,
+    array $rightEntries,
+    int $roundNumber,
+    string $startDate,
+    string $bracket,
+    int $dayOffset = 0
+): array {
+    $nextEntries = [];
+    $matchIds = [];
+    $clock = tournament_round_clock($startDate, $dayOffset);
+    $total = max(count($leftEntries), count($rightEntries));
+
+    for ($index = 0; $index < $total; $index++) {
+        $leftEntry = $leftEntries[$index] ?? null;
+        $rightEntry = $rightEntries[$index] ?? null;
+
+        if ($leftEntry === null && $rightEntry === null) {
+            continue;
+        }
+
+        if ($leftEntry === null) {
+            $nextEntries[] = $rightEntry;
+            continue;
+        }
+
+        if ($rightEntry === null) {
+            $nextEntries[] = $leftEntry;
+            continue;
+        }
+
+        $matchId = tournament_insert_match($db, [
+            'tour_id' => $tourId,
+            'round_number' => $roundNumber,
+            'match_date' => $clock->format('Y-m-d'),
+            'match_time' => $clock->format('H:i:s'),
+            'match_status' => 'Scheduled',
+            'bracket' => $bracket,
+        ]);
+
+        tournament_link_entry_to_next_match($db, $leftEntry, $matchId, 1);
+        tournament_link_entry_to_next_match($db, $rightEntry, $matchId, 2);
+
+        $matchIds[] = $matchId;
+        $nextEntries[] = tournament_entry_match_winner($matchId);
+        $clock->modify('+30 minutes');
+    }
+
+    return [
+        'matches' => $matchIds,
+        'entries' => $nextEntries,
+    ];
+}
+
+function tournament_create_winners_bracket(
+    mysqli $db,
+    int $tourId,
+    array $playerIds,
+    string $startDate,
+    string $bracket = 'Elimination'
+): array {
+    $players = array_values($playerIds);
+    shuffle($players);
+    $entries = array_map(static fn (int $playerId): array => tournament_entry_player($playerId), $players);
+    $rounds = [];
+    $roundNumber = 1;
+
+    while (count($entries) > 1) {
+        $result = tournament_build_entry_round($db, $tourId, $entries, $roundNumber, $startDate, $bracket, $roundNumber - 1);
+        $rounds[$roundNumber] = $result['matches'];
+        $entries = $result['entries'];
+        $roundNumber++;
+    }
+
+    return [
+        'rounds' => $rounds,
+        'champion_entry' => $entries[0] ?? null,
+    ];
+}
+
+function tournament_create_elimination_bracket(mysqli $db, int $tourId, array $playerIds, string $startDate, ?string $bracket = 'Elimination'): void
+{
+    tournament_create_winners_bracket($db, $tourId, $playerIds, $startDate, (string) $bracket);
+}
+
+function tournament_create_double_elimination_bracket(mysqli $db, int $tourId, array $playerIds, string $startDate): void
+{
+    $winnersBracket = tournament_create_winners_bracket($db, $tourId, $playerIds, $startDate, 'Winners Bracket');
+    $winnerRounds = $winnersBracket['rounds'] ?? [];
+    if (empty($winnerRounds) || empty($winnersBracket['champion_entry'])) {
+        return;
+    }
+
+    ksort($winnerRounds);
+    $finalWinnerRound = (int) array_key_last($winnerRounds);
+    $loserEntries = [];
+    $loserRoundNumber = 1;
+    $loserDayOffset = 0;
+
+    foreach ($winnerRounds as $winnerRoundNumber => $winnerMatchIds) {
+        $incomingLosers = array_map(
+            static fn (int $matchId): array => tournament_entry_match_loser($matchId),
+            array_values(array_map('intval', $winnerMatchIds))
+        );
+
+        if (empty($incomingLosers)) {
+            continue;
+        }
+
+        if (empty($loserEntries)) {
+            if (count($incomingLosers) === 1) {
+                $loserEntries = $incomingLosers;
                 continue;
             }
 
-            $matchId = tournament_insert_match($db, [
-                'tour_id' => $tourId,
-                'round_number' => $roundNumber,
-                'match_date' => $roundClock->format('Y-m-d'),
-                'match_time' => $roundClock->format('H:i:s'),
-                'match_status' => 'Scheduled',
-                'bracket' => $bracket,
-            ]);
-
-            tournament_link_entry_to_next_match($db, $entries[$i], $matchId, 1);
-            tournament_link_entry_to_next_match($db, $entries[$i + 1], $matchId, 2);
-            $nextEntries[] = ['match_id' => $matchId];
-            $roundClock->modify('+30 minutes');
+            $result = tournament_build_entry_round(
+                $db,
+                $tourId,
+                $incomingLosers,
+                $loserRoundNumber,
+                $startDate,
+                'Losers Bracket',
+                $loserDayOffset
+            );
+            $loserEntries = $result['entries'];
+            $loserRoundNumber++;
+            $loserDayOffset++;
+            continue;
         }
 
-        $entries = $nextEntries;
-        $roundNumber++;
+        $result = tournament_build_zipped_entry_round(
+            $db,
+            $tourId,
+            $loserEntries,
+            $incomingLosers,
+            $loserRoundNumber,
+            $startDate,
+            'Losers Bracket',
+            $loserDayOffset
+        );
+        $loserEntries = $result['entries'];
+        $loserRoundNumber++;
+        $loserDayOffset++;
+
+        if ((int) $winnerRoundNumber !== $finalWinnerRound && count($loserEntries) > 1) {
+            $result = tournament_build_entry_round(
+                $db,
+                $tourId,
+                $loserEntries,
+                $loserRoundNumber,
+                $startDate,
+                'Losers Bracket',
+                $loserDayOffset
+            );
+            $loserEntries = $result['entries'];
+            $loserRoundNumber++;
+            $loserDayOffset++;
+        }
     }
+
+    while (count($loserEntries) > 1) {
+        $result = tournament_build_entry_round(
+            $db,
+            $tourId,
+            $loserEntries,
+            $loserRoundNumber,
+            $startDate,
+            'Losers Bracket',
+            $loserDayOffset
+        );
+        $loserEntries = $result['entries'];
+        $loserRoundNumber++;
+        $loserDayOffset++;
+    }
+
+    if (empty($loserEntries[0])) {
+        return;
+    }
+
+    $grandFinalClock = tournament_round_clock($startDate, max(count($winnerRounds), $loserDayOffset));
+    $grandFinalId = tournament_insert_match($db, [
+        'tour_id' => $tourId,
+        'round_number' => 1,
+        'match_date' => $grandFinalClock->format('Y-m-d'),
+        'match_time' => $grandFinalClock->format('H:i:s'),
+        'match_status' => 'Scheduled',
+        'bracket' => 'Grand Final',
+    ]);
+
+    tournament_link_entry_to_next_match($db, $winnersBracket['champion_entry'], $grandFinalId, 1);
+    tournament_link_entry_to_next_match($db, $loserEntries[0], $grandFinalId, 2);
 }
 
 function tournament_delete_structure(mysqli $db, int $tourId): void
@@ -630,6 +846,11 @@ function tournament_rebuild_structure(
     }
 
     tournament_attach_players($db, $tourId, $playerIds, null, 'Active');
+    if ($tourType === 'Double Elimination') {
+        tournament_create_double_elimination_bracket($db, $tourId, $playerIds, $startDate);
+        return;
+    }
+
     tournament_create_elimination_bracket($db, $tourId, $playerIds, $startDate, 'Elimination');
 }
 
@@ -1453,14 +1674,32 @@ function tournament_determine_winner_label(mysqli $db, array $tournament): array
         ];
     }
 
-    $stmt = $db->prepare(
-        "SELECT m.winner_id, p.plr_name, p.plr_surname
-         FROM matches m
-         LEFT JOIN players p ON p.plr_idNum = m.winner_id
-         WHERE m.tour_id = ? AND m.match_status = 'Completed'
-         ORDER BY m.round_number DESC, m.match_id DESC
-         LIMIT 1"
-    );
+    if ($tournament['tour_type'] === 'Double Elimination') {
+        $stmt = $db->prepare(
+            "SELECT m.winner_id, p.plr_name, p.plr_surname
+             FROM matches m
+             LEFT JOIN players p ON p.plr_idNum = m.winner_id
+             WHERE m.tour_id = ? AND m.match_status = 'Completed'
+             ORDER BY
+                CASE
+                    WHEN m.bracket = 'Grand Final' THEN 3
+                    WHEN m.bracket = 'Losers Bracket' THEN 2
+                    ELSE 1
+                END DESC,
+                m.round_number DESC,
+                m.match_id DESC
+             LIMIT 1"
+        );
+    } else {
+        $stmt = $db->prepare(
+            "SELECT m.winner_id, p.plr_name, p.plr_surname
+             FROM matches m
+             LEFT JOIN players p ON p.plr_idNum = m.winner_id
+             WHERE m.tour_id = ? AND m.match_status = 'Completed'
+             ORDER BY m.round_number DESC, m.match_id DESC
+             LIMIT 1"
+        );
+    }
     $tourId = (int) $tournament['tour_id'];
     $stmt->bind_param('i', $tourId);
     $stmt->execute();
@@ -1598,6 +1837,7 @@ function tournament_record_match_result(mysqli $db, int $matchId, int $player1Sc
 
     $isLeagueGroupStage = $match['tour_type'] === 'League' && $match['group_number'] !== null;
     $isKnockout = $match['tour_type'] === 'Elimination'
+        || $match['tour_type'] === 'Double Elimination'
         || ($match['tour_type'] === 'League' && $match['group_number'] === null);
 
     if ($player1Score === 0 && $player2Score === 0) {
@@ -1748,13 +1988,25 @@ function tournament_fetch_page_data(mysqli $db, int $tourId): array
                         p1.plr_surname AS player1_surname,
                         p2.plr_name AS player2_name,
                         p2.plr_surname AS player2_surname,
-                        pm1.match_id AS prev_match1_id,
-                        pm2.match_id AS prev_match2_id
+                        COALESCE(pmw1.match_id, pml1.match_id) AS prev_match1_id,
+                        CASE
+                            WHEN pmw1.match_id IS NOT NULL THEN 'winner'
+                            WHEN pml1.match_id IS NOT NULL THEN 'loser'
+                            ELSE NULL
+                        END AS prev_match1_source,
+                        COALESCE(pmw2.match_id, pml2.match_id) AS prev_match2_id,
+                        CASE
+                            WHEN pmw2.match_id IS NOT NULL THEN 'winner'
+                            WHEN pml2.match_id IS NOT NULL THEN 'loser'
+                            ELSE NULL
+                        END AS prev_match2_source
                    FROM matches m
                    LEFT JOIN players p1 ON p1.plr_idNum = m.player1_id
                    LEFT JOIN players p2 ON p2.plr_idNum = m.player2_id
-                   LEFT JOIN matches pm1 ON pm1.next_match_id = m.match_id AND pm1.position_in_next = 1
-                   LEFT JOIN matches pm2 ON pm2.next_match_id = m.match_id AND pm2.position_in_next = 2
+                   LEFT JOIN matches pmw1 ON pmw1.next_match_id = m.match_id AND pmw1.position_in_next = 1
+                   LEFT JOIN matches pml1 ON pml1.loser_next_match_id = m.match_id AND pml1.loser_position_in_next = 1
+                   LEFT JOIN matches pmw2 ON pmw2.next_match_id = m.match_id AND pmw2.position_in_next = 2
+                   LEFT JOIN matches pml2 ON pml2.loser_next_match_id = m.match_id AND pml2.loser_position_in_next = 2
                    WHERE m.tour_id = ?
                    ORDER BY m.group_number IS NULL, m.group_number, m.round_number, m.match_date, m.match_time, m.match_id";
     $matchesStmt = $db->prepare($matchesSql);

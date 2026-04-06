@@ -12,6 +12,11 @@ body {
     min-height: 100vh;
     display: flex;
     flex-direction: column;
+    background:
+        radial-gradient(circle at top left, rgba(255, 124, 77, 0.18), transparent 24%),
+        radial-gradient(circle at bottom right, rgba(255, 67, 67, 0.12), transparent 28%),
+        linear-gradient(180deg, rgba(7, 12, 20, 0.96), rgba(4, 8, 14, 0.98));
+    color: var(--title-color);
 }
 
 main {
@@ -20,7 +25,7 @@ main {
     display: flex;
     justify-content: center;
     align-items: center;
-    padding: 6rem 1.5rem 2rem;
+    padding: 6.5rem 1.5rem 2.5rem;
 }
 
 body.auth-shell-page .footer--compact {
@@ -41,21 +46,28 @@ body.auth-shell-page .footer--compact .footer__group {
 
 .box {
     position: relative;
-    width: 400px;
-    height: 200px;
-    background: repeating-conic-gradient(from var(--a), #ff2727 0%, #ff2727 5%, transparent 5%, transparent 40%, #ff2727 50%);
-    filter: drop-shadow(0 15px 50px #000);
-    border-radius: 20px;
-    animation: rotating 4s  infinite;
+    width: min(420px, 100%);
+    height: 220px;
     display: flex;
     justify-content: center;
     align-items: center;
-    transition: 0.5s;
+    border-radius: 28px;
+    background:
+        repeating-conic-gradient(
+            from var(--a),
+            rgba(255, 124, 77, 0.95) 0%,
+            rgba(255, 124, 77, 0.95) 5%,
+            transparent 5%,
+            transparent 36%,
+            rgba(255, 124, 77, 0.95) 50%
+        );
+    filter: drop-shadow(0 24px 54px rgba(0, 0, 0, 0.42));
+    animation: rotating 6s infinite linear;
+    transition: width 0.5s ease, height 0.5s ease;
 }
 
 .box:hover {
-    width: 400px;
-    height: 500px;
+    height: 520px;
 }
 
 @keyframes rotating {
@@ -71,114 +83,194 @@ body.auth-shell-page .footer--compact .footer__group {
 .box::before {
     content: '';
     position: absolute;
-    width: 100%;
-    height: 100%;
-    background: repeating-conic-gradient(from var(--a), #014b2c 0%, #014b2c 5%, transparent 5%, transparent 40%, #014b2c 50%);
-    filter: drop-shadow(0 15px 50px #000);
-    border-radius: 20px;
-    animation: rotating 4s  infinite;
-    animation-delay: -1s;
+    inset: 0;
+    border-radius: 28px;
+    background:
+        repeating-conic-gradient(
+            from var(--a),
+            rgba(201, 50, 50, 0.92) 0%,
+            rgba(201, 50, 50, 0.92) 5%,
+            transparent 5%,
+            transparent 38%,
+            rgba(201, 50, 50, 0.92) 50%
+        );
+    animation: rotating 6s infinite linear;
+    animation-delay: -1.5s;
 }
 
 .box::after {
     content: '';
     position: absolute;
-    inset: 4px;
-    background: #2d2d39;
-    border-radius: 15px;
-    border: 8px solid #25252b;
+    inset: 5px;
+    border-radius: 24px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background:
+        radial-gradient(circle at top right, rgba(255, 124, 77, 0.14), transparent 34%),
+        linear-gradient(180deg, rgba(16, 24, 36, 0.96), rgba(8, 12, 20, 0.98));
 }
 
 .login {
     position: absolute;
-    inset: 60px;
+    inset: 58px;
+    z-index: 1;
     display: flex;
     justify-content: center;
     align-items: center;
-    flex-direction: column;
-    border-radius: rgba(0, 0, 0, 0.2);
-    z-index: 1000;
-    box-shadow: inset 0 10px 20px rgba(0, 0, 0, 0.5);
-    border-bottom: 2px solid rgba(255, 255, 255, 0.5);
-    transition: 0.5s;
-    color: #fff;
+    border-radius: 24px;
+    background: rgba(11, 17, 27, 0.78);
+    box-shadow: inset 0 12px 26px rgba(0, 0, 0, 0.28);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    transition: inset 0.5s ease;
     overflow: hidden;
+    color: #fff;
 }
 
 .box:hover .login {
-    inset: 40px;
+    inset: 38px;
 }
 
 .loginBx {
     position: relative;
+    width: min(100%, 280px);
     display: flex;
-    justify-content: center;
-    align-items: center;
     flex-direction: column;
-    gap: 20px;
-    width: 70%;
-    transform: translateY(122px);
-    transition: 0.5s;
+    align-items: center;
+    gap: 18px;
+    transform: translateY(126px);
+    transition: transform 0.5s ease;
 }
 
 .box:hover .loginBx {
-    transform: translateY(0px);
+    transform: translateY(0);
 }
 
 .loginBx h2 {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
     text-transform: uppercase;
-    font-weight: 600;
-    letter-spacing: 0.2em;
+    letter-spacing: 0.18em;
+    font-size: 1rem;
+    font-weight: var(--font-black);
+    color: #fff;
 }
 
 .loginBx h2 i {
-    color: #f34343;
-    text-shadow: 0 0 5px #f34343, 0 0 25px #f34343;
+    color: var(--first-color-light);
+    text-shadow: 0 0 18px rgba(255, 124, 77, 0.24);
+}
+
+.loginBx form,
+.loginBx > input[type="email"],
+.loginBx > input[type="submit"] {
+    width: 100%;
+}
+
+.loginBx form {
+    display: grid;
+    gap: 14px;
 }
 
 .loginBx input {
     width: 100%;
-    padding: 10px 20px;
-    outline: none;
-    border: none;
-    font-size: 1.2em;
+    padding: 0.9rem 1.05rem;
+    border-radius: 18px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    background: rgba(255, 255, 255, 0.06);
     color: #fff;
-    background: rgba(0, 0, 0, 0.1);
-    border: 2px solid #fff;
-    border-radius: 30px;
+    font-size: 0.98rem;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
 }
 
 .loginBx input::placeholder {
-    color: #999;
+    color: rgba(255, 255, 255, 0.48);
+}
+
+.loginBx input:focus {
+    outline: none;
+    border-color: rgba(255, 124, 77, 0.42);
+    box-shadow: 0 0 0 4px rgba(255, 124, 77, 0.12);
+    background: rgba(255, 255, 255, 0.09);
 }
 
 .loginBx input[type="submit"] {
-    background: #16995c;
-    border: none;
-    font-weight: 500;
-    color: #111;
+    margin-top: 0.2rem;
+    border: 1px solid rgba(255, 215, 202, 0.28);
+    background: linear-gradient(180deg, #ff7c4d, #ef5a29);
+    color: #fff;
+    font-size: 1rem;
+    font-weight: var(--font-bold);
+    letter-spacing: 0.04em;
     cursor: pointer;
-    transition: 0.5s;
-    font-family: 'sans-serif'; 
-    font-size: 1.5em bold; 
+    box-shadow: 0 16px 28px rgba(239, 90, 41, 0.22);
 }
 
 .loginBx input[type="submit"]:hover {
-    box-shadow: 0 0 10px #16995c, 0 0 60px #16995c;
+    box-shadow: 0 18px 32px rgba(239, 90, 41, 0.3);
+}
+
+#error-message {
+    width: 100%;
+    min-height: 1.4rem;
+    color: #fecaca;
+    font-size: 0.9rem;
+    text-align: center;
 }
 
 .group {
     width: 100%;
     display: flex;
     justify-content: space-between;
+    gap: 0.75rem;
+    align-items: center;
+    flex-wrap: wrap;
 }
 
-.group a {
-    color: #fff;
+.group a,
+.group pre {
+    color: rgba(255, 255, 255, 0.84);
     text-decoration: none;
+    font: inherit;
+    white-space: normal;
 }
 
-.group a:nth-child(2) {
-    color: #f34343;
-    font-weight: 600;
-} 
+.group a:hover {
+    color: #fff;
+}
+
+.group a:nth-child(2),
+.group a:only-child {
+    color: #ffd7ca;
+    font-weight: var(--font-bold);
+}
+
+@media (max-width: 540px) {
+    main {
+        padding-inline: 1rem;
+    }
+
+    .box {
+        height: 240px;
+    }
+
+    .box:hover {
+        height: 540px;
+    }
+
+    .login {
+        inset: 48px 20px;
+    }
+
+    .box:hover .login {
+        inset: 34px 14px;
+    }
+
+    .loginBx {
+        width: 100%;
+    }
+
+    .group {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}

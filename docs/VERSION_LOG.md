@@ -297,3 +297,49 @@
   - browser QA for the rebuilt blog page, especially the composer dialog and multi-image authoring flow
   - browser QA for the updated gallery lightbox and linked-post navigation
   - authenticated browser QA for the soft-refresh tournament admin flow under repeated match/roster edits
+
+## Double Elimination, Scale Seeding, And Public Runtime Hardening Pass
+- Date: 2026-04-06
+- Status: tournament-engine expansion and public-page stability follow-up driven by manual verification
+- Main changes:
+  - added active `Double Elimination` tournament support with winners-bracket, losers-bracket, and grand-final generation in the shared tournament helper layer
+  - exposed loser-path source metadata plus advancement labels so public/admin bracket rendering can explain where each slot feeds next
+  - updated the admin tournament creation/details surfaces and the public tournament-detail page to render separate winners, losers, and grand-final bracket groups
+  - added `scripts/seed_large_tournaments.php` and seeded deterministic 64-player `League`, `Group`, `Elimination`, and `Double Elimination` tournaments for scale verification
+  - rebuilt `pages/blog.html` into a clean event-delegated implementation after the earlier one-line script proved fragile in a real browser
+  - widened `services/get_blogs.php` public page-size support to `100` and switched the gallery plus public tournament detail page onto `window.appFetchJson(...)` for safer JSON failure handling
+- Verification in this pass:
+  - targeted PHP lint for `services/get_blogs.php`
+  - live HTTP verification for `services/get_blogs.php?page=1&pageSize=100`
+  - live HTTP verification for `services/get_tournament_details.php?id=8`
+  - Chrome headless DOM verification for:
+    - `pages/blog.html`
+    - `pages/gallery.html`
+    - `pages/tournament_details.php?id=8`
+  - DB-backed scale checks confirming expected fixture counts for the seeded 64-player tournaments
+- Still pending:
+  - authenticated browser QA of the admin-side `Double Elimination` create/update flow
+  - real pointer/touch drag/drop QA in the bracket editor
+  - Apache-backed visual QA and the remaining responsive/manual sweep from `docs/TESTING_CHECKLIST.md`
+
+## Shared Feedback Recovery And Bracket Focus Pass
+- Date: 2026-04-06
+- Status: manual-verification follow-up focused on dead shared assets, orphaned media rows, and large-bracket navigation
+- Main changes:
+  - restored `js/ui_feedback.js` and versioned the affected page includes so cached 404s stop breaking confirmation, prompt, and toast flows
+  - added local fallback wrappers on `pages/blog.html`, `pages/gallery.html`, and `pages/admin/manage_players.php` so those pages stay functional even if the shared feedback helper ever fails again
+  - filtered missing-file media rows out of `services/get_blogs.php` and `services/gallery_get.php` so dead blog/gallery image paths no longer render into the browser
+  - removed the separate featured-post block from `pages/blog.html`
+  - added focus-mode/full-screen controls plus path-jump navigation on the public tournament-detail bracket and the admin connected bracket for large elimination trees
+- Verification in this pass:
+  - targeted PHP lint for touched service/page files
+  - live HTTP verification that `js/ui_feedback.js?v=20260406-1` returns `200`
+  - live `get_blogs.php?page=1&pageSize=100` verification confirming the broken blog post now exposes zero usable images instead of a dead path
+  - live `gallery_get.php` verification confirming only existing gallery files are returned
+  - static/source verification for:
+    - removal of the featured-post block from `pages/blog.html`
+    - public bracket focus-mode and path-jump hooks in `pages/tournament_details.php`
+    - admin bracket focus-mode and path-jump hooks in `pages/admin/show_tournament_details.php` and `js/admin_tournament_details.js`
+- Still pending:
+  - real browser QA for the new public/admin bracket focus-mode interactions
+  - authenticated browser QA for the updated admin membership-review prompt flow

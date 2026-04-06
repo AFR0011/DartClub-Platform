@@ -18,8 +18,19 @@ try {
          ORDER BY g.created_at DESC'
     );
     $stmt->execute();
-    $images = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+    $rawImages = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
     $stmt->close();
+
+    $images = [];
+    foreach ($rawImages as $image) {
+        $imagePath = app_existing_public_path($image['file_path'] ?? null);
+        if ($imagePath === null) {
+            continue;
+        }
+
+        $image['file_path'] = $imagePath;
+        $images[] = $image;
+    }
 
     if (!empty($images)) {
         app_json_response($images);
@@ -41,7 +52,7 @@ try {
             }
             $fallbackImages[] = [
                 'id' => -1 * $index,
-                'file_path' => '../files/media/images/gallery/' . $file,
+                'file_path' => app_public_path('../files/media/images/gallery/' . $file),
                 'title' => pathinfo($file, PATHINFO_FILENAME),
                 'source_blog_id' => null,
                 'uploaded_by_user_id' => null,

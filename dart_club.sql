@@ -100,6 +100,8 @@ CREATE TABLE `blogs` (
   `blog_content` text DEFAULT NULL,
   `author_user_id` int(11) DEFAULT NULL,
   `status` varchar(24) NOT NULL DEFAULT 'published',
+  `blog_category` varchar(80) DEFAULT 'Announcement',
+  `blog_tags` varchar(255) DEFAULT NULL,
   `created_at` datetime DEFAULT current_timestamp(),
   `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `published_at` datetime DEFAULT NULL,
@@ -343,8 +345,8 @@ VALUES
   (1012, 'Baran', 'Aydin', 'Famagusta', '1992-05-06', '+90-533-100-1012', 'baran.aydin', NULL);
 
 INSERT INTO `blogs`
-  (`blog_id`, `blog_title`, `blog_content`, `author_user_id`, `status`, `created_at`, `published_at`)
+  (`blog_id`, `blog_title`, `blog_content`, `author_user_id`, `status`, `blog_category`, `blog_tags`, `created_at`, `published_at`)
 VALUES
-  (1, 'Welcome to the new Dart Club platform', '<p>Follow tournaments, apply for membership, and stay up to date with club news here.</p>', 1, 'published', NOW(), NOW());
+  (1, 'Welcome to the new Dart Club platform', '<p>Follow tournaments, apply for membership, and stay up to date with club news here.</p>', 1, 'published', 'Announcement', 'club, platform, welcome', NOW(), NOW());
 
 COMMIT;

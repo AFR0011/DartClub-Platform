@@ -32,6 +32,14 @@
 - Restored the gallery to a stable four-column desktop card layout and added linked-post navigation for blog-originated images.
 - Softened tournament admin updates so common match/bracket mutations preserve the current section instead of hard-resetting the page.
 - Expanded `docs/TESTING_CHECKLIST.md` into a fuller page-by-page QA runbook.
+- Added active `Double Elimination` support with winners-bracket, losers-bracket, and grand-final generation plus loser-path propagation.
+- Added seeded 64-player scale tournaments for `League`, `Group`, `Elimination`, and `Double Elimination` via `scripts/seed_large_tournaments.php`.
+- Rebuilt the public blog page into a stable event-delegated implementation after a real-browser runtime failure left it stuck on its loading state.
+- Switched the public gallery page and public tournament-detail page onto the shared JSON helper so backend HTML failures stop surfacing as frontend JSON parser crashes.
+- Restored the shared `js/ui_feedback.js` helper and versioned its page includes so stale cached 404s stop breaking blog, gallery, and admin interactions.
+- Filtered orphaned blog/gallery media rows out of the public services so missing files no longer produce dead image requests.
+- Removed the standalone featured-post block from the blog page.
+- Added focus-mode/full-screen and path-jump controls to the public and admin elimination brackets for large-tree navigation.
 - Added repo mapping docs and repo-local Codex config.
 - Added the global `repo-map` skill scaffold.
 - Centralized DB/bootstrap usage.
@@ -73,8 +81,12 @@
     - responsive membership-review action dropdown behavior
     - tournament roster filter/sort behavior on create/edit pages
     - public player-profile navigation from tournament pages
+    - public and admin `Double Elimination` bracket readability plus loser-path progression
+    - seeded `Scale Test - Double Elimination 64` browser-eye pass across desktop/tablet/mobile widths
+    - public and admin bracket focus-mode usability at scale
     - preview-rail blog reading flow and multi-image post creation
     - gallery linked-post lightbox flow
+    - console-clean blog/gallery rendering when media files referenced in the database are missing on disk
 
 ## Remaining Backend Cleanup
 - Document or script the one-time MariaDB grant setup expected for the canonical `dartadmin` local user.
@@ -100,6 +112,5 @@
 - Redesign the admin area into a more coherent operations console once the remaining runtime issues are closed.
 
 ## Deferred
-- Full `DoubleElimination` implementation with a real losers bracket engine.
 - Framework migration or frontend/backend split.
 - Realtime sockets/push for live scoring.
