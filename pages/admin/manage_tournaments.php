@@ -197,7 +197,7 @@ $playerStmt->close();
         .filter-bar {
             display: grid;
             gap: 12px;
-            grid-template-columns: 1fr auto;
+            grid-template-columns: minmax(220px, 1fr) minmax(180px, 220px) minmax(180px, 220px);
             align-items: end;
             margin-bottom: 12px;
         }
@@ -423,6 +423,15 @@ $playerStmt->close();
                     <input type="text" id="playerFilter" placeholder="Type a player name to narrow the list">
                 </div>
                 <div class="form-group" style="margin-bottom:0;">
+                    <label for="playerSort">Sort player list</label>
+                    <select id="playerSort">
+                        <option value="name_asc">Player A-Z</option>
+                        <option value="name_desc">Player Z-A</option>
+                        <option value="id_asc">Oldest first</option>
+                        <option value="id_desc">Newest first</option>
+                    </select>
+                </div>
+                <div class="form-group" style="margin-bottom:0;">
                     <label for="selectedPlayersStatus">Add selected players as</label>
                     <select name="selectedPlayersStatus" id="selectedPlayersStatus">
                         <option value="Registered" selected>Registered entrants</option>
@@ -445,7 +454,11 @@ $playerStmt->close();
                     </thead>
                     <tbody>
                         <?php foreach ($players as $player): ?>
-                            <tr data-player-row data-player-name="<?php echo htmlspecialchars(strtolower(trim($player['plr_name'] . ' ' . $player['plr_surname']))); ?>">
+                            <tr
+                                data-player-row
+                                data-player-id="<?php echo (int) $player['plr_idNum']; ?>"
+                                data-player-name="<?php echo htmlspecialchars(strtolower(trim($player['plr_name'] . ' ' . $player['plr_surname']))); ?>"
+                            >
                                 <td>
                                     <label class="row-toggle" data-row-toggle>
                                         <input type="checkbox" name="selectedPlayers[]" value="<?php echo (int) $player['plr_idNum']; ?>">
@@ -474,6 +487,7 @@ $playerStmt->close();
         const teamSettings = document.getElementById('teamSettings');
         const typeHint = document.getElementById('typeHint');
         const playerFilter = document.getElementById('playerFilter');
+        const playerSort = document.getElementById('playerSort');
         const playerSelectionCount = document.getElementById('playerSelectionCount');
 
         function syncSelectableRow(row) {
@@ -538,16 +552,44 @@ $playerStmt->close();
         typeSelect.addEventListener('change', syncTournamentMode);
         syncTournamentMode();
 
-        playerFilter?.addEventListener('input', function () {
-            const query = this.value.trim().toLowerCase();
-            document.querySelectorAll('[data-player-row]').forEach((row) => {
-                const playerName = row.dataset.playerName || '';
-                row.style.display = playerName.includes(query) ? '' : 'none';
+        function applyPlayerListControls() {
+            const tbody = document.querySelector('.player-picker tbody');
+            if (!tbody) {
+                return;
+            }
+
+            const query = playerFilter?.value.trim().toLowerCase() || '';
+            const sortMode = playerSort?.value || 'name_asc';
+            const rows = Array.from(tbody.querySelectorAll('[data-player-row]'));
+
+            rows.sort((left, right) => {
+                const leftName = left.dataset.playerName || '';
+                const rightName = right.dataset.playerName || '';
+                if (sortMode === 'name_desc') {
+                    return rightName.localeCompare(leftName, undefined, { sensitivity: 'base' });
+                }
+                if (sortMode === 'id_asc') {
+                    return Number(left.dataset.playerId || 0) - Number(right.dataset.playerId || 0);
+                }
+                if (sortMode === 'id_desc') {
+                    return Number(right.dataset.playerId || 0) - Number(left.dataset.playerId || 0);
+                }
+
+                return leftName.localeCompare(rightName, undefined, { sensitivity: 'base' });
             });
-        });
+
+            rows.forEach((row) => {
+                row.style.display = (row.dataset.playerName || '').includes(query) ? '' : 'none';
+                tbody.appendChild(row);
+            });
+        }
+
+        playerFilter?.addEventListener('input', applyPlayerListControls);
+        playerSort?.addEventListener('change', applyPlayerListControls);
 
         bindSelectableRows();
         refreshSelectionCount();
+        applyPlayerListControls();
 
         document.getElementById('tournamentForm').addEventListener('submit', function (event) {
             const startDate = new Date(document.getElementById('tour_startDate').value);

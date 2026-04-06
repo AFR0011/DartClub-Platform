@@ -2,7 +2,7 @@
 
 ## Metadata
 - Project: `Dart Club`
-- Last updated: 2026-04-02
+- Last updated: 2026-04-03
 - Repo type: legacy PHP/MySQL website
 - Current repo status: mapped, documented, runtime-tested on XAMPP, and further debug-hardened across the shared public shell, JSON service layer, and admin user management flow
 
@@ -81,6 +81,25 @@
 - Added row-click player selection on tournament admin roster forms so add/remove actions no longer depend on tiny raw checkboxes.
 - Added a public tournament-hub filter for “My tournaments” and refreshed the logged-in registration flow so signed-in users without a player row can still register instantly from their account name.
 - Extended the newer tournament/public visual language onto the public tournament-detail page, the blog page, and older admin landing/user-management surfaces.
+- Promoted the public tournament-detail bracket into a clearly labeled main-website section so visitors can find the bracket separately from the fixtures list.
+- Shrunk the public main-website bracket into compact clickable matchup nodes so the detailed match card only appears for the currently selected matchup.
+- Added a dedicated form/button styling pass on the public blog and gallery pages so their inputs, upload controls, and action buttons no longer fall back to raw browser defaults.
+- Added a read-only public player-profile route plus service so visitors can open another player's tournament-facing profile without exposing private dashboard-only fields.
+- Linked tournament participant names and selected bracket-detail cards to the new public player-profile page on both the main site and the admin bracket detail view.
+- Reworked the admin connected bracket into a denser selector layout where the full detail card appears only for the currently selected matchup.
+- Added editable registration-open/close dates plus a one-click `Start Tournament` action on the admin tournament-detail page so managers can close registration and build the structure together.
+- Normalized membership-application file URLs to `/files/...` and added DOC/DOCX open-in-new-tab handling in the admin membership review screen.
+- Tightened admin user and membership-review UI consistency with clearer role-vs-membership badges and aligned action/delete button styling.
+- Added filter/sort controls across the remaining admin player lists, including membership review, tournament roster management, and tournament creation pickers.
+- Changed membership-review action buttons to collapse into a compact dropdown on smaller screens while keeping the full inline button row on wider layouts.
+- Reworked the admin tournament bracket so clicking a matchup opens a focused modal for score entry and schedule editing instead of expanding detail cards below the bracket.
+- Increased connected-bracket track spacing and compacted matchup cards so admin knockout nodes stop visually colliding while staying reasonably dense.
+- Restyled tournament section-toggle buttons and the modal time/schedule controls so the admin tournament surface reads more consistently with the rest of the console.
+- Rebuilt the public blog page into a clearer preview-rail plus full-article workflow, with previous/next article navigation and a dedicated composer dialog instead of inline authoring controls.
+- Added multi-image blog post support so blog entries can carry a small image gallery instead of only one oversized image.
+- Restored the gallery page to a stable four-column desktop card layout and added linked-post navigation for blog-originated images.
+- Switched admin tournament mutations onto a soft-refresh flow that preserves the active section and page position instead of hard-resetting the whole page after common saves.
+- Expanded `docs/TESTING_CHECKLIST.md` into a fuller section-by-section QA runbook covering home, auth, profile, tournaments, player profiles, blog, gallery, admin, responsive, and abuse-input sweeps.
 - Rebuilt `dart_club.sql` around the productized data model:
   - membership state
   - membership applications
@@ -126,6 +145,7 @@
 - Final UI polish still needs a true browser/responsive pass on the public and admin shells.
 - Some local XAMPP/MariaDB installs may still have broken or missing grants for `dartadmin`; the repo now surfaces clean JSON failures in that state, but the DB user itself still needs an environment-level fix.
 - The new guest registration path creates lightweight `players` rows with `user_id = NULL`; long-term cleanup/reporting rules for those guest-only records are still undocumented.
+- The new public player profile intentionally exposes only safe public tournament history and identity labels; broader profile visibility still needs an explicit privacy decision before expanding further.
 
 ## Remaining Priorities
 - Use `docs/TESTING_CHECKLIST.md` as the next-session manual verification order.
@@ -139,11 +159,24 @@
   - guest registration modal
   - signed-in no-profile registration fallback
   - admin generate/rebuild structure button
+  - admin start-tournament button
 - Do a manual browser pass on the upgraded tournament admin UX:
   - compact match scoring in the table view
   - connected bracket drag-and-drop seeding
   - bracket-board vs connected-bracket readability
+  - modal-first bracket matchup workflow
   - mobile/tablet readability of the denser admin tournament screens
+  - responsive membership-review action dropdown behavior
+  - tournament roster filter/sort controls on create/edit pages
+- Do a manual browser pass on the refreshed content/community UX:
+  - preview rail vs full-post reading flow on `pages/blog.html`
+  - multi-image blog authoring dialog
+  - gallery linked-post CTA behavior
+  - four-column gallery desktop layout and responsive collapse
+- Do a manual browser pass on the new cross-profile navigation:
+  - public bracket detail player links
+  - public participant-list player links
+  - admin bracket detail player links
 - Do a manual browser pass on the updated public tournament hub:
   - “My tournaments” filtering
   - logged-in quick registration
@@ -214,6 +247,31 @@
     - `pages/admin/show_tournament_details.php`
     - `pages/admin/manage_users.php`
     - `pages/admin/admin_panel.php`
+  - public tournament-detail source check for:
+    - explicit `Tournament Bracket` section label
+    - separate `Fixtures List` label
+    - compact clickable bracket nodes with a selected-match detail card
+    - player-profile links from participant rows and selected bracket cards
+  - live public-profile coverage for:
+    - `services/get_public_player_profile.php`
+    - `pages/player_profile.php`
+  - direct HTTP availability for a stored membership document under `/files/applications/membership/...`
+  - public page-source smoke checks for:
+    - upgraded blog button/input styling hooks
+    - upgraded gallery button/input styling hooks
+    - preview-rail blog layout hooks
+    - linked-post gallery lightbox hooks
+  - static admin tournament-detail wiring for:
+    - editable `registration_close_at`
+    - `Start Tournament`
+    - compact bracket selectors with modal-first match details
+    - player-profile links in bracket-driven match details
+  - static admin-management page wiring for:
+    - role-vs-membership badges in `manage_users.php`
+    - aligned membership action buttons in `manage_players.php`
+    - filter/sort controls in `manage_tournaments.php` and `show_tournament_details.php`
+    - modal-first bracket interaction hooks in `show_tournament_details.php`
+    - soft-refresh tournament admin flow in `js/admin_tournament_details.js`
 - Not verified in this pass:
   - Apache-backed visual QA
   - SMTP/email delivery
@@ -222,6 +280,14 @@
   - signed-in browser registration flow for a user without a player profile
   - real drag-and-drop interaction under an actual browser pointer/touch session
   - real browser rendering of the new connected public/admin bracket layouts
+  - real browser-eye QA for the new click-to-expand public bracket interaction
+  - real browser-eye QA for the admin bracket after switching from selected detail cards to a modal-first workflow
+  - authenticated browser execution of the new admin `Start Tournament` action
+  - authenticated browser verification of the membership DOC/DOCX preview fallback behavior
+  - responsive browser verification of the new membership-action dropdown collapse behavior
+  - browser QA for the new filter/sort controls across tournament roster lists
+  - browser QA for the new preview-rail blog flow and multi-image blog authoring path
+  - browser QA for the updated gallery lightbox and linked-post navigation
   - standard built-in-server DB-backed smoke checks under the default `dartadmin` credentials because the local MariaDB grant state is unhealthy
 - Next-session operator guide:
   - `docs/TESTING_CHECKLIST.md`

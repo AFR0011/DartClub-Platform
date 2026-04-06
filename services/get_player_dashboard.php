@@ -36,6 +36,9 @@ $membershipStmt->bind_param('i', $userId);
 $membershipStmt->execute();
 $membershipApplication = $membershipStmt->get_result()->fetch_assoc();
 $membershipStmt->close();
+if ($membershipApplication) {
+    $membershipApplication['application_file_path'] = app_public_path($membershipApplication['application_file_path'] ?? null);
+}
 
 $stats = [
     'registered_tournaments' => 0,
@@ -196,4 +199,3 @@ app_json_response([
     'tournaments' => $tournaments,
     'upcoming_matches' => array_slice($upcomingMatches, 0, 10),
 ]);
-

@@ -51,8 +51,68 @@ $players = $playersQuery ? $playersQuery->fetch_all(MYSQLI_ASSOC) : [];
 
         .membership-actions {
             display: flex;
+            justify-content: flex-end;
+        }
+
+        .membership-actions-inline {
+            display: flex;
             gap: 8px;
             flex-wrap: wrap;
+            align-items: center;
+            justify-content: flex-end;
+        }
+
+        .toolbar-line {
+            display: grid;
+            gap: 12px;
+            grid-template-columns: minmax(220px, 1fr) minmax(180px, 220px);
+            align-items: end;
+            margin: 16px 0;
+        }
+
+        .table-shell {
+            overflow: auto;
+            border-radius: 22px;
+        }
+
+        .action-menu {
+            position: relative;
+            display: none;
+        }
+
+        .action-menu summary {
+            list-style: none;
+            padding: 10px 16px;
+            border-radius: 999px;
+            background: linear-gradient(180deg, #fbbf24 0%, #f59e0b 100%);
+            color: #fff;
+            font-size: 0.88rem;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 10px 18px rgba(15, 23, 42, 0.08);
+        }
+
+        .action-menu summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .action-menu-panel {
+            position: absolute;
+            right: 0;
+            top: calc(100% + 8px);
+            z-index: 6;
+            min-width: 170px;
+            display: grid;
+            gap: 8px;
+            padding: 12px;
+            border-radius: 18px;
+            border: 1px solid rgba(37, 99, 235, 0.12);
+            background: rgba(255, 255, 255, 0.98);
+            box-shadow: 0 18px 36px rgba(15, 23, 42, 0.12);
+        }
+
+        .action-menu-panel button {
+            width: 100%;
         }
 
         .application-status {
@@ -76,6 +136,27 @@ $players = $playersQuery ? $playersQuery->fetch_all(MYSQLI_ASSOC) : [];
             border: 1px solid rgba(37, 99, 235, 0.1);
             border-radius: 18px;
             background: #fff;
+        }
+
+        .helper-note {
+            color: #5b6678;
+            margin-top: 12px;
+        }
+
+        @media (max-width: 980px) {
+            .membership-actions-inline {
+                display: none;
+            }
+
+            .action-menu {
+                display: block;
+            }
+        }
+
+        @media (max-width: 760px) {
+            .toolbar-line {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
@@ -112,82 +193,157 @@ $players = $playersQuery ? $playersQuery->fetch_all(MYSQLI_ASSOC) : [];
         <div class="panel-card">
             <h2>Membership Applications</h2>
             <p>Pending applications appear first. Use the buttons to review and change the applicant's membership state.</p>
+            <div class="toolbar-line">
+                <div>
+                    <label for="applicationFilter">Filter applications</label>
+                    <input type="text" id="applicationFilter" placeholder="Search by user, email, or player name">
+                </div>
+                <div>
+                    <label for="applicationStatusFilter">Status</label>
+                    <select id="applicationStatusFilter">
+                        <option value="all">All statuses</option>
+                        <option value="pending">Pending</option>
+                        <option value="approved">Approved</option>
+                        <option value="rejected">Rejected</option>
+                    </select>
+                </div>
+            </div>
             <div id="membership-applications" class="empty-state">Loading applications...</div>
         </div>
 
         <div class="panel-card" style="margin-top: 24px;">
             <h2>Application Preview</h2>
             <p>Select an application to preview the uploaded form.</p>
+            <p class="helper-note">PDF files preview inline. DOC and DOCX files open in a new tab or download, depending on the browser.</p>
             <iframe id="application-preview" title="Membership application preview"></iframe>
         </div>
 
         <div class="panel-card" style="margin-top: 24px;">
             <h2>Player Registry</h2>
-            <table class="players-table">
-                <thead>
-                    <tr>
-                        <th>Player</th>
-                        <th>Username</th>
-                        <th>Email</th>
-                        <th>Phone</th>
-                        <th>Role</th>
-                        <th>Membership</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ($players as $player): ?>
+            <div class="toolbar-line">
+                <div>
+                    <label for="registryFilter">Filter registry</label>
+                    <input type="text" id="registryFilter" placeholder="Search by player, username, or email">
+                </div>
+                <div>
+                    <label for="registrySort">Sort registry</label>
+                    <select id="registrySort">
+                        <option value="name_asc">Player A-Z</option>
+                        <option value="name_desc">Player Z-A</option>
+                        <option value="role">Role</option>
+                        <option value="membership">Membership</option>
+                    </select>
+                </div>
+            </div>
+            <div class="table-shell">
+                <table class="players-table" id="playerRegistryTable">
+                    <thead>
                         <tr>
-                            <td><?php echo htmlspecialchars(trim(($player['plr_name'] ?? '') . ' ' . ($player['plr_surname'] ?? ''))); ?></td>
-                            <td><?php echo htmlspecialchars((string) ($player['user_name'] ?? '-')); ?></td>
-                            <td><?php echo htmlspecialchars((string) ($player['email'] ?? '-')); ?></td>
-                            <td><?php echo htmlspecialchars((string) ($player['plr_phone'] ?? '-')); ?></td>
-                            <td><?php echo htmlspecialchars((string) ($player['user_role'] ?? 'guest')); ?></td>
-                            <td><?php echo htmlspecialchars((string) ($player['membership_status'] ?? 'not_submitted')); ?></td>
+                            <th>Player</th>
+                            <th>Username</th>
+                            <th>Email</th>
+                            <th>Phone</th>
+                            <th>Role</th>
+                            <th>Membership</th>
                         </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($players as $player): ?>
+                            <?php $playerName = trim(($player['plr_name'] ?? '') . ' ' . ($player['plr_surname'] ?? '')); ?>
+                            <tr
+                                data-player-registry-row
+                                data-player-name="<?php echo htmlspecialchars(strtolower($playerName)); ?>"
+                                data-player-role="<?php echo htmlspecialchars(strtolower((string) ($player['user_role'] ?? 'guest'))); ?>"
+                                data-player-membership="<?php echo htmlspecialchars(strtolower((string) ($player['membership_status'] ?? 'not_submitted'))); ?>"
+                                data-player-search="<?php echo htmlspecialchars(strtolower($playerName . ' ' . (string) ($player['user_name'] ?? '') . ' ' . (string) ($player['email'] ?? ''))); ?>"
+                            >
+                                <td><?php echo htmlspecialchars($playerName); ?></td>
+                                <td><?php echo htmlspecialchars((string) ($player['user_name'] ?? '-')); ?></td>
+                                <td><?php echo htmlspecialchars((string) ($player['email'] ?? '-')); ?></td>
+                                <td><?php echo htmlspecialchars((string) ($player['plr_phone'] ?? '-')); ?></td>
+                                <td><?php echo htmlspecialchars((string) ($player['user_role'] ?? 'guest')); ?></td>
+                                <td><?php echo htmlspecialchars((string) ($player['membership_status'] ?? 'not_submitted')); ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 
     <script>
         const previewFrame = document.getElementById('application-preview');
+        let membershipApplications = [];
+
+        function escapeHtml(value) {
+            return String(value ?? '')
+                .replaceAll('&', '&amp;')
+                .replaceAll('<', '&lt;')
+                .replaceAll('>', '&gt;')
+                .replaceAll('"', '&quot;')
+                .replaceAll("'", '&#39;');
+        }
+
+        function normalizeText(value) {
+            return String(value ?? '').trim().toLowerCase();
+        }
 
         function renderApplicationRow(item) {
             const statusClass = (item.status || '').toLowerCase();
+            const filePath = JSON.stringify(item.application_file_path || '');
+            const originalFilename = JSON.stringify(item.original_filename || '');
+            const applicationId = Number(item.application_id || 0);
+            const playerProfile = item.plr_name ? `${item.plr_name} ${item.plr_surname}` : 'No player profile yet';
             return `
                 <tr>
-                    <td>${item.application_id}</td>
-                    <td>${item.user_name}</td>
-                    <td>${item.email}</td>
-                    <td>${item.plr_name ? `${item.plr_name} ${item.plr_surname}` : 'No player profile yet'}</td>
-                    <td><span class="application-status ${statusClass}">${item.status}</span></td>
-                    <td>${item.submitted_at || '-'}</td>
-                    <td>${item.reviewed_at || '-'}</td>
+                    <td>${applicationId}</td>
+                    <td>${escapeHtml(item.user_name)}</td>
+                    <td>${escapeHtml(item.email)}</td>
+                    <td>${escapeHtml(playerProfile)}</td>
+                    <td><span class="application-status ${escapeHtml(statusClass)}">${escapeHtml(item.status)}</span></td>
+                    <td>${escapeHtml(item.submitted_at || '-')}</td>
+                    <td>${escapeHtml(item.reviewed_at || '-')}</td>
                     <td class="membership-actions">
-                        <button type="button" onclick="previewApplication('${item.application_file_path}')">View</button>
-                        <button type="button" onclick="reviewApplication(${item.application_id}, 'approve')">Approve</button>
-                        <button type="button" class="cancel-btn" onclick="reviewApplication(${item.application_id}, 'reject')">Reject</button>
+                        <div class="membership-actions-inline">
+                            <button type="button" class="action-btn" onclick='previewApplication(${filePath}, ${originalFilename})'>View</button>
+                            <button type="button" class="submit-btn" onclick="reviewApplication(${applicationId}, 'approve')">Approve</button>
+                            <button type="button" class="cancel-btn" onclick="reviewApplication(${applicationId}, 'reject')">Reject</button>
+                        </div>
+                        <details class="action-menu">
+                            <summary>Actions</summary>
+                            <div class="action-menu-panel">
+                                <button type="button" class="action-btn" onclick='previewApplication(${filePath}, ${originalFilename})'>View</button>
+                                <button type="button" class="submit-btn" onclick="reviewApplication(${applicationId}, 'approve')">Approve</button>
+                                <button type="button" class="cancel-btn" onclick="reviewApplication(${applicationId}, 'reject')">Reject</button>
+                            </div>
+                        </details>
                     </td>
                 </tr>
             `;
         }
 
-        async function loadApplications() {
+        function renderApplications() {
             const container = document.getElementById('membership-applications');
-            try {
-                const response = await fetch('../../services/get_membership_applications.php');
-                const data = await response.json();
-                if (!data.success || !Array.isArray(data.items)) {
-                    throw new Error(data.message || 'Failed to load membership applications.');
-                }
+            const filterValue = normalizeText(document.getElementById('applicationFilter')?.value);
+            const statusValue = normalizeText(document.getElementById('applicationStatusFilter')?.value || 'all');
+            const items = membershipApplications.filter((item) => {
+                const searchable = normalizeText([
+                    item.user_name,
+                    item.email,
+                    item.plr_name,
+                    item.plr_surname
+                ].join(' '));
+                const statusMatches = statusValue === 'all' || normalizeText(item.status) === statusValue;
+                return statusMatches && searchable.includes(filterValue);
+            });
 
-                if (data.items.length === 0) {
-                    container.innerHTML = '<div class="empty-state">No membership applications have been submitted yet.</div>';
-                    return;
-                }
+            if (items.length === 0) {
+                container.innerHTML = '<div class="empty-state">No membership applications match the current filters.</div>';
+                return;
+            }
 
-                container.innerHTML = `
+            container.innerHTML = `
+                <div class="table-shell">
                     <table class="players-table">
                         <thead>
                             <tr>
@@ -202,17 +358,59 @@ $players = $playersQuery ? $playersQuery->fetch_all(MYSQLI_ASSOC) : [];
                             </tr>
                         </thead>
                         <tbody>
-                            ${data.items.map(renderApplicationRow).join('')}
+                            ${items.map(renderApplicationRow).join('')}
                         </tbody>
                     </table>
-                `;
+                </div>
+            `;
+        }
+
+        async function loadApplications() {
+            const container = document.getElementById('membership-applications');
+            try {
+                const response = await fetch('../../services/get_membership_applications.php');
+                const data = await response.json();
+                if (!data.success || !Array.isArray(data.items)) {
+                    throw new Error(data.message || 'Failed to load membership applications.');
+                }
+
+                membershipApplications = data.items;
+                if (membershipApplications.length === 0) {
+                    container.innerHTML = '<div class="empty-state">No membership applications have been submitted yet.</div>';
+                    return;
+                }
+
+                renderApplications();
             } catch (error) {
                 container.innerHTML = `<div class="empty-state">${error.message}</div>`;
             }
         }
 
-        function previewApplication(path) {
-            previewFrame.src = path;
+        function previewApplication(path, originalFilename = '') {
+            if (!path) {
+                window.alert('No application file is available for this record.');
+                return;
+            }
+
+            const normalizedPath = path.startsWith('/') ? path : `/${path.replace(/^(\.\.\/)+/, '')}`;
+            const lowerPath = normalizedPath.toLowerCase();
+
+            if (lowerPath.endsWith('.pdf')) {
+                previewFrame.removeAttribute('srcdoc');
+                previewFrame.src = normalizedPath;
+            } else {
+                const safeFilename = escapeHtml(originalFilename || 'This file');
+                previewFrame.removeAttribute('src');
+                previewFrame.srcdoc = `
+                    <div style="padding: 24px; font-family: Segoe UI, sans-serif; color: #18212f;">
+                        <h3 style="margin-top: 0;">Document preview unavailable</h3>
+                        <p>${safeFilename} will open in a new tab or download, depending on your browser.</p>
+                        <p><a href="${normalizedPath}" target="_blank" rel="noopener">Open application file</a></p>
+                    </div>
+                `;
+                window.open(normalizedPath, '_blank', 'noopener');
+            }
+
             previewFrame.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
 
@@ -243,7 +441,49 @@ $players = $playersQuery ? $playersQuery->fetch_all(MYSQLI_ASSOC) : [];
             window.alert(`Application ${decision === 'approve' ? 'approved' : 'rejected'} successfully.`);
         }
 
-        document.addEventListener('DOMContentLoaded', loadApplications);
+        function renderPlayerRegistry() {
+            const tbody = document.querySelector('#playerRegistryTable tbody');
+            if (!tbody) {
+                return;
+            }
+
+            const filterValue = normalizeText(document.getElementById('registryFilter')?.value);
+            const sortValue = document.getElementById('registrySort')?.value || 'name_asc';
+            const rows = Array.from(tbody.querySelectorAll('[data-player-registry-row]'));
+
+            rows.sort((left, right) => {
+                const leftName = left.dataset.playerName || '';
+                const rightName = right.dataset.playerName || '';
+                if (sortValue === 'name_desc') {
+                    return rightName.localeCompare(leftName, undefined, { sensitivity: 'base' });
+                }
+                if (sortValue === 'role') {
+                    return (left.dataset.playerRole || '').localeCompare(right.dataset.playerRole || '', undefined, { sensitivity: 'base' })
+                        || leftName.localeCompare(rightName, undefined, { sensitivity: 'base' });
+                }
+                if (sortValue === 'membership') {
+                    return (left.dataset.playerMembership || '').localeCompare(right.dataset.playerMembership || '', undefined, { sensitivity: 'base' })
+                        || leftName.localeCompare(rightName, undefined, { sensitivity: 'base' });
+                }
+
+                return leftName.localeCompare(rightName, undefined, { sensitivity: 'base' });
+            });
+
+            rows.forEach((row) => {
+                const matches = (row.dataset.playerSearch || '').includes(filterValue);
+                row.style.display = matches ? '' : 'none';
+                tbody.appendChild(row);
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('applicationFilter')?.addEventListener('input', renderApplications);
+            document.getElementById('applicationStatusFilter')?.addEventListener('change', renderApplications);
+            document.getElementById('registryFilter')?.addEventListener('input', renderPlayerRegistry);
+            document.getElementById('registrySort')?.addEventListener('change', renderPlayerRegistry);
+            renderPlayerRegistry();
+            loadApplications();
+        });
     </script>
 </body>
 </html>

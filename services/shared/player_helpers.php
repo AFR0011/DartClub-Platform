@@ -29,6 +29,29 @@ function player_id_for_user(mysqli $db, int $userId): ?int
     return (int) $player['plr_idNum'];
 }
 
+function player_fetch_public(mysqli $db, int $playerId): ?array
+{
+    $sql = 'SELECT
+                p.plr_idNum,
+                p.plr_name,
+                p.plr_surname,
+                p.plr_username,
+                u.user_name,
+                u.membership_status
+            FROM players p
+            LEFT JOIN users u ON u.user_id = p.user_id
+            WHERE p.plr_idNum = ?';
+
+    $stmt = $db->prepare($sql);
+    $stmt->bind_param('i', $playerId);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $player = $result->num_rows > 0 ? $result->fetch_assoc() : null;
+    $stmt->close();
+
+    return $player ?: null;
+}
+
 function player_name(array $player): string
 {
     return trim(($player['plr_name'] ?? '') . ' ' . ($player['plr_surname'] ?? ''));

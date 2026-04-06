@@ -8,397 +8,258 @@
     <link rel="shortcut icon" href="../files/media/images/logo.png">
     <link rel="stylesheet" href="../css/style.css">
     <style>
-        .blog-shell {
-            padding: 7rem 0 3rem;
-            display: grid;
-            gap: 1.75rem;
-        }
-
-        .surface,
-        .blog-post,
-        .comment-card {
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 22px;
-            padding: 1.5rem;
-        }
-
-        .blog-post {
-            display: grid;
-            gap: 1rem;
-            background:
-                radial-gradient(circle at top right, rgba(255, 107, 53, 0.08), transparent 32%),
-                rgba(255, 255, 255, 0.04);
-        }
-
-        .blog-form-grid {
-            display: grid;
-            gap: 0.9rem;
-        }
-
-        input[type="text"],
-        textarea,
-        input[type="file"],
-        select {
-            width: 100%;
-            padding: 0.8rem 0.9rem;
-            border-radius: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            background: rgba(0, 0, 0, 0.18);
-            color: #fff;
-        }
-
-        .post-meta,
-        .comment-meta,
-        .reaction-row,
-        .comment-actions {
-            display: flex;
-            gap: 0.85rem;
-            flex-wrap: wrap;
-            align-items: center;
-        }
-
-        .post-image {
-            width: 100%;
-            max-height: 360px;
-            object-fit: cover;
-            border-radius: 16px;
-        }
-
-        .comment-list {
-            display: grid;
-            gap: 0.75rem;
-        }
-
-        .membership-chip {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.4rem;
-            padding: 0.45rem 0.85rem;
-            border-radius: 999px;
-            background: rgba(255, 107, 53, 0.18);
-            color: #ffd7ca;
-        }
-
-        .hero-surface {
-            display: grid;
-            gap: 1rem;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            background:
-                radial-gradient(circle at top right, rgba(255, 107, 53, 0.12), transparent 34%),
-                radial-gradient(circle at bottom left, rgba(255, 255, 255, 0.06), transparent 40%),
-                rgba(255, 255, 255, 0.04);
-        }
-
-        .summary-strip {
-            display: grid;
-            gap: 1rem;
-            grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-        }
-
-        .summary-card {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 18px;
-            padding: 1rem 1.1rem;
-        }
-
-        .summary-card strong {
-            display: block;
-            color: #fff;
-            font-size: 1.45rem;
-        }
-
-        .summary-card span {
-            color: var(--text-color);
-            font-size: 0.92rem;
-        }
+        .blog-shell{padding:7rem 0 3rem;display:grid;gap:1.5rem}
+        .surface,.preview-card,.comment-card,.composer-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:24px;padding:1.5rem}
+        .hero-surface,.summary-strip,.blog-layout,.preview-list,.detail-panel,.comment-list,.composer-form{display:grid;gap:1rem}
+        .hero-surface{grid-template-columns:repeat(auto-fit,minmax(220px,1fr));background:radial-gradient(circle at top right,rgba(255,107,53,.14),transparent 34%),rgba(255,255,255,.04)}
+        .summary-strip{grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}
+        .summary-card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:1rem 1.1rem}
+        .summary-card strong{display:block;color:#fff;font-size:1.45rem}
+        .summary-card span,.meta-line,.helper-text,.preview-excerpt,.comment-meta{color:var(--text-color)}
+        .chip,.status-chip,.detail-chip{display:inline-flex;align-items:center;gap:.4rem;padding:.45rem .85rem;border-radius:999px;font-size:.88rem;font-weight:600}
+        .chip{background:rgba(255,107,53,.18);color:#ffd7ca}
+        .status-chip{background:rgba(255,255,255,.08);color:#fff}
+        .status-draft{background:rgba(245,158,11,.18);color:#fde68a}
+        .status-published{background:rgba(34,197,94,.18);color:#bbf7d0}
+        .detail-chip{background:rgba(255,255,255,.06);color:var(--text-color)}
+        .blog-toolbar,.preview-head,.meta-line,.detail-actions,.detail-nav,.detail-owner-actions,.detail-reactions,.comment-meta,.composer-head{display:flex;gap:.75rem;flex-wrap:wrap;align-items:center}
+        .blog-toolbar,.detail-actions,.detail-nav,.composer-head{justify-content:space-between}
+        .blog-layout{grid-template-columns:minmax(280px,360px) minmax(0,1fr);align-items:start}
+        .preview-rail{display:grid;gap:1rem;position:sticky;top:6.5rem}
+        .preview-card{display:grid;gap:.85rem;cursor:pointer;transition:transform .18s ease,border-color .18s ease,background-color .18s ease}
+        .preview-card:hover,.preview-card.is-active{transform:translateY(-1px);border-color:rgba(255,107,53,.24);background:rgba(255,255,255,.06)}
+        .preview-thumb,.stage-image{width:100%;object-fit:cover;display:block}
+        .preview-thumb{aspect-ratio:16/10;border-radius:18px}
+        .stage-image{max-height:420px;border-radius:20px}
+        .detail-panel{line-height:1.8}
+        .detail-content{display:grid;gap:.9rem;color:#fff}
+        .detail-content p,.detail-content ul,.detail-content ol,.detail-content blockquote,.detail-content pre,.detail-content h1,.detail-content h2,.detail-content h3,.detail-content h4{margin:0}
+        .gallery-strip{display:grid;gap:.65rem;grid-template-columns:repeat(auto-fit,minmax(90px,1fr))}
+        .thumb-button{border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);border-radius:16px;padding:.3rem;cursor:pointer}
+        .thumb-button.is-active,.thumb-button:hover{border-color:rgba(255,107,53,.26)}
+        .thumb-button img{width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:12px;display:block}
+        .detail-actions,.blog-comments{border-top:1px solid rgba(255,255,255,.08);padding-top:1rem}
+        .comment-card{padding:1rem 1.1rem}
+        .empty-state{text-align:center;padding:2rem;border-radius:24px;border:1px dashed rgba(255,255,255,.12);color:var(--text-color)}
+        .ui-input,.ui-select,.ui-textarea{width:100%;padding:.95rem 1rem;border-radius:16px;border:1px solid rgba(255,255,255,.14);background:rgba(0,0,0,.2);color:#fff}
+        .ui-input:focus,.ui-select:focus,.ui-textarea:focus{outline:none;border-color:rgba(255,107,53,.38);box-shadow:0 0 0 4px rgba(255,107,53,.12)}
+        .ui-button,.ui-button-secondary,.ui-button-danger{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;padding:.85rem 1.15rem;border-radius:999px;border:1px solid transparent;cursor:pointer;font:inherit}
+        .ui-button{background:linear-gradient(180deg,#ff7c4d,#ef5a29);color:#fff}
+        .ui-button-secondary{background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.12);color:#fff}
+        .ui-button-danger{background:rgba(220,38,38,.12);border-color:rgba(220,38,38,.25);color:#fecaca}
+        .composer-overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:1.5rem;background:rgba(5,10,18,.74);z-index:1000}
+        .composer-card{width:min(820px,100%);max-height:90vh;overflow:auto;background:radial-gradient(circle at top right,rgba(255,107,53,.12),transparent 34%),rgba(15,23,42,.96)}
+        @media (max-width:980px){.blog-layout{grid-template-columns:1fr}.preview-rail{position:static}}
+        @media (max-width:760px){.blog-toolbar,.detail-actions,.detail-nav,.composer-head{flex-direction:column;align-items:flex-start}}
     </style>
 </head>
 <body>
     <header class="header" id="header">
         <nav class="nav container">
-            <a href="main.php" class="nav__logo">
-                <img src="../files/media/images/logo.png" alt="logo"> Famagusta Dart Club
-            </a>
-            <div class="nav__menu" id="nav-menu">
-                <ul class="nav__list"></ul>
-                <div class="nav__close" id="nav-close">
-                    <i class="ri-close-line"></i>
-                </div>
-            </div>
-            <div class="nav__toggle" id="nav-toggle">
-                <i class="ri-menu-line"></i>
-            </div>
+            <a href="main.php" class="nav__logo"><img src="../files/media/images/logo.png" alt="logo"> Famagusta Dart Club</a>
+            <div class="nav__menu" id="nav-menu"><ul class="nav__list"></ul><div class="nav__close" id="nav-close"><i class="ri-close-line"></i></div></div>
+            <div class="nav__toggle" id="nav-toggle"><i class="ri-menu-line"></i></div>
         </nav>
     </header>
 
     <main class="main">
-        <section class="blog-shell container" id="blog-shell">
-            <div class="surface">Loading the club blog...</div>
-        </section>
+        <section class="blog-shell container" id="blog-shell"><div class="surface">Loading the club blog...</div></section>
     </main>
 
-    <a href="#top" class="scrollup" id="scroll-up">
-        <i class="ri-arrow-up-line"></i>
-    </a>
+    <a href="#top" class="scrollup" id="scroll-up"><i class="ri-arrow-up-line"></i></a>
 
     <script src="../js/scrollreveal.min.js"></script>
     <script src="../js/behaviour.js?v=20260402-2"></script>
     <script>
-        let sessionContext = null;
+        let sessionContext=null;
+        const blogState={posts:[],selectedBlogId:null,selectedImageIndexes:{},composerOpen:false};
 
-        function createPostForm() {
-            if (!sessionContext?.can_author_blog) {
-                return '';
-            }
+        function escapeHtml(value){return String(value??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#39;');}
+        function htmlToText(html){const temp=document.createElement('div');temp.innerHTML=html||'';return temp.textContent||temp.innerText||'';}
+        function formatDate(value){return value?new Date(value).toLocaleString():'Not published yet';}
+        function excerpt(post){const text=htmlToText(post.blog_content||'').trim();return text.length>180?`${text.slice(0,177)}...`:text;}
+        function heroImage(post){return post.images?.[0]?.file_path||'../files/media/images/logo.png';}
+        function selectedPost(){return blogState.posts.find((post)=>Number(post.blog_id)===Number(blogState.selectedBlogId))||null;}
+        function selectedImageIndex(post){const raw=Number(blogState.selectedImageIndexes[post.blog_id]||0);return Math.max(0,Math.min(raw,(post.images?.length||1)-1));}
+        function resolveSelectedBlogId(preferredId=null){const urlId=Number(new URL(window.location.href).searchParams.get('post')||0);const preferred=Number(preferredId||blogState.selectedBlogId||urlId||0);if(preferred&&blogState.posts.some((post)=>Number(post.blog_id)===preferred)){return preferred;}return blogState.posts.length?Number(blogState.posts[0].blog_id):null;}
+        function syncBlogUrl(blogId){const url=new URL(window.location.href);if(blogId){url.searchParams.set('post',String(blogId));}else{url.searchParams.delete('post');}window.history.replaceState({},'',url.toString());}
+        function selectBlogPost(blogId){blogState.selectedBlogId=Number(blogId);syncBlogUrl(blogState.selectedBlogId);renderBlogPage();}
+        function selectPostImage(blogId,index){blogState.selectedImageIndexes[blogId]=index;renderBlogPage();}
+        function openComposer(){blogState.composerOpen=true;renderBlogPage();}
+        function closeComposer(){blogState.composerOpen=false;renderBlogPage();}
+        function handleComposerOverlay(event){if(event.target===event.currentTarget){closeComposer();}}
 
-            return `
-                <section class="surface">
-                    <h2>Create a blog post</h2>
-                    <p style="color: var(--text-color); margin: 0.75rem 0 1rem;">
-                        ${
-                          sessionContext.can_publish_blog
-                            ? 'Managers and admins can publish immediately or save drafts.'
-                            : 'Approved club members create drafts first. Managers and admins publish them after review.'
-                        }
-                    </p>
-                    <form id="blog-create-form" class="blog-form-grid">
-                        <input name="title" type="text" placeholder="Post title" required>
-                        <textarea name="content" rows="6" placeholder="Write your update here..." required></textarea>
-                        <input name="image" type="file" accept="image/*">
-                        ${sessionContext.can_publish_blog ? `
-                            <select name="status">
-                                <option value="draft">Save draft</option>
-                                <option value="published">Publish now</option>
-                            </select>
-                        ` : '<input type="hidden" name="status" value="draft">'}
-                        <button type="submit" class="button">Save post</button>
-                    </form>
-                </section>
-            `;
+        function renderPreview(post){
+            const active=Number(post.blog_id)===Number(blogState.selectedBlogId);
+            return `<article class="preview-card ${active?'is-active':''}" onclick="selectBlogPost(${Number(post.blog_id)})">
+                <div class="preview-head"><span class="status-chip status-${escapeHtml(post.status)}">${escapeHtml(post.status)}</span><span class="helper-text">${escapeHtml(formatDate(post.published_at||post.created_at))}</span></div>
+                <img class="preview-thumb" src="${escapeHtml(heroImage(post))}" alt="${escapeHtml(post.blog_title)}">
+                <div class="meta-line"><span>By ${escapeHtml(post.author||'Club staff')}</span><span>${Number(post.like_count||0)} likes</span><span>${Number(post.comment_count||0)} comments</span></div>
+                <div><h3>${escapeHtml(post.blog_title)}</h3><p class="preview-excerpt" style="margin-top:.75rem;">${escapeHtml(excerpt(post)||'Open this post to read the full story.')}</p></div>
+            </article>`;
         }
 
-        function renderCommentBlock(post) {
-            return `
-                <div class="comment-list">
-                    ${post.comments.map((comment) => `
-                        <article class="comment-card">
-                            <div class="comment-meta">
-                                <strong>${comment.user_name}</strong>
-                                <span style="color: var(--text-color);">${new Date(comment.created_at).toLocaleString()}</span>
-                            </div>
-                            <p style="margin-top: 0.75rem;">${comment.comment_content}</p>
-                            ${
-                              sessionContext?.logged_in && (sessionContext.can_publish_blog || Number(comment.user_id) === Number(sessionContext.user_id))
-                                ? `<div class="comment-actions" style="margin-top: 0.75rem;"><button type="button" onclick="deleteComment(${comment.comment_id})">Delete</button></div>`
-                                : ''
-                            }
-                        </article>
-                    `).join('')}
-                    ${post.comments.length === 0 ? '<p style="color: var(--text-color);">No comments yet.</p>' : ''}
+        function renderGallery(post){
+            if(!Array.isArray(post.images)||post.images.length===0){return '';}
+            const index=selectedImageIndex(post);
+            const current=post.images[index]||post.images[0];
+            return `<div class="detail-gallery">
+                <img class="stage-image" src="${escapeHtml(current.file_path)}" alt="${escapeHtml(current.title||post.blog_title)}">
+                ${post.images.length>1?`<div class="gallery-strip">${post.images.map((image,imageIndex)=>`<button type="button" class="thumb-button ${imageIndex===index?'is-active':''}" onclick="selectPostImage(${Number(post.blog_id)},${imageIndex})"><img src="${escapeHtml(image.file_path)}" alt="${escapeHtml(image.title||`${post.blog_title} image ${imageIndex+1}`)}"></button>`).join('')}</div>`:''}
+            </div>`;
+        }
+
+        function renderComments(post){
+            if(!Array.isArray(post.comments)||post.comments.length===0){return '<p class="helper-text">No comments yet.</p>';}
+            return `<div class="comment-list">${post.comments.map((comment)=>`<article class="comment-card"><div class="comment-meta"><strong>${escapeHtml(comment.user_name)}</strong><span>${escapeHtml(formatDate(comment.created_at))}</span></div><p>${escapeHtml(comment.comment_content)}</p>${sessionContext?.logged_in&&(sessionContext.can_publish_blog||Number(comment.user_id)===Number(sessionContext.user_id))?`<div><button type="button" class="ui-button-danger" onclick="deleteComment(${Number(comment.comment_id)})">Delete comment</button></div>`:''}</article>`).join('')}</div>`;
+        }
+
+        function renderDetail(post,index){
+            const previous=blogState.posts[index-1]||null;
+            const next=blogState.posts[index+1]||null;
+            return `<article class="surface detail-panel">
+                <div class="meta-line"><span class="status-chip status-${escapeHtml(post.status)}">${escapeHtml(post.status)}</span><span>By ${escapeHtml(post.author||'Club staff')}</span><span>${escapeHtml(formatDate(post.published_at||post.created_at))}</span></div>
+                <h2>${escapeHtml(post.blog_title)}</h2>
+                <div class="detail-nav">
+                    <button type="button" class="ui-button-secondary" ${previous?`onclick="selectBlogPost(${Number(previous.blog_id)})"`:'disabled'}><i class="ri-arrow-left-line"></i> Previous post</button>
+                    <button type="button" class="ui-button-secondary" ${next?`onclick="selectBlogPost(${Number(next.blog_id)})"`:'disabled'}>Next post <i class="ri-arrow-right-line"></i></button>
                 </div>
-            `;
+                ${renderGallery(post)}
+                <div class="detail-content">${post.blog_content||''}</div>
+                <div class="detail-actions">
+                    <div class="detail-reactions">
+                        <button type="button" class="ui-button-secondary" onclick="toggleLike(${Number(post.blog_id)})"><i class="ri-thumb-up-line"></i> ${post.viewer_has_liked?'Unlike':'Like'} (${Number(post.like_count||0)})</button>
+                        <span class="detail-chip"><i class="ri-message-3-line"></i> ${Number(post.comment_count||0)} comments</span>
+                    </div>
+                    <div class="detail-owner-actions">
+                        ${post.viewer_can_publish?`<button type="button" class="ui-button" onclick="publishPost(${Number(post.blog_id)})">Publish post</button>`:''}
+                        ${post.viewer_can_delete?`<button type="button" class="ui-button-danger" onclick="deletePost(${Number(post.blog_id)})">Delete post</button>`:''}
+                    </div>
+                </div>
+                <section class="blog-comments">
+                    <h3>Comments</h3>
+                    ${renderComments(post)}
+                    ${sessionContext?.logged_in?`<form class="composer-form" onsubmit="submitComment(event,${Number(post.blog_id)})"><textarea name="content" rows="4" class="ui-textarea" placeholder="Write your reply..." required></textarea><button type="submit" class="ui-button">Add comment</button></form>`:'<p class="helper-text">Sign in to comment and react.</p>'}
+                </section>
+            </article>`;
         }
 
-        function renderPost(post) {
-            return `
-                <article class="blog-post">
-                    <div class="post-meta">
-                        <span class="membership-chip">${post.status}</span>
-                        <span style="color: var(--text-color);">By ${post.author || 'Club staff'}</span>
-                        <span style="color: var(--text-color);">${new Date(post.published_at || post.created_at).toLocaleString()}</span>
-                    </div>
-                    <div>
-                        <h2>${post.blog_title}</h2>
-                        <div style="margin-top: 0.85rem;">${post.blog_content}</div>
-                    </div>
-                    ${post.images.length > 0 ? `<img class="post-image" src="${post.images[0].file_path}" alt="${post.images[0].title || post.blog_title}">` : ''}
-                    <div class="reaction-row">
-                        <button type="button" onclick="toggleLike(${post.blog_id})">${post.viewer_has_liked ? 'Unlike' : 'Like'} (${post.like_count})</button>
-                        <span style="color: var(--text-color);">${post.comment_count} comments</span>
-                        ${
-                          post.viewer_can_publish
-                            ? `<button type="button" onclick="publishPost(${post.blog_id})">Publish</button>`
-                            : ''
-                        }
-                        ${
-                          post.viewer_can_delete
-                            ? `<button type="button" class="cancel-btn" onclick="deletePost(${post.blog_id})">Delete</button>`
-                            : ''
-                        }
-                    </div>
-                    <div>
-                        <h3>Comments</h3>
-                        <div style="margin-top: 0.85rem;">
-                            ${renderCommentBlock(post)}
-                        </div>
-                    </div>
-                    ${
-                      sessionContext?.logged_in
-                        ? `
-                            <form onsubmit="submitComment(event, ${post.blog_id})" class="blog-form-grid">
-                                <textarea name="content" rows="3" placeholder="Share your thoughts..." required></textarea>
-                                <button type="submit" class="button">Add comment</button>
-                            </form>
-                          `
-                        : '<p style="color: var(--text-color);">Sign in to comment and react.</p>'
-                    }
-                </article>
-            `;
+        function renderComposer(){
+            if(!blogState.composerOpen||!sessionContext?.can_author_blog){return '';}
+            return `<div class="composer-overlay" onclick="handleComposerOverlay(event)"><div class="composer-card">
+                <div class="composer-head">
+                    <div><div class="chip"><i class="ri-edit-2-line"></i> Write a post</div><h2 style="margin-top:1rem;">Create a club update</h2><p class="helper-text" style="margin-top:.75rem;">${sessionContext.can_publish_blog?'Managers and admins can save drafts or publish directly.':'Approved members create drafts. Managers and admins review and publish them.'}</p></div>
+                    <button type="button" class="ui-button-secondary" onclick="closeComposer()">Close</button>
+                </div>
+                <form id="blog-create-form" class="composer-form">
+                    <input name="title" type="text" class="ui-input" placeholder="Headline" maxlength="200" required>
+                    <textarea name="content" rows="10" class="ui-textarea" placeholder="Write the full story here..." required></textarea>
+                    <label><span class="helper-text" style="display:block; margin-bottom:.5rem;">Add images</span><input name="images[]" type="file" class="ui-input" accept="image/*" multiple></label>
+                    ${sessionContext.can_publish_blog?`<select name="status" class="ui-select"><option value="draft">Save draft</option><option value="published">Publish now</option></select>`:'<input type="hidden" name="status" value="draft">'}
+                    <div class="detail-actions" style="border-top:none;padding-top:0;"><span class="helper-text">Multiple images appear as a gallery in the post and can also be opened from the gallery page.</span><button type="submit" class="ui-button">Save post</button></div>
+                </form>
+            </div></div>`;
         }
 
-        async function loadBlogPage() {
-            const [contextResponse, postsResponse] = await Promise.all([
-                fetch('../services/get_session_context.php'),
-                fetch('../services/get_blogs.php?page=1&pageSize=20')
-            ]);
-
-            sessionContext = await contextResponse.json();
-            const postsPayload = await postsResponse.json();
-            if (!Array.isArray(postsPayload.items)) {
-                throw new Error(postsPayload.error || 'Failed to load blog posts.');
-            }
-
-            const shell = document.getElementById('blog-shell');
-            shell.innerHTML = `
-                <section class="surface hero-surface">
-                    <div>
-                        <div class="membership-chip"><i class="ri-article-line"></i> Club stories</div>
-                        <h1 style="margin-top: 1rem;">Club Blog</h1>
-                        <p style="color: var(--text-color); margin-top: 0.85rem;">
-                            Match reports, tournament recaps, club updates, and member stories all live here in one place.
-                        </p>
-                    </div>
-                    <div>
-                        <h3>Publishing flow</h3>
-                        <p style="color: var(--text-color); margin-top: 0.75rem;">
-                            Approved members write drafts. Managers and admins can publish, moderate, and keep the public feed tidy.
-                        </p>
-                    </div>
+        function renderBlogPage(){
+            const shell=document.getElementById('blog-shell');
+            const post=selectedPost();
+            const selectedIndex=post?blogState.posts.findIndex((item)=>Number(item.blog_id)===Number(post.blog_id)):-1;
+            shell.innerHTML=`<section class="surface hero-surface">
+                    <div><div class="chip"><i class="ri-article-line"></i> Club stories</div><h1 style="margin-top:1rem;">Club Blog</h1><p class="helper-text" style="margin-top:.85rem;">Browse quick post previews on the left, then read the full story on the right with easier navigation between updates.</p></div>
+                    <div><h3>Publishing flow</h3><p class="helper-text" style="margin-top:.75rem;">Approved members can write drafts. Managers and admins can publish, moderate, and keep the public feed tidy.</p></div>
                 </section>
                 <section class="summary-strip">
-                    <article class="summary-card"><strong>${postsPayload.items.length}</strong><span>Visible posts</span></article>
-                    <article class="summary-card"><strong>${postsPayload.items.reduce((total, post) => total + Number(post.comment_count || 0), 0)}</strong><span>Total comments</span></article>
-                    <article class="summary-card"><strong>${postsPayload.items.reduce((total, post) => total + Number(post.like_count || 0), 0)}</strong><span>Total likes</span></article>
-                    <article class="summary-card"><strong>${sessionContext?.can_author_blog ? 'Yes' : 'No'}</strong><span>You can draft posts</span></article>
+                    <article class="summary-card"><strong>${blogState.posts.length}</strong><span>Visible posts</span></article>
+                    <article class="summary-card"><strong>${blogState.posts.reduce((total,postItem)=>total+Number(postItem.comment_count||0),0)}</strong><span>Total comments</span></article>
+                    <article class="summary-card"><strong>${blogState.posts.reduce((total,postItem)=>total+Number(postItem.like_count||0),0)}</strong><span>Total likes</span></article>
+                    <article class="summary-card"><strong>${sessionContext?.can_author_blog?'Yes':'No'}</strong><span>You can draft posts</span></article>
                 </section>
-                ${createPostForm()}
-                <section style="display: grid; gap: 1rem;">
-                    ${postsPayload.items.length > 0 ? postsPayload.items.map(renderPost).join('') : '<div class="surface">No blog posts available yet.</div>'}
+                <section class="surface blog-toolbar">
+                    <div><h2 style="margin:0;">Browse the feed</h2><p class="helper-text" style="margin-top:.55rem;">The preview rail keeps posts clearly separated, while the main panel focuses on one article at a time.</p></div>
+                    ${sessionContext?.can_author_blog?'<button type="button" class="ui-button" onclick="openComposer()"><i class="ri-quill-pen-line"></i> Create post</button>':''}
                 </section>
-            `;
-
-            const form = document.getElementById('blog-create-form');
-            if (form) {
-                form.addEventListener('submit', submitPost);
-            }
+                <section class="blog-layout">
+                    <aside class="surface preview-rail"><div><h3 style="margin:0;">Latest posts</h3><p class="helper-text" style="margin-top:.55rem;">Click any preview card to open the full article.</p></div><div class="preview-list">${blogState.posts.length?blogState.posts.map(renderPreview).join(''):'<div class="empty-state">No posts are available yet.</div>'}</div></aside>
+                    <div>${post?renderDetail(post,selectedIndex):'<div class="empty-state">Choose a post preview to read the full article.</div>'}</div>
+                </section>
+                ${renderComposer()}`;
+            const createForm=document.getElementById('blog-create-form');
+            if(createForm){createForm.addEventListener('submit',submitPost);}
         }
 
-        async function submitPost(event) {
-            event.preventDefault();
-            const form = event.currentTarget;
-            const formData = new FormData(form);
-            const response = await fetch('../services/create_blog.php', {
-                method: 'POST',
-                body: formData
-            });
-            const data = await response.json();
-            if (!data.success) {
-                window.alert(data.message || 'Failed to save post.');
-                return;
-            }
+        async function loadBlogPage(options={}){
+            const [contextResponse,postsResponse]=await Promise.all([fetch('../services/get_session_context.php'),fetch('../services/get_blogs.php?page=1&pageSize=20')]);
+            sessionContext=await contextResponse.json();
+            const payload=await postsResponse.json();
+            if(!Array.isArray(payload.items)){throw new Error(payload.error||'Failed to load blog posts.');}
+            blogState.posts=payload.items;
+            blogState.selectedBlogId=resolveSelectedBlogId(options.preferredPostId??null);
+            syncBlogUrl(blogState.selectedBlogId);
+            renderBlogPage();
+        }
 
+        async function submitPost(event){
+            event.preventDefault();
+            const response=await fetch('../services/create_blog.php',{method:'POST',body:new FormData(event.currentTarget)});
+            const data=await response.json();
+            if(!data.success){window.alert(data.message||'Failed to save post.');return;}
+            blogState.composerOpen=false;
             window.alert(data.message);
-            await loadBlogPage();
+            await loadBlogPage({preferredPostId:data.blog_id});
         }
 
-        async function publishPost(blogId) {
-            const response = await fetch('../services/update_blog_status.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ blog_id: blogId, status: 'published' })
-            });
-            const data = await response.json();
-            if (!data.success) {
-                window.alert(data.message || 'Failed to publish post.');
-                return;
-            }
-
-            await loadBlogPage();
+        async function publishPost(blogId){
+            const response=await fetch('../services/update_blog_status.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({blog_id:blogId,status:'published'})});
+            const data=await response.json();
+            if(!data.success){window.alert(data.message||'Failed to publish post.');return;}
+            await loadBlogPage({preferredPostId:blogId});
         }
 
-        async function deletePost(blogId) {
-            if (!window.confirm('Delete this blog post?')) {
-                return;
-            }
-            const response = await fetch('../services/delete_blog.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ blog_id: blogId })
-            });
-            const data = await response.json();
-            if (!data.success) {
-                window.alert(data.message || 'Failed to delete post.');
-                return;
-            }
-
-            await loadBlogPage();
+        async function deletePost(blogId){
+            if(!window.confirm('Delete this blog post?')){return;}
+            const response=await fetch('../services/delete_blog.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({blog_id:blogId})});
+            const data=await response.json();
+            if(!data.success){window.alert(data.message||'Failed to delete post.');return;}
+            const currentIndex=blogState.posts.findIndex((post)=>Number(post.blog_id)===Number(blogId));
+            const fallback=blogState.posts[currentIndex+1]||blogState.posts[currentIndex-1]||null;
+            await loadBlogPage({preferredPostId:fallback?fallback.blog_id:null});
         }
 
-        async function submitComment(event, blogId) {
+        async function submitComment(event,blogId){
             event.preventDefault();
-            const form = event.currentTarget;
-            const content = new FormData(form).get('content');
-            const response = await fetch('../services/create_blog_comment.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ blog_id: blogId, content })
-            });
-            const data = await response.json();
-            if (!data.success) {
-                window.alert(data.message || 'Failed to add comment.');
-                return;
-            }
-
-            await loadBlogPage();
+            const content=new FormData(event.currentTarget).get('content');
+            const response=await fetch('../services/create_blog_comment.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({blog_id:blogId,content})});
+            const data=await response.json();
+            if(!data.success){window.alert(data.message||'Failed to add comment.');return;}
+            await loadBlogPage({preferredPostId:blogId});
         }
 
-        async function deleteComment(commentId) {
-            const response = await fetch('../services/delete_blog_comment.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ comment_id: commentId })
-            });
-            const data = await response.json();
-            if (!data.success) {
-                window.alert(data.message || 'Failed to delete comment.');
-                return;
-            }
-
-            await loadBlogPage();
+        async function deleteComment(commentId){
+            const response=await fetch('../services/delete_blog_comment.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({comment_id:commentId})});
+            const data=await response.json();
+            if(!data.success){window.alert(data.message||'Failed to delete comment.');return;}
+            await loadBlogPage({preferredPostId:blogState.selectedBlogId});
         }
 
-        async function toggleLike(blogId) {
-            const response = await fetch('../services/toggle_blog_reaction.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ blog_id: blogId })
-            });
-            const data = await response.json();
-            if (!data.success) {
-                window.alert(data.message || 'Failed to update reaction.');
-                return;
-            }
-
-            await loadBlogPage();
+        async function toggleLike(blogId){
+            const response=await fetch('../services/toggle_blog_reaction.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({blog_id:blogId})});
+            const data=await response.json();
+            if(!data.success){window.alert(data.message||'Failed to update reaction.');return;}
+            await loadBlogPage({preferredPostId:blogId});
         }
 
-        document.addEventListener('DOMContentLoaded', () => {
-            loadBlogPage().catch((error) => {
-                document.getElementById('blog-shell').innerHTML = `<div class="surface">${error.message}</div>`;
-            });
-        });
+        document.addEventListener('DOMContentLoaded',()=>{loadBlogPage().catch((error)=>{document.getElementById('blog-shell').innerHTML=`<div class="surface">${escapeHtml(error.message)}</div>`;});});
+        window.selectBlogPost=selectBlogPost;
+        window.selectPostImage=selectPostImage;
+        window.openComposer=openComposer;
+        window.closeComposer=closeComposer;
+        window.handleComposerOverlay=handleComposerOverlay;
+        window.publishPost=publishPost;
+        window.deletePost=deletePost;
+        window.submitComment=submitComment;
+        window.deleteComment=deleteComment;
+        window.toggleLike=toggleLike;
     </script>
 </body>
 </html>

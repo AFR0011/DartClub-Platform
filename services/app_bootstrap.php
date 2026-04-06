@@ -99,6 +99,35 @@ if (!defined('APP_BOOTSTRAPPED')) {
         }
     }
 
+    function app_public_path(?string $path): ?string
+    {
+        if ($path === null) {
+            return null;
+        }
+
+        $normalized = trim($path);
+        if ($normalized === '') {
+            return null;
+        }
+
+        if (preg_match('#^https?://#i', $normalized) === 1) {
+            return $normalized;
+        }
+
+        $normalized = str_replace('\\', '/', $normalized);
+        while (str_starts_with($normalized, '../')) {
+            $normalized = substr($normalized, 3);
+        }
+        while (str_starts_with($normalized, './')) {
+            $normalized = substr($normalized, 2);
+        }
+
+        $normalized = '/' . ltrim($normalized, '/');
+        $normalized = preg_replace('#/+#', '/', $normalized) ?: $normalized;
+
+        return $normalized;
+    }
+
     if (app_is_service_request()) {
         ini_set('display_errors', '0');
 

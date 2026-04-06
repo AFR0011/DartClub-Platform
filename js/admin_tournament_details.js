@@ -1,5 +1,58 @@
-const TournamentAdminPage = window.TOURNAMENT_PAGE || { players: [] };
+const TournamentAdminPage = { players: [], matches: {} };
 let draggedBracketSlot = null;
+
+function readTournamentPageData(source = document) {
+    const dataNode = source.getElementById('tournament-page-data');
+    if (dataNode) {
+        try {
+            return JSON.parse(dataNode.textContent || '{}');
+        } catch (error) {
+            console.error('Failed to parse tournament page data:', error);
+        }
+    }
+
+    return window.TOURNAMENT_PAGE || { players: [], matches: {} };
+}
+
+function hydrateTournamentPageData(source = document) {
+    const nextData = readTournamentPageData(source) || {};
+    Object.keys(TournamentAdminPage).forEach((key) => {
+        delete TournamentAdminPage[key];
+    });
+    Object.assign(TournamentAdminPage, nextData);
+    TournamentAdminPage.players = Array.isArray(TournamentAdminPage.players) ? TournamentAdminPage.players : [];
+    TournamentAdminPage.matches = TournamentAdminPage.matches && typeof TournamentAdminPage.matches === 'object'
+        ? TournamentAdminPage.matches
+        : {};
+}
+
+function getSectionStorageKey() {
+    return `tournament-admin:${TournamentAdminPage.tourId || 'default'}:section`;
+}
+
+function getCurrentSectionName() {
+    return document.querySelector('[data-section].active')?.dataset.section || null;
+}
+
+function rememberActiveSection(sectionName) {
+    if (!sectionName) {
+        return;
+    }
+
+    try {
+        window.sessionStorage.setItem(getSectionStorageKey(), sectionName);
+    } catch (error) {
+        console.warn('Failed to persist tournament section state:', error);
+    }
+}
+
+function readRememberedSection() {
+    try {
+        return window.sessionStorage.getItem(getSectionStorageKey());
+    } catch (error) {
+        return null;
+    }
+}
 
 async function postJson(url, payload) {
     const response = await fetch(url, {
@@ -11,33 +64,111 @@ async function postJson(url, payload) {
     return response.json();
 }
 
-function populatePlayerSelect(selectId) {
-    const select = document.getElementById(selectId);
-    if (!select) {
+function getMatchMeta(matchId) {
+    const matches = TournamentAdminPage.matches || {};
+    return matches[String(matchId)] || matches[matchId] || null;
+}
+
+function setElementText(id, value) {
+    const element = document.getElementById(id);
+    if (element) {
+        element.textContent = value;
+    }
+}
+
+function syncModalPlayerCard(linkId, labelId, playerLabel, profileUrl) {
+    const link = document.getElementById(linkId);
+    const label = document.getElementById(labelId);
+    if (!link || !label) {
         return;
     }
 
-    select.innerHTML = '<option value="">-</option>';
-    TournamentAdminPage.players.forEach((player) => {
-        const option = document.createElement('option');
-        option.value = player.id;
-        option.textContent = player.name;
-        select.appendChild(option);
-    });
+    const safeLabel = playerLabel || 'TBD';
+    if (profileUrl) {
+        link.textContent = safeLabel;
+        link.href = profileUrl;
+        link.hidden = false;
+        label.hidden = true;
+    } else {
+        label.textContent = safeLabel;
+        label.hidden = false;
+        link.hidden = true;
+        link.removeAttribute('href');
+    }
+}
+
+function syncModalResultState(match) {
+    const hasBothPlayers = Boolean(match?.player1_id) && Boolean(match?.player2_id);
+    const resultButton = document.getElementById('mf_save_result');
+    const player1Input = document.getElementById('mf_p1s');
+    const player2Input = document.getElementById('mf_p2s');
+    if (!resultButton || !player1Input || !player2Input) {
+        return;
+    }
+
+    resultButton.disabled = !hasBothPlayers;
+    player1Input.disabled = !hasBothPlayers;
+    player2Input.disabled = !hasBothPlayers;
 }
 
 function showSection(sectionName) {
-    document.querySelectorAll('[data-section]').forEach((section) => {
-        section.classList.toggle('active', section.dataset.section === sectionName);
+    const sections = Array.from(document.querySelectorAll('[data-section]'));
+    const sectionExists = sections.some((section) => section.dataset.section === sectionName);
+    const nextSection = sectionExists ? sectionName : (sections[0]?.dataset.section || null);
+
+    sections.forEach((section) => {
+        section.classList.toggle('active', section.dataset.section === nextSection);
     });
 
     document.querySelectorAll('[data-section-button]').forEach((button) => {
-        button.classList.toggle('active', button.dataset.sectionButton === sectionName);
+        button.classList.toggle('active', button.dataset.sectionButton === nextSection);
     });
+
+    rememberActiveSection(nextSection);
 }
 
-function refreshMatches() {
-    window.location.reload();
+async function refreshMatches(options = {}) {
+    const preserveSection = options.preserveSection !== false;
+    const preserveScroll = options.preserveScroll !== false;
+    const preferredSection = preserveSection ? (getCurrentSectionName() || readRememberedSection()) : null;
+    const currentScrollY = preserveScroll ? window.scrollY : 0;
+
+    const response = await fetch(window.location.href, {
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Cache-Control': 'no-cache'
+        }
+    });
+
+    if (!response.ok) {
+        throw new Error(`Failed to refresh tournament page (${response.status}).`);
+    }
+
+    const html = await response.text();
+    const parser = new DOMParser();
+    const nextDocument = parser.parseFromString(html, 'text/html');
+    const nextContainer = nextDocument.querySelector('.container');
+    const nextMatchModal = nextDocument.getElementById('matchModal');
+    const nextLeagueModal = nextDocument.getElementById('leagueToolsModal');
+    const nextDataNode = nextDocument.getElementById('tournament-page-data');
+
+    if (!nextContainer || !nextMatchModal || !nextLeagueModal || !nextDataNode) {
+        throw new Error('Refreshed tournament markup is incomplete.');
+    }
+
+    document.querySelector('.container')?.replaceWith(nextContainer);
+    document.getElementById('matchModal')?.replaceWith(nextMatchModal);
+    document.getElementById('leagueToolsModal')?.replaceWith(nextLeagueModal);
+    document.getElementById('tournament-page-data')?.replaceWith(nextDataNode);
+
+    hydrateTournamentPageData(document);
+    initializeTournamentPage(preferredSection);
+
+    if (preserveScroll) {
+        window.requestAnimationFrame(() => {
+            window.scrollTo({ top: currentScrollY, behavior: 'auto' });
+        });
+    }
 }
 
 function saveQuickMatchResult(event, matchId) {
@@ -71,7 +202,7 @@ function saveQuickMatchResult(event, matchId) {
             if (!data.success) {
                 throw new Error(data.message || 'Failed to record result');
             }
-            refreshMatches();
+            await refreshMatches();
         } catch (error) {
             window.alert(error.message);
         }
@@ -96,7 +227,31 @@ async function generateStructure() {
         if (!data.success) {
             throw new Error(data.message || 'Failed to generate structure');
         }
-        refreshMatches();
+        await refreshMatches();
+    } catch (error) {
+        window.alert(error.message);
+    }
+}
+
+async function startTournament() {
+    if (!window.confirm('This will close registration immediately and build or rebuild the tournament structure from the current non-withdrawn entrants. Continue?')) {
+        return;
+    }
+
+    try {
+        const response = await fetch('../../services/tournament_generate_structure.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                tour_id: TournamentAdminPage.tourId,
+                start_tournament: true
+            })
+        });
+        const data = await response.json();
+        if (!data.success) {
+            throw new Error(data.message || 'Failed to start tournament');
+        }
+        await refreshMatches();
     } catch (error) {
         window.alert(error.message);
     }
@@ -133,7 +288,7 @@ async function addMatch() {
         if (!data.success) {
             throw new Error(data.message || 'Failed to create match');
         }
-        refreshMatches();
+        await refreshMatches();
     } catch (error) {
         window.alert(error.message);
     }
@@ -149,16 +304,13 @@ async function deleteMatch(matchId) {
         if (!data.success) {
             throw new Error(data.message || 'Failed to delete match');
         }
-        refreshMatches();
+        await refreshMatches();
     } catch (error) {
         window.alert(error.message);
     }
 }
 
 async function openMatchModal(matchId) {
-    populatePlayerSelect('mf_p1');
-    populatePlayerSelect('mf_p2');
-
     document.getElementById('mf_match_id').value = matchId;
     document.getElementById('matchModal').style.display = 'flex';
 
@@ -170,19 +322,24 @@ async function openMatchModal(matchId) {
         }
 
         const match = data.match;
+        const matchMeta = getMatchMeta(matchId) || {};
         document.getElementById('mf_date').value = match.match_date || '';
         document.getElementById('mf_time').value = (match.match_time || '').slice(0, 5);
-        document.getElementById('mf_round').value = match.round_number || '';
-        document.getElementById('mf_bracket').value = match.bracket || '';
-        document.getElementById('mf_group').value = match.group_number || '';
-        document.getElementById('mf_next').value = match.next_match_id || '';
-        document.getElementById('mf_pos').value = match.position_in_next || '';
-        document.getElementById('mf_loser_next').value = match.loser_next_match_id || '';
-        document.getElementById('mf_loser_pos').value = match.loser_position_in_next || '';
-        document.getElementById('mf_p1').value = match.player1_id || '';
-        document.getElementById('mf_p2').value = match.player2_id || '';
-        document.getElementById('mf_p1s').value = match.player1_score || '';
-        document.getElementById('mf_p2s').value = match.player2_score || '';
+        document.getElementById('mf_p1s').value = match.player1_score ?? '';
+        document.getElementById('mf_p2s').value = match.player2_score ?? '';
+
+        setElementText('mf_match_number', `Match ${matchMeta.number || matchId}`);
+        setElementText('mf_round_label', matchMeta.round_title || `Round ${match.round_number || 1}`);
+        setElementText('mf_status_label', match.match_status || matchMeta.status || 'Scheduled');
+        setElementText(
+            'mf_flow_label',
+            matchMeta.next_match_number ? `Winner to Match ${matchMeta.next_match_number}` : 'Winner path pending'
+        );
+        syncModalPlayerCard('mf_player1_link', 'mf_player1_label', matchMeta.player1_label, matchMeta.player1_profile_url);
+        syncModalPlayerCard('mf_player2_link', 'mf_player2_label', matchMeta.player2_label, matchMeta.player2_profile_url);
+        setElementText('mf_score_label_1', `${matchMeta.player1_label || 'Top slot'} score`);
+        setElementText('mf_score_label_2', `${matchMeta.player2_label || 'Bottom slot'} score`);
+        syncModalResultState(match);
     } catch (error) {
         closeMatchModal();
         window.alert(error.message);
@@ -197,16 +354,7 @@ async function saveMatchFields() {
     const payload = {
         match_id: parseInt(document.getElementById('mf_match_id').value, 10),
         match_date: document.getElementById('mf_date').value || null,
-        match_time: document.getElementById('mf_time').value ? `${document.getElementById('mf_time').value}:00` : null,
-        round_number: document.getElementById('mf_round').value ? parseInt(document.getElementById('mf_round').value, 10) : null,
-        bracket: document.getElementById('mf_bracket').value || null,
-        group_number: document.getElementById('mf_group').value ? parseInt(document.getElementById('mf_group').value, 10) : null,
-        next_match_id: document.getElementById('mf_next').value ? parseInt(document.getElementById('mf_next').value, 10) : null,
-        position_in_next: document.getElementById('mf_pos').value ? parseInt(document.getElementById('mf_pos').value, 10) : null,
-        loser_next_match_id: document.getElementById('mf_loser_next').value ? parseInt(document.getElementById('mf_loser_next').value, 10) : null,
-        loser_position_in_next: document.getElementById('mf_loser_pos').value ? parseInt(document.getElementById('mf_loser_pos').value, 10) : null,
-        player1_id: document.getElementById('mf_p1').value ? parseInt(document.getElementById('mf_p1').value, 10) : null,
-        player2_id: document.getElementById('mf_p2').value ? parseInt(document.getElementById('mf_p2').value, 10) : null
+        match_time: document.getElementById('mf_time').value ? `${document.getElementById('mf_time').value}:00` : null
     };
 
     try {
@@ -214,17 +362,29 @@ async function saveMatchFields() {
         if (!data.success) {
             throw new Error(data.message || 'Failed to update match');
         }
-        refreshMatches();
+        await refreshMatches();
     } catch (error) {
         window.alert(error.message);
     }
 }
 
 async function saveMatchResult() {
+    if (document.getElementById('mf_save_result')?.disabled) {
+        window.alert('This match needs both slots seeded before a result can be recorded.');
+        return;
+    }
+
+    const player1Raw = document.getElementById('mf_p1s').value;
+    const player2Raw = document.getElementById('mf_p2s').value;
+    if (player1Raw === '' || player2Raw === '') {
+        window.alert('Enter both scores before recording the result.');
+        return;
+    }
+
     const payload = {
         match_id: parseInt(document.getElementById('mf_match_id').value, 10),
-        player1_score: parseInt(document.getElementById('mf_p1s').value || '0', 10),
-        player2_score: parseInt(document.getElementById('mf_p2s').value || '0', 10)
+        player1_score: parseInt(player1Raw, 10),
+        player2_score: parseInt(player2Raw, 10)
     };
 
     try {
@@ -232,7 +392,7 @@ async function saveMatchResult() {
         if (!data.success) {
             throw new Error(data.message || 'Failed to record result');
         }
-        refreshMatches();
+        await refreshMatches();
     } catch (error) {
         window.alert(error.message);
     }
@@ -248,7 +408,7 @@ async function promoteGroups() {
         if (!data.success) {
             throw new Error(data.message || 'Failed to promote groups');
         }
-        refreshMatches();
+        await refreshMatches();
     } catch (error) {
         window.alert(error.message);
     }
@@ -270,7 +430,7 @@ async function saveTeamMatchResult(event, teamMatchId) {
         if (!data.success) {
             throw new Error(data.message || 'Failed to record team result');
         }
-        refreshMatches();
+        await refreshMatches();
     } catch (error) {
         window.alert(error.message);
     }
@@ -307,7 +467,7 @@ async function submitLeagueTools() {
         if (!data.success) {
             throw new Error(data.message || 'Failed to reschedule league');
         }
-        refreshMatches();
+        await refreshMatches();
     } catch (error) {
         window.alert(error.message);
     }
@@ -406,7 +566,7 @@ async function handleBracketDrop(event) {
         if (!data.success) {
             throw new Error(data.message || 'Failed to swap players');
         }
-        refreshMatches();
+        await refreshMatches();
     } catch (error) {
         window.alert(error.message);
         clearBracketDropTargets();
@@ -420,6 +580,28 @@ function bindBracketSlots() {
         slot.addEventListener('dragover', handleBracketDragOver);
         slot.addEventListener('dragleave', handleBracketDragLeave);
         slot.addEventListener('drop', handleBracketDrop);
+    });
+}
+
+function selectAdminBracketMatch(matchId) {
+    openMatchModal(matchId);
+}
+
+function bindBracketInteraction() {
+    const cards = Array.from(document.querySelectorAll('[data-admin-bracket-match]'));
+    if (cards.length === 0) {
+        return;
+    }
+
+    cards.forEach((card) => {
+        card.addEventListener('keydown', (event) => {
+            if (event.key !== 'Enter' && event.key !== ' ') {
+                return;
+            }
+
+            event.preventDefault();
+            openMatchModal(card.dataset.matchId || '0');
+        });
     });
 }
 
@@ -478,40 +660,169 @@ function bindSelectableRows() {
 
 function bindAvailablePlayerFilter() {
     const filter = document.getElementById('newPlayerFilter');
-    if (!filter) {
+    const sort = document.getElementById('newPlayerSort');
+    const tbody = document.querySelector('[data-player-add-row]')?.closest('tbody');
+    if (!filter || !tbody) {
         return;
     }
 
-    filter.addEventListener('input', () => {
+    const applyControls = () => {
         const query = filter.value.trim().toLowerCase();
-        document.querySelectorAll('[data-player-add-row]').forEach((row) => {
-            const playerName = row.dataset.playerName || '';
-            row.style.display = playerName.includes(query) ? '' : 'none';
+        const sortMode = sort?.value || 'name_asc';
+        const rows = Array.from(tbody.querySelectorAll('[data-player-add-row]'));
+
+        rows.sort((left, right) => {
+            const leftName = left.dataset.playerName || '';
+            const rightName = right.dataset.playerName || '';
+            if (sortMode === 'name_desc') {
+                return rightName.localeCompare(leftName, undefined, { sensitivity: 'base' });
+            }
+            if (sortMode === 'id_asc') {
+                return Number(left.dataset.playerId || 0) - Number(right.dataset.playerId || 0);
+            }
+            if (sortMode === 'id_desc') {
+                return Number(right.dataset.playerId || 0) - Number(left.dataset.playerId || 0);
+            }
+
+            return leftName.localeCompare(rightName, undefined, { sensitivity: 'base' });
         });
+
+        rows.forEach((row) => {
+            row.style.display = (row.dataset.playerName || '').includes(query) ? '' : 'none';
+            tbody.appendChild(row);
+        });
+    };
+
+    filter.addEventListener('input', applyControls);
+    sort?.addEventListener('change', applyControls);
+    applyControls();
+}
+
+function bindCurrentPlayerControls() {
+    const filter = document.getElementById('currentPlayerFilter');
+    const sort = document.getElementById('currentPlayerSort');
+    const tbody = document.querySelector('[data-current-player-row]')?.closest('tbody');
+    if (!filter || !tbody) {
+        return;
+    }
+
+    const applyControls = () => {
+        const query = filter.value.trim().toLowerCase();
+        const sortMode = sort?.value || 'name_asc';
+        const rows = Array.from(tbody.querySelectorAll('[data-current-player-row]'));
+
+        rows.sort((left, right) => {
+            const leftName = left.dataset.playerName || '';
+            const rightName = right.dataset.playerName || '';
+            if (sortMode === 'name_desc') {
+                return rightName.localeCompare(leftName, undefined, { sensitivity: 'base' });
+            }
+            if (sortMode === 'status') {
+                return (left.dataset.playerStatus || '').localeCompare(right.dataset.playerStatus || '', undefined, { sensitivity: 'base' })
+                    || leftName.localeCompare(rightName, undefined, { sensitivity: 'base' });
+            }
+            if (sortMode === 'group') {
+                return Number(left.dataset.playerGroup || 9999) - Number(right.dataset.playerGroup || 9999)
+                    || leftName.localeCompare(rightName, undefined, { sensitivity: 'base' });
+            }
+
+            return leftName.localeCompare(rightName, undefined, { sensitivity: 'base' });
+        });
+
+        rows.forEach((row) => {
+            const searchable = `${row.dataset.playerName || ''} ${row.dataset.playerStatus || ''} ${row.dataset.playerGroup || ''}`;
+            row.style.display = searchable.includes(query) ? '' : 'none';
+            tbody.appendChild(row);
+        });
+    };
+
+    filter.addEventListener('input', applyControls);
+    sort?.addEventListener('change', applyControls);
+    applyControls();
+}
+
+function bindModalDismissals() {
+    const matchModal = document.getElementById('matchModal');
+    const leagueModal = document.getElementById('leagueToolsModal');
+
+    [matchModal, leagueModal].forEach((modal) => {
+        if (!modal) {
+            return;
+        }
+
+        if (modal.dataset.dismissBound === 'true') {
+            return;
+        }
+
+        modal.dataset.dismissBound = 'true';
+        modal.addEventListener('click', (event) => {
+            if (event.target !== modal) {
+                return;
+            }
+
+            if (modal.id === 'matchModal') {
+                closeMatchModal();
+            } else {
+                closeLeagueToolsModal();
+            }
+        });
+    });
+
+    if (document.body.dataset.tournamentModalEscapeBound === 'true') {
+        return;
+    }
+
+    document.body.dataset.tournamentModalEscapeBound = 'true';
+    document.addEventListener('keydown', (event) => {
+        if (event.key !== 'Escape') {
+            return;
+        }
+
+        const liveMatchModal = document.getElementById('matchModal');
+        const liveLeagueModal = document.getElementById('leagueToolsModal');
+
+        if (liveMatchModal?.style.display === 'flex') {
+            closeMatchModal();
+        }
+        if (liveLeagueModal?.style.display === 'flex') {
+            closeLeagueToolsModal();
+        }
     });
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+function initializeTournamentPage(preferredSection = null) {
     document.querySelectorAll('[data-section-button]').forEach((button) => {
         button.addEventListener('click', () => showSection(button.dataset.sectionButton));
     });
 
     document.getElementById('generateStructureBtn')?.addEventListener('click', generateStructure);
-    document.getElementById('refreshMatchesBtn')?.addEventListener('click', refreshMatches);
+    document.getElementById('startTournamentBtn')?.addEventListener('click', startTournament);
+    document.getElementById('refreshMatchesBtn')?.addEventListener('click', () => {
+        refreshMatches().catch((error) => window.alert(error.message));
+    });
     document.getElementById('addMatchBtn')?.addEventListener('click', addMatch);
     document.getElementById('promoteGroupsBtn')?.addEventListener('click', promoteGroups);
     document.getElementById('openLeagueToolsBtn')?.addEventListener('click', openLeagueToolsModal);
 
-    populatePlayerSelect('mf_p1');
-    populatePlayerSelect('mf_p2');
     bindBracketSlots();
+    bindBracketInteraction();
     bindSelectableRows();
+    bindCurrentPlayerControls();
     bindAvailablePlayerFilter();
+    bindModalDismissals();
     refreshSelectionMeta();
+    showSection(preferredSection || readRememberedSection() || getCurrentSectionName() || 'matches');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    hydrateTournamentPageData(document);
+    initializeTournamentPage();
 });
 
 window.showSection = showSection;
 window.generateStructure = generateStructure;
+window.startTournament = startTournament;
+window.selectAdminBracketMatch = selectAdminBracketMatch;
 window.saveQuickMatchResult = saveQuickMatchResult;
 window.openMatchModal = openMatchModal;
 window.closeMatchModal = closeMatchModal;

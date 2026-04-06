@@ -5,9 +5,17 @@ require_once __DIR__ . '/dbConnection.php';
 
 try {
     $stmt = $conn->prepare(
-        'SELECT id, file_path, title, source_blog_id, uploaded_by_user_id, created_at
-         FROM gallery_images
-         ORDER BY created_at DESC'
+        'SELECT
+            g.id,
+            g.file_path,
+            g.title,
+            g.source_blog_id,
+            g.uploaded_by_user_id,
+            g.created_at,
+            b.blog_title AS source_blog_title
+         FROM gallery_images g
+         LEFT JOIN blogs b ON b.blog_id = g.source_blog_id
+         ORDER BY g.created_at DESC'
     );
     $stmt->execute();
     $images = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
@@ -47,4 +55,3 @@ try {
 } catch (Throwable $exception) {
     app_json_response(['error' => 'Failed to fetch gallery images: ' . $exception->getMessage()], 500);
 }
-

@@ -54,8 +54,111 @@ require_role('admin');
             border-radius: 22px;
         }
 
+        .toolbar-line {
+            display: grid;
+            gap: 12px;
+            grid-template-columns: minmax(220px, 1fr) minmax(180px, 220px);
+            align-items: end;
+            margin-top: 16px;
+        }
+
+        .status-stack {
+            display: grid;
+            gap: 6px;
+        }
+
+        .status-note {
+            color: #5b6678;
+            font-size: 0.82rem;
+        }
+
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 6px 12px;
+            border-radius: 999px;
+            font-size: 0.82rem;
+            font-weight: 700;
+            text-transform: capitalize;
+        }
+
+        .status-pill.role-player {
+            background: rgba(37, 99, 235, 0.12);
+            color: #1d4ed8;
+        }
+
+        .status-pill.role-manager {
+            background: rgba(245, 158, 11, 0.14);
+            color: #b45309;
+        }
+
+        .status-pill.role-admin {
+            background: rgba(124, 58, 237, 0.14);
+            color: #6d28d9;
+        }
+
+        .status-pill.membership-approved {
+            background: rgba(22, 163, 74, 0.12);
+            color: #15803d;
+        }
+
+        .status-pill.membership-pending {
+            background: rgba(245, 158, 11, 0.14);
+            color: #b45309;
+        }
+
+        .status-pill.membership-rejected {
+            background: rgba(220, 38, 38, 0.12);
+            color: #b91c1c;
+        }
+
+        .status-pill.membership-not_submitted {
+            background: rgba(100, 116, 139, 0.12);
+            color: #475569;
+        }
+
+        .role-pill-select {
+            width: auto;
+            min-width: 132px;
+            margin-bottom: 0;
+            padding: 8px 34px 8px 12px;
+            border-radius: 999px;
+            border: 1px solid transparent;
+            font-size: 0.82rem;
+            font-weight: 700;
+            text-transform: capitalize;
+            appearance: none;
+            background-position: right 12px center;
+            background-repeat: no-repeat;
+            background-size: 10px 10px;
+            background-image: linear-gradient(45deg, transparent 50%, currentColor 50%), linear-gradient(135deg, currentColor 50%, transparent 50%);
+        }
+
+        .role-pill-select.role-player {
+            background-color: rgba(37, 99, 235, 0.12);
+            color: #1d4ed8;
+            border-color: rgba(37, 99, 235, 0.18);
+        }
+
+        .role-pill-select.role-manager {
+            background-color: rgba(245, 158, 11, 0.14);
+            color: #b45309;
+            border-color: rgba(245, 158, 11, 0.2);
+        }
+
+        .role-pill-select.role-admin {
+            background-color: rgba(124, 58, 237, 0.14);
+            color: #6d28d9;
+            border-color: rgba(124, 58, 237, 0.2);
+        }
+
         @media (max-width: 900px) {
             .hero-band {
+                grid-template-columns: 1fr;
+            }
+
+            .toolbar-line {
                 grid-template-columns: 1fr;
             }
         }
@@ -97,6 +200,23 @@ require_role('admin');
 
         <div class="surface-panel">
             <p class="mini-note">Use this table to manage account roles while keeping the club membership workflow independent.</p>
+            <div class="toolbar-line">
+                <div>
+                    <label for="userFilter">Filter users</label>
+                    <input type="text" id="userFilter" placeholder="Search by username or email">
+                </div>
+                <div>
+                    <label for="userSort">Sort users</label>
+                    <select id="userSort">
+                        <option value="name_asc">Username A-Z</option>
+                        <option value="name_desc">Username Z-A</option>
+                        <option value="role">Role</option>
+                        <option value="membership">Membership</option>
+                        <option value="id_desc">Newest first</option>
+                        <option value="id_asc">Oldest first</option>
+                    </select>
+                </div>
+            </div>
         </div>
 
         <div class="surface-panel">
@@ -119,44 +239,123 @@ require_role('admin');
     </div>
 
     <script>
-        function loadUsers() {
-            fetch('../../services/get_users.php')
-                .then(response => response.json())
-                .then(data => {
-                    const usersList = document.getElementById('users-list');
-                    usersList.innerHTML = '';
+        let allUsers = [];
 
-                    if (!Array.isArray(data)) {
-                        const message = data.message || data.error || 'Failed to load users.';
-                        throw new Error(message);
-                    }
-                    
-                    data.forEach(user => {
-                        const row = document.createElement('tr');
-                        row.innerHTML = `
-                            <td>${user.user_id}</td>
-                            <td>${user.user_name}</td>
-                            <td>${user.email}</td>
-                            <td>
-                                <select onchange="updateUserRole(${user.user_id}, this.value)">
+        function formatMembershipStatus(value) {
+            return (value || 'not_submitted').replaceAll('_', ' ');
+        }
+
+        function escapeHtml(value) {
+            return String(value ?? '')
+                .replaceAll('&', '&amp;')
+                .replaceAll('<', '&lt;')
+                .replaceAll('>', '&gt;')
+                .replaceAll('"', '&quot;')
+                .replaceAll("'", '&#39;');
+        }
+
+        function syncRoleSelectAppearance(select) {
+            if (!select) {
+                return;
+            }
+
+            select.classList.remove('role-player', 'role-manager', 'role-admin');
+            select.classList.add(`role-${select.value}`);
+        }
+
+        function sortUsers(users) {
+            const sortMode = document.getElementById('userSort')?.value || 'name_asc';
+            return [...users].sort((left, right) => {
+                if (sortMode === 'name_desc') {
+                    return (right.user_name || '').localeCompare(left.user_name || '', undefined, { sensitivity: 'base' });
+                }
+                if (sortMode === 'role') {
+                    return (left.user_role || '').localeCompare(right.user_role || '', undefined, { sensitivity: 'base' })
+                        || (left.user_name || '').localeCompare(right.user_name || '', undefined, { sensitivity: 'base' });
+                }
+                if (sortMode === 'membership') {
+                    return (left.membership_status || 'not_submitted').localeCompare(right.membership_status || 'not_submitted', undefined, { sensitivity: 'base' })
+                        || (left.user_name || '').localeCompare(right.user_name || '', undefined, { sensitivity: 'base' });
+                }
+                if (sortMode === 'id_desc') {
+                    return Number(right.user_id || 0) - Number(left.user_id || 0);
+                }
+                if (sortMode === 'id_asc') {
+                    return Number(left.user_id || 0) - Number(right.user_id || 0);
+                }
+
+                return (left.user_name || '').localeCompare(right.user_name || '', undefined, { sensitivity: 'base' });
+            });
+        }
+
+        function renderUsers() {
+            const usersList = document.getElementById('users-list');
+            const filterValue = (document.getElementById('userFilter')?.value || '').trim().toLowerCase();
+            const filteredUsers = allUsers.filter((user) => {
+                const haystack = `${user.user_name || ''} ${user.email || ''}`.toLowerCase();
+                return haystack.includes(filterValue);
+            });
+
+            const sortedUsers = sortUsers(filteredUsers);
+            if (sortedUsers.length === 0) {
+                usersList.innerHTML = `
+                    <tr>
+                        <td colspan="6">No users match the current filter.</td>
+                    </tr>
+                `;
+                return;
+            }
+
+            usersList.innerHTML = sortedUsers.map((user) => {
+                const membershipStatus = user.membership_status || 'not_submitted';
+                return `
+                    <tr>
+                        <td>${escapeHtml(user.user_id)}</td>
+                        <td>${escapeHtml(user.user_name)}</td>
+                        <td>${escapeHtml(user.email)}</td>
+                        <td>
+                            <div class="status-stack">
+                                <span class="status-note">Auth role</span>
+                                <select class="role-pill-select role-${escapeHtml(user.user_role)}" onchange="updateUserRole(${Number(user.user_id)}, this.value); syncRoleSelectAppearance(this);">
                                     <option value="player" ${user.user_role === 'player' ? 'selected' : ''}>Player</option>
                                     <option value="manager" ${user.user_role === 'manager' ? 'selected' : ''}>Manager</option>
                                     <option value="admin" ${user.user_role === 'admin' ? 'selected' : ''}>Admin</option>
                                 </select>
-                            </td>
-                            <td>${user.membership_status || 'not_submitted'}</td>
-                            <td>
-                                <button onclick="deleteUser(${user.user_id})" class="button delete-btn">Delete</button>
-                            </td>
-                        `;
-                        usersList.appendChild(row);
-                    });
+                            </div>
+                        </td>
+                        <td>
+                            <div class="status-stack">
+                                <span class="status-note">Club membership</span>
+                                <span class="status-pill membership-${escapeHtml(membershipStatus)}">${escapeHtml(formatMembershipStatus(membershipStatus))}</span>
+                            </div>
+                        </td>
+                        <td>
+                            <button onclick="deleteUser(${Number(user.user_id)})" class="cancel-btn">Delete user</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            document.querySelectorAll('.role-pill-select').forEach(syncRoleSelectAppearance);
+        }
+
+        function loadUsers() {
+            fetch('../../services/get_users.php')
+                .then(response => response.json())
+                .then(data => {
+                    if (!Array.isArray(data)) {
+                        const message = data.message || data.error || 'Failed to load users.';
+                        throw new Error(message);
+                    }
+
+                    allUsers = data;
+                    renderUsers();
                 })
                 .catch(error => {
                     console.error('Error loading users:', error);
                     document.getElementById('users-list').innerHTML = `
                         <tr>
-                            <td colspan="6">Failed to load users: ${error.message}</td>
+                            <td colspan="6">Failed to load users: ${escapeHtml(error.message)}</td>
                         </tr>
                     `;
                 });
@@ -216,7 +415,11 @@ require_role('admin');
             }
         }
 
-        document.addEventListener('DOMContentLoaded', loadUsers);
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('userFilter')?.addEventListener('input', renderUsers);
+            document.getElementById('userSort')?.addEventListener('change', renderUsers);
+            loadUsers();
+        });
     </script>
 </body>
 </html> 

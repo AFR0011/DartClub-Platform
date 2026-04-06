@@ -100,11 +100,11 @@
         }
 
         .read-bracket {
-            --bracket-track: 84px;
+            --bracket-track: 62px;
             display: grid;
             grid-auto-flow: column;
-            grid-auto-columns: minmax(290px, 290px);
-            gap: 30px;
+            grid-auto-columns: minmax(220px, 220px);
+            gap: 26px;
             min-width: max-content;
             align-items: start;
         }
@@ -167,7 +167,35 @@
             background: rgba(0, 0, 0, 0.18);
         }
 
-        .read-bracket-card.has-outgoing::after {
+        .read-bracket-matchup {
+            position: relative;
+            width: 100%;
+            display: grid;
+            gap: 0.4rem;
+            padding: 0.7rem 0.8rem;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(0, 0, 0, 0.18);
+            text-align: left;
+            color: #fff;
+            cursor: pointer;
+            transition: transform 0.18s ease, border-color 0.18s ease, background-color 0.18s ease, box-shadow 0.18s ease;
+        }
+
+        .read-bracket-matchup:hover {
+            transform: translateY(-1px);
+            border-color: rgba(255, 107, 53, 0.28);
+        }
+
+        .read-bracket-matchup.is-active {
+            border-color: rgba(255, 107, 53, 0.38);
+            background:
+                radial-gradient(circle at top right, rgba(255, 107, 53, 0.12), transparent 32%),
+                rgba(255, 255, 255, 0.07);
+            box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.12);
+        }
+
+        .read-bracket-matchup.has-outgoing::after {
             content: '';
             position: absolute;
             right: -18px;
@@ -178,27 +206,163 @@
             background: rgba(255, 255, 255, 0.16);
         }
 
-        .read-bracket-slot {
-            padding: 0.8rem 0.95rem;
-            border-radius: 14px;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            background: rgba(255, 255, 255, 0.03);
+        .read-bracket-summary {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-color);
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .read-bracket-vs {
             display: grid;
-            gap: 0.3rem;
-            margin-top: 0.65rem;
+            gap: 0.28rem;
         }
 
-        .read-bracket-slot strong {
+        .read-bracket-player {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            min-width: 0;
+            padding: 0.35rem 0.55rem;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .read-bracket-player strong {
             color: #fff;
+            font-size: 0.85rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
-        .read-bracket-meta {
+        .read-bracket-player span {
+            color: var(--text-color);
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            flex-shrink: 0;
+        }
+
+        .read-bracket-meta,
+        .selected-match-meta {
             display: flex;
             justify-content: space-between;
             gap: 0.75rem;
             flex-wrap: wrap;
             color: var(--text-color);
             font-size: 0.88rem;
+        }
+
+        .selected-match-card {
+            margin-top: 1.2rem;
+            background:
+                radial-gradient(circle at top right, rgba(255, 107, 53, 0.08), transparent 34%),
+                rgba(255, 255, 255, 0.04);
+        }
+
+        .selected-match-grid {
+            display: grid;
+            gap: 0.85rem;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            margin-top: 1rem;
+        }
+
+        .selected-match-slot {
+            padding: 0.95rem 1rem;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.03);
+            display: grid;
+            gap: 0.35rem;
+        }
+
+        .selected-match-slot strong {
+            color: #fff;
+        }
+
+        .selected-match-result {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.45rem 0.8rem;
+            border-radius: 999px;
+            background: rgba(255, 107, 53, 0.16);
+            color: #ffd7ca;
+            font-weight: 700;
+        }
+
+        .detail-button,
+        .detail-button-secondary,
+        .detail-button-danger,
+        .detail-input,
+        .detail-select,
+        .detail-textarea {
+            font: inherit;
+        }
+
+        .detail-button,
+        .detail-button-secondary,
+        .detail-button-danger {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.55rem;
+            padding: 0.82rem 1.15rem;
+            border-radius: 999px;
+            border: 1px solid transparent;
+            cursor: pointer;
+            transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease, background-color 0.18s ease;
+        }
+
+        .detail-button {
+            background: linear-gradient(180deg, #ff7c4d, #ef5a29);
+            color: #fff;
+            box-shadow: 0 10px 22px rgba(239, 90, 41, 0.2);
+        }
+
+        .detail-button-secondary {
+            background: rgba(255, 255, 255, 0.04);
+            border-color: rgba(255, 255, 255, 0.12);
+            color: #fff;
+        }
+
+        .detail-button-danger {
+            background: rgba(220, 38, 38, 0.12);
+            border-color: rgba(220, 38, 38, 0.25);
+            color: #fecaca;
+        }
+
+        .detail-button:hover,
+        .detail-button-secondary:hover,
+        .detail-button-danger:hover {
+            transform: translateY(-1px);
+        }
+
+        .detail-input,
+        .detail-select,
+        .detail-textarea {
+            width: 100%;
+            padding: 0.9rem 1rem;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            background: rgba(0, 0, 0, 0.18);
+            color: #fff;
+            transition: border-color 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
+        }
+
+        .detail-input:focus,
+        .detail-select:focus,
+        .detail-textarea:focus {
+            outline: none;
+            border-color: rgba(255, 107, 53, 0.38);
+            box-shadow: 0 0 0 4px rgba(255, 107, 53, 0.12);
+            background: rgba(0, 0, 0, 0.26);
         }
     </style>
 </head>
@@ -234,6 +398,8 @@
     <script src="../js/behaviour.js?v=20260402-2"></script>
     <script>
         const tournamentId = <?php echo $tourId; ?>;
+        let currentTournamentData = null;
+        let selectedBracketMatchId = null;
 
         function roundTitle(roundNumber, totalRounds) {
             const remainingRounds = totalRounds - roundNumber;
@@ -255,6 +421,22 @@
             const surname = match[`${prefix}_surname`] || '';
             const joinedName = `${firstName} ${surname}`.trim();
             return joinedName || 'TBD';
+        }
+
+        function playerProfileLink(match, slot) {
+            const prefix = slot === 'player1' ? 'player1' : 'player2';
+            const playerId = Number(match[`${prefix}_id`] || 0);
+            const label = playerLabel(match, slot);
+            if (!playerId) {
+                return label;
+            }
+
+            return `<a href="player_profile.php?id=${playerId}" style="color:#fff; text-decoration:none; font-weight:700;">${label}</a>`;
+        }
+
+        function bracketDisplayTitle(match, totalRounds) {
+            const roundName = roundTitle(Number(match.round_number || 1), totalRounds);
+            return `${roundName} • Match ${match.match_id}`;
         }
 
         function renderStandingsTable(rows, entityLabel = 'Player') {
@@ -372,6 +554,39 @@
             `;
         }
 
+        function renderSelectedBracketMatch(match, totalRounds) {
+            if (!match) {
+                return '';
+            }
+
+            const hasScore = match.player1_score !== null && match.player2_score !== null;
+            return `
+                <article class="surface selected-match-card">
+                    <div class="read-bracket-meta">
+                        <strong>${bracketDisplayTitle(match, totalRounds)}</strong>
+                        <span>${match.match_status}</span>
+                    </div>
+                    <div class="selected-match-grid">
+                        <div class="selected-match-slot">
+                            <span>Top slot</span>
+                            <strong>${playerProfileLink(match, 'player1')}</strong>
+                        </div>
+                        <div class="selected-match-slot">
+                            <span>Bottom slot</span>
+                            <strong>${playerProfileLink(match, 'player2')}</strong>
+                        </div>
+                    </div>
+                    <div class="selected-match-meta" style="margin-top: 1rem;">
+                        <span>${match.match_date} at ${String(match.match_time || '').slice(0, 5)}</span>
+                        <span>${match.bracket || (match.group_number ? `Group ${match.group_number}` : 'Knockout fixture')}</span>
+                    </div>
+                    <div style="margin-top: 1rem;">
+                        <span class="selected-match-result">${hasScore ? `${match.player1_score} - ${match.player2_score}` : 'Waiting for result'}</span>
+                    </div>
+                </article>
+            `;
+        }
+
         function renderBracket(matches) {
             const knockoutMatches = (matches || []).filter((match) => match.group_number === null);
             if (knockoutMatches.length === 0) {
@@ -389,6 +604,7 @@
 
             const roundEntries = Array.from(roundsMap.entries()).sort((left, right) => left[0] - right[0]);
             const slotCount = Math.pow(2, roundEntries.length);
+            const selectedMatch = knockoutMatches.find((match) => Number(match.match_id) === Number(selectedBracketMatchId)) || knockoutMatches[0];
 
             return `
                 <div class="read-bracket-shell">
@@ -401,26 +617,29 @@
                                         const rowSpan = Math.pow(2, roundIndex + 1);
                                         const rowStart = (matchIndex * rowSpan) + 1;
                                         const rowEnd = rowStart + rowSpan;
+                                        const isActive = Number(selectedMatch.match_id) === Number(match.match_id);
                                         return `
                                             <div class="read-bracket-node ${roundIndex > 0 ? 'has-incoming' : ''}" style="grid-row: ${rowStart} / ${rowEnd};">
-                                                <article class="read-bracket-card ${roundIndex < roundEntries.length - 1 ? 'has-outgoing' : ''}">
-                                                    <div class="read-bracket-meta">
+                                                <button
+                                                    type="button"
+                                                    class="read-bracket-matchup ${roundIndex < roundEntries.length - 1 ? 'has-outgoing' : ''} ${isActive ? 'is-active' : ''}"
+                                                    onclick="showBracketMatch(${match.match_id})"
+                                                >
+                                                    <div class="read-bracket-summary">
                                                         <span>Match ${match.match_id}</span>
                                                         <span>${match.match_status}</span>
                                                     </div>
-                                                    <div class="read-bracket-slot">
-                                                        <span>Top slot</span>
-                                                        <strong>${playerLabel(match, 'player1')}</strong>
+                                                    <div class="read-bracket-vs">
+                                                        <div class="read-bracket-player">
+                                                            <span>Top</span>
+                                                            <strong>${playerLabel(match, 'player1')}</strong>
+                                                        </div>
+                                                        <div class="read-bracket-player">
+                                                            <span>Bottom</span>
+                                                            <strong>${playerLabel(match, 'player2')}</strong>
+                                                        </div>
                                                     </div>
-                                                    <div class="read-bracket-slot">
-                                                        <span>Bottom slot</span>
-                                                        <strong>${playerLabel(match, 'player2')}</strong>
-                                                    </div>
-                                                    <div class="read-bracket-meta" style="margin-top: 0.85rem;">
-                                                        <span>${match.match_date} at ${String(match.match_time || '').slice(0, 5)}</span>
-                                                        <span>${match.player1_score !== null && match.player2_score !== null ? `${match.player1_score} - ${match.player2_score}` : 'Waiting'}</span>
-                                                    </div>
-                                                </article>
+                                                </button>
                                             </div>
                                         `;
                                     }).join('')}
@@ -429,6 +648,7 @@
                         `).join('')}
                     </div>
                 </div>
+                ${renderSelectedBracketMatch(selectedMatch, roundEntries.length)}
             `;
         }
 
@@ -495,7 +715,7 @@
                                 <tbody>
                                     ${data.players.map((player) => `
                                         <tr>
-                                            <td>${player.plr_name} ${player.plr_surname}</td>
+                                            <td><a href="player_profile.php?id=${player.plr_idNum}" style="color:#fff; text-decoration:none;">${player.plr_name} ${player.plr_surname}</a></td>
                                             <td>${player.player_status}</td>
                                             <td>${player.group_number ?? '-'}</td>
                                         </tr>
@@ -565,6 +785,15 @@
             `;
         }
 
+        function showBracketMatch(matchId) {
+            if (!currentTournamentData) {
+                return;
+            }
+
+            selectedBracketMatchId = Number(matchId);
+            renderTournamentPage(currentTournamentData);
+        }
+
         async function loadTournamentDetails() {
             if (!tournamentId) {
                 throw new Error('Tournament id is missing.');
@@ -576,6 +805,11 @@
                 throw new Error(data.message || 'Failed to load the tournament.');
             }
 
+            currentTournamentData = data;
+            if (selectedBracketMatchId === null) {
+                const firstKnockoutMatch = (data.matches || []).find((match) => match.group_number === null);
+                selectedBracketMatchId = firstKnockoutMatch ? Number(firstKnockoutMatch.match_id) : null;
+            }
             renderTournamentPage(data);
         }
 
@@ -584,6 +818,8 @@
                 document.getElementById('detail-shell').innerHTML = `<div class="surface">${error.message}</div>`;
             });
         });
+
+        window.showBracketMatch = showBracketMatch;
     </script>
 </body>
 </html>

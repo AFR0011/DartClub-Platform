@@ -188,6 +188,7 @@
   - added a “My tournaments” filter to the public tournament hub
   - changed signed-in public registration so users without an existing player row can still register instantly from their account name
   - refreshed the public tournament-detail page, public blog page, admin landing page, user-management page, and player-management page to match the newer tournament visual language more closely
+  - made the public tournament-detail bracket a clearer first-class section on the main website by separating it from the fixtures list
 - Verification in this pass:
   - targeted PHP lint for all touched PHP files
   - live HTTP/source checks for:
@@ -195,7 +196,104 @@
     - `pages/tournament_details.php`
     - `pages/blog.html`
     - `pages/admin/show_tournament_details.php`
+    - `pages/tournament_details.php` labels for `Tournament Bracket` and `Fixtures List`
   - live signed-in registration verification through `services/register_tournament.php` using a temporary no-profile user, followed by cleanup
 - Still pending:
   - browser-eye QA for the new public/admin bracket rendering and spacing
   - real pointer/touch drag-and-drop verification in a browser session
+
+## Public Bracket Density And Media UI Pass
+- Date: 2026-04-03
+- Status: manual-verification follow-up focused on public bracket readability and media-page control polish
+- Main changes:
+  - changed the public tournament-detail bracket into a denser compact-node layout so rounds occupy less space
+  - moved the full bracket match card into a selected-match detail panel that updates when a visitor clicks a matchup
+  - added styled public UI controls for the blog page so draft/comment/publish/delete actions and text inputs match the rest of the site better
+  - added the same styled public UI-control treatment to the gallery upload/delete flow and refreshed the gallery hero/summary presentation
+- Verification in this pass:
+  - targeted PHP lint for:
+    - `pages/tournament_details.php`
+    - `pages/blog.html`
+    - `pages/gallery.html`
+  - live HTTP/source checks for:
+    - `pages/tournament_details.php` compact bracket hooks
+    - `pages/blog.html` styled control hooks
+    - `pages/gallery.html` styled control hooks
+- Still pending:
+  - visual browser QA for overlap/spacing on the new compact public bracket
+  - manual browser-eye review of the refreshed blog/gallery controls across viewport sizes
+
+## Player Profiles And Admin Bracket Compression Pass
+- Date: 2026-04-03
+- Status: manual-verification follow-up focused on cross-profile navigation, admin bracket density, and admin workflow cleanup
+- Main changes:
+  - added a read-only public player-profile page plus JSON service for safe public tournament-facing profiles
+  - linked player names from public tournament participants, public selected bracket cards, and admin bracket detail cards into the new player-profile page
+  - compressed the admin connected bracket into compact matchup selectors so only the active matchup shows the full detail card below the bracket
+  - added editable registration-open/close dates and a `Start Tournament` action to the admin tournament-detail page
+  - normalized membership application file URLs to `/files/...` and improved the admin membership review screen for DOC/DOCX handling
+  - aligned manage-users and membership-review action styling so destructive and approval buttons match the newer admin UI language
+- Verification in this pass:
+  - targeted PHP lint for all touched PHP files
+  - live HTTP check for a stored membership document under `/files/applications/membership/...`
+  - live HTTP + JSON check for `services/get_public_player_profile.php`
+  - live page load/source check for `pages/player_profile.php`
+  - static source checks for:
+    - public tournament player-profile links
+    - admin bracket selection hooks
+    - admin role-vs-membership UI markers
+- Still pending:
+  - authenticated browser QA for the new admin `Start Tournament` action
+  - browser-eye QA for the compressed admin bracket and selected-detail workflow
+  - real pointer/touch drag-and-drop QA against the compact admin bracket slots
+
+## Admin Tournament Controls And Responsive Review Pass
+- Date: 2026-04-03
+- Status: manual-verification follow-up focused on tournament/admin list controls, responsive membership review actions, and dialog-first bracket editing
+- Main changes:
+  - added filter/sort controls to the remaining admin player lists, including tournament creation, tournament roster editing, and the player registry
+  - changed membership-review action buttons to keep the full inline row on wide screens but collapse into an actions dropdown on smaller screens
+  - merged the manage-users role selector fully into the role pill treatment so the selector itself communicates current auth state
+  - changed admin knockout-bracket matchup clicks to open the match dialog directly instead of expanding detail cards below the bracket
+  - simplified the match dialog to focused score-entry and schedule sections, removing low-level bracket wiring fields from day-to-day admin editing
+  - increased connected-bracket spacing and compacted matchup cards to reduce node overlap while keeping the bracket dense
+  - restyled tournament section toggles and the match-dialog time/schedule controls so they align better with the broader admin design language
+- Verification in this pass:
+  - targeted PHP lint for:
+    - `pages/admin/manage_players.php`
+    - `pages/admin/manage_tournaments.php`
+    - `pages/admin/manage_users.php`
+    - `pages/admin/show_tournament_details.php`
+  - static source checks for:
+    - tournament roster filter/sort controls
+    - membership-review action dropdown hooks
+    - modal-first bracket wiring and schedule-only match updates
+- Still pending:
+  - authenticated browser QA for the new modal-first admin bracket flow
+  - responsive browser QA for the membership-review dropdown collapse behavior
+  - real browser rendering QA for connected-bracket spacing after the overlap fix
+
+## Blog Workflow, Gallery Linking, And QA Runbook Pass
+- Date: 2026-04-03
+- Status: manual-verification follow-up focused on public content UX, gallery/blog cross-linking, softer admin tournament refreshes, and explicit QA coverage
+- Main changes:
+  - rebuilt `pages/blog.html` into a clearer news-style layout with a preview rail, a focused full-post reader, previous/next navigation, and a dedicated composer dialog
+  - added multi-image blog post creation support in `services/create_blog.php` so a post can carry a small gallery instead of only one oversized image
+  - updated `pages/gallery.html` to keep a stable four-column desktop card grid with titles underneath and a linked-post CTA for blog-originated images
+  - extended `services/gallery_get.php` with related blog-title metadata for linked gallery items
+  - changed admin tournament refresh behavior in `js/admin_tournament_details.js` to preserve the current section/page state instead of fully resetting after common mutation actions
+  - expanded `docs/TESTING_CHECKLIST.md` into a fuller section-by-section QA runbook covering the full website and admin console
+- Verification in this pass:
+  - targeted PHP lint for:
+    - `pages/admin/show_tournament_details.php`
+    - `services/create_blog.php`
+    - `services/gallery_get.php`
+  - static source checks for:
+    - blog preview-rail/detail workflow markers
+    - gallery linked-post lightbox hooks
+    - soft-refresh tournament admin hooks and section persistence wiring
+    - expanded checklist coverage in `docs/TESTING_CHECKLIST.md`
+- Still pending:
+  - browser QA for the rebuilt blog page, especially the composer dialog and multi-image authoring flow
+  - browser QA for the updated gallery lightbox and linked-post navigation
+  - authenticated browser QA for the soft-refresh tournament admin flow under repeated match/roster edits

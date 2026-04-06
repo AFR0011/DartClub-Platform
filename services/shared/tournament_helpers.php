@@ -925,6 +925,35 @@ function tournament_generate_structure(mysqli $db, int $tourId, ?string $startDa
     return count($competitionPlayerIds);
 }
 
+function tournament_force_close_registration(mysqli $db, int $tourId, ?DateTime $closedAt = null): array
+{
+    tournament_assert_mutable($db, $tourId);
+    $tournament = tournament_fetch_settings($db, $tourId);
+
+    if (in_array($tournament['status'], ['completed', 'archived'], true)) {
+        throw new RuntimeException('Completed tournaments cannot be restarted from this action.');
+    }
+
+    $closedAt = $closedAt ?? new DateTime();
+    $registrationOpenAt = new DateTime($tournament['registration_open_at'] ?: $tournament['tour_creationDate']);
+    if ($registrationOpenAt > $closedAt) {
+        $registrationOpenAt = clone $closedAt;
+    }
+
+    $update = $db->prepare(
+        'UPDATE tournaments
+         SET registration_open_at = ?, registration_close_at = ?
+         WHERE tour_id = ?'
+    );
+    $registrationOpen = $registrationOpenAt->format('Y-m-d H:i:s');
+    $registrationClose = $closedAt->format('Y-m-d H:i:s');
+    $update->bind_param('ssi', $registrationOpen, $registrationClose, $tourId);
+    $update->execute();
+    $update->close();
+
+    return tournament_refresh_lifecycle($db, $tourId);
+}
+
 function tournament_fetch_match(mysqli $db, int $matchId): array
 {
     $sql = 'SELECT m.*, t.tour_type

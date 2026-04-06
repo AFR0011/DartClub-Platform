@@ -49,7 +49,7 @@ if (!move_uploaded_file($file['tmp_name'], $destination)) {
     app_json_response(['success' => false, 'message' => 'Failed to store the uploaded file.'], 500);
 }
 
-$webPath = '../files/applications/membership/' . $filename;
+$webPath = '/files/applications/membership/' . $filename;
 
 $conn->begin_transaction();
 
@@ -97,4 +97,3 @@ try {
     $conn->rollback();
     app_json_response(['success' => false, 'message' => $exception->getMessage()], 500);
 }
-

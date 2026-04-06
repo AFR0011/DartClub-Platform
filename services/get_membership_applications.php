@@ -42,8 +42,8 @@ $sql = "SELECT
 $result = $conn->query($sql);
 $items = [];
 while ($row = $result->fetch_assoc()) {
+    $row['application_file_path'] = app_public_path($row['application_file_path'] ?? null);
     $items[] = $row;
 }
 
 app_json_response(['success' => true, 'items' => $items]);
-
