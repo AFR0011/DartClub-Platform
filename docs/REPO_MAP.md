@@ -56,6 +56,7 @@
     - `services/gallery_delete.php`
 - `pages/login.html`, `pages/sign_up.html`, `pages/reset_password.html`
   - auth/onboarding surfaces
+  - `pages/reset_password.html` is an account-help page, not a live self-service reset workflow
 
 ## Admin Surfaces
 - `pages/admin/admin_panel.php`
@@ -111,6 +112,8 @@
 - `services/shared/player_helpers.php`
   - `users.user_id -> players.user_id` lookups
   - player profile creation/update helpers
+- `services/shared/mail_helpers.php`
+  - shared best-effort PHPMailer wrapper for credential and registration emails
 - `services/shared/tournament_helpers.php`
   - tournament creation and updates
   - roster attachment
@@ -238,6 +241,10 @@
   - `js/admin_nav.js`
   - `js/ui_feedback.js`
     - shared toast, confirm, and prompt helpers used by blog, gallery, and admin workflows
+- Local regression toolkit:
+  - `scripts/seed_large_tournaments.php`
+  - `scripts/lint_php.ps1`
+  - `scripts/run_smoke_checks.ps1`
 - Media:
   - `files/media/images/`
   - `files/media/images/gallery/`

@@ -232,13 +232,13 @@ function buildFooterHtml(context) {
             <img src="${PUBLIC_LOGO}" alt="logo" /> Famagusta Dart Club
           </a>
           <p class="footer__description">
-            Follow tournaments, blog updates, and club activity in one place.
+            Follow public brackets, match results, club news, and membership updates in one place.
           </p>
           <p class="footer__description">
             ${
               context.logged_in
                 ? `Signed in as ${escapeHtml(context.user_name)}`
-                : "Create an account to register for tournaments and apply for membership."
+                : "Create an account to register for tournaments and submit membership paperwork."
             }
           </p>
         </div>
@@ -252,7 +252,7 @@ function buildFooterHtml(context) {
             </ul>
           </div>
           <div>
-            <h3 class="footer__title">ACCOUNT</h3>
+            <h3 class="footer__title">CLUB</h3>
             <ul class="footer__links">
               <li><a href="profile.html" class="${footerLinkClass("profile.html")}">Player Dashboard</a></li>
               <li><a href="register.html" class="${footerLinkClass("register.html")}">Membership</a></li>
@@ -269,8 +269,8 @@ function buildFooterHtml(context) {
           <a href="tel:+905338602325" class="footer__social-link">
             <i class="ri-phone-fill"></i>
           </a>
-          <a href="mailto:info@dartclub.local" class="footer__social-link">
-            <i class="ri-mail-fill"></i>
+          <a href="register.html" class="footer__social-link" aria-label="Open membership page">
+            <i class="ri-team-fill"></i>
           </a>
         </ul>
         <span class="footer__copy">&#169; Famagusta Dart Club. All rights reserved.</span>
@@ -343,4 +343,25 @@ async function hydratePublicShell() {
   }
 }
 
+function bindHomepageEventCards() {
+  document.querySelectorAll("article.event__card").forEach((card) => {
+    if (card.dataset.cardBound === "1") {
+      return;
+    }
+
+    card.dataset.cardBound = "1";
+    card.addEventListener("click", (event) => {
+      if (event.target.closest("a, button, input, select, textarea")) {
+        return;
+      }
+
+      const targetLink = card.querySelector("a.event__button");
+      if (targetLink) {
+        targetLink.click();
+      }
+    });
+  });
+}
+
 document.addEventListener("DOMContentLoaded", hydratePublicShell);
+document.addEventListener("DOMContentLoaded", bindHomepageEventCards);

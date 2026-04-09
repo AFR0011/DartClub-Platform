@@ -1,5 +1,43 @@
 # VERSION_LOG
 
+## Finalization And Option-C Polish Pass
+- Date: 2026-04-09
+- Status: release-facing finalization pass focused on dead-end UX removal, admin dashboard polish, richer public player presentation, and repo-truth alignment
+- Main changes:
+  - rebuilt `pages/about.html` and cleaned `pages/main.php` so the public site no longer ships placeholder copy, broken image paths, or a fake footer contact/newsletter form
+  - removed the fake login-side reset path and turned `pages/reset_password.html` into an explicit account-help page until a real reset backend exists
+  - added `services/shared/mail_helpers.php` and unified best-effort SMTP-backed email behavior for player creation and signed-in tournament registration confirmations
+  - added a small summary/attention dashboard to `pages/admin/admin_panel.php`
+  - expanded the public player profile with titles, podiums, best finish, win-rate summaries, placement highlights, and recent results
+  - restored the documented local regression toolkit via `scripts/seed_large_tournaments.php`, `scripts/lint_php.ps1`, and `scripts/run_smoke_checks.ps1`
+  - removed dead legacy assets/scripts and marked the standalone admin match pages as explicit legacy fallbacks
+- Verification in this pass:
+  - targeted PHP lint for the touched public pages, services, admin pages, and CLI scripts
+  - live HTTP/source checks for the rebuilt home/about/reset/help/public profile/admin dashboard surfaces
+  - local CLI execution of the restored regression toolkit
+  - static scan confirming removed legacy assets/scripts are no longer referenced from active pages
+- Still pending:
+  - real browser-eye QA for the rewritten public copy/layouts across desktop/tablet/mobile
+  - SMTP delivery verification against a real configured mail server
+  - decision on whether manual account recovery remains acceptable after launch
+  - full end-to-end host deployment using the deployment guide
+
+## Deployment Prep Pass
+- Date: 2026-04-09
+- Status: repo prepared for first real PHP-host deployment
+- Main changes:
+  - added optional `services/config.local.php` loading ahead of tracked DB defaults
+  - added `services/config.local.example.php` so server DB credentials can be supplied without editing tracked source
+  - added a root `.htaccess` to deny direct web access to sensitive repo files/directories and disable directory indexing
+  - added `docs/FREE_DEPLOYMENT_GUIDE.md` with repo-specific deployment instructions, failure modes, and hosting tradeoffs
+- Verification in this pass:
+  - targeted PHP lint for `services/config.php` and `services/config.local.example.php`
+  - static inspection of `.htaccess`, `.gitignore`, and deployment docs
+- Still pending:
+  - first end-to-end deployment on a real host
+  - Apache-host verification that the new `.htaccess` rules behave as intended
+  - host-specific SMTP and writable-upload verification
+
 ## Double-Elimination View Behavior Pass
 - Date: 2026-04-08
 - Status: manual-verification follow-up focused on bracket-view behavior, finals rendering, and mobile usability

@@ -22,7 +22,18 @@ $stats = [
     'individual_matches_won' => 0,
     'team_matches_played' => 0,
     'team_matches_won' => 0,
+    'combined_matches_played' => 0,
+    'combined_matches_won' => 0,
+    'combined_win_rate' => 0,
+    'titles' => 0,
+    'runner_up_finishes' => 0,
+    'third_place_finishes' => 0,
+    'podium_finishes' => 0,
+    'top_eight_finishes' => 0,
+    'best_finish' => null,
 ];
+
+$placementHighlights = [];
 
 $tournamentsStmt = $conn->prepare(
     "SELECT
@@ -55,6 +66,42 @@ foreach ($tournaments as $tournament) {
     }
     if (in_array($tournament['status'], ['completed', 'archived'], true)) {
         $stats['completed_tournaments']++;
+    }
+
+    $finalRank = $tournament['final_rank'] !== null ? (int) $tournament['final_rank'] : null;
+    $placementLabel = trim((string) ($tournament['placement_label'] ?? ''));
+    $normalizedLabel = strtolower($placementLabel);
+
+    if ($finalRank !== null && ($stats['best_finish'] === null || $finalRank < $stats['best_finish'])) {
+        $stats['best_finish'] = $finalRank;
+    }
+
+    if ($normalizedLabel === 'champion' || $finalRank === 1) {
+        $stats['titles']++;
+    }
+    if ($normalizedLabel === 'runner-up' || $finalRank === 2) {
+        $stats['runner_up_finishes']++;
+    }
+    if ($normalizedLabel === '3rd place' || $finalRank === 3) {
+        $stats['third_place_finishes']++;
+    }
+    if ($finalRank !== null && $finalRank <= 3) {
+        $stats['podium_finishes']++;
+    }
+    if ($finalRank !== null && $finalRank <= 8) {
+        $stats['top_eight_finishes']++;
+    }
+
+    if (in_array($tournament['status'], ['completed', 'archived'], true) && ($placementLabel !== '' || $finalRank !== null)) {
+        $placementHighlights[] = [
+            'tour_id' => (int) $tournament['tour_id'],
+            'tour_title' => $tournament['tour_title'],
+            'tour_type' => $tournament['tour_type'],
+            'tour_endDate' => $tournament['tour_endDate'],
+            'placement_label' => $placementLabel !== '' ? $placementLabel : ('#' . $finalRank),
+            'final_rank' => $finalRank,
+            'winner_label' => $tournament['winner_label'],
+        ];
     }
 }
 
@@ -95,6 +142,11 @@ $teamStatsStmt->close();
 
 $stats['team_matches_played'] = (int) ($teamStats['played'] ?? 0);
 $stats['team_matches_won'] = (int) ($teamStats['won'] ?? 0);
+$stats['combined_matches_played'] = $stats['individual_matches_played'] + $stats['team_matches_played'];
+$stats['combined_matches_won'] = $stats['individual_matches_won'] + $stats['team_matches_won'];
+$stats['combined_win_rate'] = $stats['combined_matches_played'] > 0
+    ? round(($stats['combined_matches_won'] / $stats['combined_matches_played']) * 100, 1)
+    : 0;
 
 $recentResultsStmt = $conn->prepare(
     "SELECT
@@ -124,10 +176,15 @@ $recentResultsStmt->execute();
 $recentResults = $recentResultsStmt->get_result()->fetch_all(MYSQLI_ASSOC);
 $recentResultsStmt->close();
 
+usort($placementHighlights, static function (array $left, array $right): int {
+    return strcmp((string) ($right['tour_endDate'] ?? ''), (string) ($left['tour_endDate'] ?? ''));
+});
+
 app_json_response([
     'success' => true,
     'player' => $player,
     'stats' => $stats,
     'tournaments' => $tournaments,
     'recent_results' => $recentResults,
+    'placement_highlights' => array_slice($placementHighlights, 0, 6),
 ]);

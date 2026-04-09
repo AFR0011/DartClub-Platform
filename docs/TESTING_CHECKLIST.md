@@ -7,17 +7,20 @@ Use this as the full manual QA path for the website. Run it top to bottom after 
 1. Start Apache and MariaDB from XAMPP.
 2. Confirm the database import is current and the app can connect.
 3. Confirm the site loads from the intended local URL.
-4. Prepare these accounts before you begin:
+4. Run the low-cost preflight checks before manual QA:
+   - `powershell -ExecutionPolicy Bypass -File scripts\lint_php.ps1`
+   - `powershell -ExecutionPolicy Bypass -File scripts\run_smoke_checks.ps1`
+5. Prepare these accounts before you begin:
    - guest session
    - normal signed-in user with no membership
    - approved member
    - manager
    - admin
-5. Prepare these data states if possible:
+6. Prepare these data states if possible:
    - at least one open tournament
    - at least one closed/archived tournament
    - at least one tournament of each type: `Round Robin`, `League`, `Group`, `Elimination`, `Double Elimination`
-6. If local tournament data is sparse, seed the large regression set before starting:
+7. If local tournament data is sparse, seed the large regression set before starting:
    - `C:\Users\Ali\xampp\php\php.exe scripts/seed_large_tournaments.php`
    - verify these titles exist:
      - `Scale Test - League 64`
@@ -58,8 +61,9 @@ For every failure, capture:
 6. Log in with a valid account and confirm redirect/session state is correct.
 7. Try an invalid password and confirm the error is shown cleanly.
 8. Open `pages/reset_password.html`.
-9. Test valid and invalid reset attempts.
-10. Confirm the auth pages keep their dedicated layout/footer and do not inherit broken public-nav behavior.
+9. Confirm it clearly states that self-service password reset is not live yet.
+10. Confirm it links back to sign-in and to an approved club contact channel instead of showing a fake form.
+11. Confirm the auth pages keep their dedicated layout/footer and do not inherit broken public-nav behavior.
 
 ## 3. Profile Page
 1. Log in as a normal user.

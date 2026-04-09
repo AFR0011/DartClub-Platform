@@ -1,6 +1,24 @@
 # MIGRATION_BACKLOG
 
 ## Completed In This Pass
+- Rebuilt `pages/about.html` into a current production page with working asset paths, working navigation, and real club/platform copy.
+- Replaced the remaining placeholder homepage copy in `pages/main.php` and removed the dead footer newsletter/contact form path from the public-shell direction.
+- Removed the fake login-side password-reset link and converted `pages/reset_password.html` into an explicit account-help/support page until a real reset backend exists.
+- Added `services/shared/mail_helpers.php` and unified best-effort email sending across player creation and signed-in tournament registration confirmations.
+- Added a small admin summary dashboard to `pages/admin/admin_panel.php`.
+- Expanded `pages/player_profile.php` and `services/get_public_player_profile.php` into a richer public tournament-facing player presentation.
+- Restored the documented local regression toolkit by adding:
+  - `scripts/seed_large_tournaments.php`
+  - `scripts/lint_php.ps1`
+  - `scripts/run_smoke_checks.ps1`
+- Removed confirmed dead legacy assets/scripts:
+  - `js/main.js`
+  - `js/blog.js`
+  - `js/contact_form.js`
+  - `js/select_row.js`
+  - `js/upload.js`
+  - `css/gallety_style.css`
+- Marked the standalone admin match pages as legacy fallbacks and removed the broken edit-page link from `view_match_details.php`.
 - Fixed guest session-context loading so the public shell no longer needs a DB connection before checking login state.
 - Added service-level JSON hardening so uncaught service errors stop leaking HTML into frontend `.json()` callers.
 - Fixed config env parsing for blank DB passwords.
@@ -53,6 +71,11 @@
 - Changed the public and admin double-elimination filters so winners-only and losers-only collapse the opposite branch while keeping the opening round visible as the anchor lane.
 - Fixed the public and admin `Finals` button behavior so it renders only the grand final plus third-place playoff instead of falling back to a combined bracket state.
 - Tightened mobile bracket behavior on the public tournament page plus the admin connected-bracket and bracket-board views.
+- Added deployment prep for real hosting:
+  - optional `services/config.local.php`
+  - `services/config.local.example.php`
+  - root `.htaccess`
+  - `docs/FREE_DEPLOYMENT_GUIDE.md`
 - Added repo mapping docs and repo-local Codex config.
 - Added the global `repo-map` skill scaffold.
 - Centralized DB/bootstrap usage.
@@ -76,6 +99,7 @@
 
 ## Next High-Priority Validation
 - Follow `docs/TESTING_CHECKLIST.md` in order.
+- Use `docs/FREE_DEPLOYMENT_GUIDE.md` for the first real host rollout. Prefer Oracle Cloud Always Free for full PHP/MySQL compatibility; use free shared PHP hosting only as a fallback.
 - Finish the remaining runtime/manual gaps:
   - SMTP-backed credential delivery
   - Apache visual and navigation QA
@@ -110,11 +134,17 @@
 
 ## Remaining Backend Cleanup
 - Document or script the one-time MariaDB grant setup expected for the canonical `dartadmin` local user.
+- After the first real deployment, document the exact host-specific runtime notes:
+  - DB host/user naming
+  - writable upload directories
+  - SSL steps
+  - any provider-specific PHP settings
 - Decide whether legacy standalone admin pages should be retired or kept as read-only fallbacks:
   - `pages/admin/record_match_result.php`
   - `pages/admin/view_match_details.php`
   - `pages/admin/manage_blogs.php`
   - image upload/admin legacy pages
+- Decide whether a real token-based password-reset flow is worth implementing post-launch, or whether manual admin reset remains the intended support model.
 - Decide how guest-only tournament entrants should be reconciled if they later create a full site account/profile.
 - Document SMTP deployment settings in one place and confirm production-safe defaults.
 

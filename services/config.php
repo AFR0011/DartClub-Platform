@@ -1,5 +1,10 @@
 <?php
 
+$localConfigPath = __DIR__ . '/config.local.php';
+if (is_file($localConfigPath)) {
+    require_once $localConfigPath;
+}
+
 if (!function_exists('app_config_env')) {
     function app_config_env(string $name, string $default): string
     {

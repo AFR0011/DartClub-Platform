@@ -2,6 +2,7 @@
 
 require_once __DIR__ . '/app_bootstrap.php';
 require_once __DIR__ . '/dbConnection.php';
+require_once __DIR__ . '/shared/mail_helpers.php';
 require_once __DIR__ . '/shared/player_helpers.php';
 require_once __DIR__ . '/shared/tournament_helpers.php';
 
@@ -30,6 +31,21 @@ try {
     $conn->begin_transaction();
     $userId = isset($_SESSION['user_id']) ? (int) $_SESSION['user_id'] : 0;
     $playerId = $userId > 0 ? player_id_for_user($conn, $userId) : null;
+    $registrationEmail = null;
+    $registrationName = null;
+
+    if ($userId > 0) {
+        $userStmt = $conn->prepare('SELECT user_name, email FROM users WHERE user_id = ?');
+        $userStmt->bind_param('i', $userId);
+        $userStmt->execute();
+        $userRow = $userStmt->get_result()->fetch_assoc();
+        $userStmt->close();
+
+        if ($userRow) {
+            $registrationEmail = trim((string) ($userRow['email'] ?? ''));
+            $registrationName = trim((string) ($userRow['user_name'] ?? ''));
+        }
+    }
 
     if (!$playerId) {
         if ($userId > 0) {
@@ -87,6 +103,16 @@ try {
     $insert->close();
 
     $conn->commit();
+    if ($registrationEmail !== null && $registrationEmail !== '') {
+        app_send_best_effort_email(
+            $registrationEmail,
+            $registrationName ?: 'Club Member',
+            'Tournament registration confirmed',
+            'Your registration for <strong>' . htmlspecialchars((string) $tournament['tour_title'], ENT_QUOTES, 'UTF-8') . '</strong> is recorded.<br>Your entry is currently marked as <strong>Registered</strong> and will appear in the live competition roster once the tournament structure is generated.',
+            'Your registration for ' . (string) $tournament['tour_title'] . ' is recorded. Your entry is currently marked as Registered and will appear in the live competition roster once the tournament structure is generated.'
+        );
+    }
+
     app_json_response([
         'success' => true,
         'message' => 'Successfully registered for the tournament.',

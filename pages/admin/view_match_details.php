@@ -232,6 +232,10 @@ $match_history = $result_history->fetch_all(MYSQLI_ASSOC);
     <div class="container">
         <span style="font-size:30px;cursor:pointer" onclick="openNav()">&#9776;</span>
         <h1>Match Details</h1>
+
+        <div class="success-message" style="background:#eef5ff;color:#1d4ed8;border-left-color:#1d4ed8;">
+            Legacy fallback page. Use the consolidated tournament detail workspace for the primary admin match workflow.
+        </div>
         
         <div class="match-info">
             <h2><?php echo htmlspecialchars($match['tour_title']); ?></h2>
@@ -418,9 +422,7 @@ $match_history = $result_history->fetch_all(MYSQLI_ASSOC);
         
         <div class="actions">
             <a href="show_tournament_details.php?id=<?php echo $match['tour_id']; ?>" class="back-btn">Back to Tournament</a>
-            <?php if ($_SESSION['user_role'] == 'admin'): ?>
-            <a href="edit_match_details.php?id=<?php echo $match_id; ?>" class="edit-btn">Edit Match Details</a>
-            <?php endif; ?>
+            <a href="record_match_result.php?id=<?php echo $match_id; ?>" class="edit-btn">Open legacy score entry</a>
         </div>
     </div>
     

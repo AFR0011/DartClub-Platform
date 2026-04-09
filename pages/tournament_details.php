@@ -838,7 +838,7 @@
     </a>
 
     <script src="../js/scrollreveal.min.js"></script>
-    <script src="../js/behaviour.js?v=20260402-2"></script>
+    <script src="../js/behaviour.js?v=20260409-1"></script>
     <script>
         const tournamentId = <?php echo $tourId; ?>;
         let currentTournamentData = null;

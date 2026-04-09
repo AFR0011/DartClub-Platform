@@ -2,7 +2,7 @@
 
 ## Metadata
 - Project: `Dart Club`
-- Last updated: 2026-04-08
+- Last updated: 2026-04-09
 - Repo type: legacy PHP/MySQL website
 - Current repo status: mapped, documented, runtime-tested on XAMPP, and further debug-hardened across the shared public shell, JSON service layer, tournament engine, and public content/community surfaces
 
@@ -66,6 +66,23 @@
   - managers/admins can publish and moderate
 
 ## What Changed In This Pass
+- Finished the largest remaining public-content cleanup items by rebuilding `pages/about.html`, replacing placeholder homepage copy in `pages/main.php`, and removing the fake footer newsletter/contact form from the live public shell direction.
+- Removed the fake self-service password-reset flow from the login path and replaced `pages/reset_password.html` with an explicit account-help/support page until a real reset backend exists.
+- Added `services/shared/mail_helpers.php` and unified best-effort outbound email handling so player-creation emails and signed-in tournament registration confirmations now use one SMTP-aware helper.
+- Added a small option-C admin summary dashboard on `pages/admin/admin_panel.php` with pending membership, pending draft, registration, and scoring-backlog visibility.
+- Expanded the public player profile into a richer tournament-facing page with titles, podiums, win rate, best finish, placement highlights, and recent results.
+- Restored the missing local regression toolkit by adding:
+  - `scripts/seed_large_tournaments.php`
+  - `scripts/lint_php.ps1`
+  - `scripts/run_smoke_checks.ps1`
+- Removed confirmed dead legacy assets/scripts:
+  - `js/main.js`
+  - `js/blog.js`
+  - `js/contact_form.js`
+  - `js/select_row.js`
+  - `js/upload.js`
+  - `css/gallety_style.css`
+- Labeled the old standalone admin match pages as legacy fallbacks and removed the broken link from `view_match_details.php` to the missing `edit_match_details.php`.
 - Restored `services/get_tournaments.php` runtime loading by requiring `services/shared/tournament_view_helpers.php`, fixing the public tournament feed under the local built-in PHP server.
 - Hardened the shared public-shell fetch path so guests no longer need a working DB connection just to load navigation/session context.
 - Added service-level exception/error handling so JSON endpoints return JSON failures instead of leaking HTML warning/fatal output into frontend `.json()` callers.
@@ -124,6 +141,11 @@
 - Changed the public and admin double-elimination view toggles so winners-only and losers-only collapse the opposite branch instead of removing the whole layout outright, keeping the opening round visible as the center spine.
 - Fixed the public/admin `Finals` view so it renders only the grand final and third-place playoff cards instead of falling back to a broken combined bracket state.
 - Tightened the mobile bracket fallbacks on the public tournament page plus the admin connected-bracket and bracket-board views so large elimination trees remain scrollable and readable on narrower screens.
+- Added deployment prep for real PHP hosting:
+  - optional `services/config.local.php` override loading in `services/config.php`
+  - `services/config.local.example.php` for server-side DB credentials
+  - root `.htaccess` to block direct web access to sensitive repo files/directories
+  - `docs/FREE_DEPLOYMENT_GUIDE.md` covering Oracle Cloud Always Free as the recommended free long-term target plus shared-hosting fallback guidance
 - Rebuilt `dart_club.sql` around the productized data model:
   - membership state
   - membership applications
@@ -171,6 +193,8 @@
 - The new guest registration path creates lightweight `players` rows with `user_id = NULL`; long-term cleanup/reporting rules for those guest-only records are still undocumented.
 - The new public player profile intentionally exposes only safe public tournament history and identity labels; broader profile visibility still needs an explicit privacy decision before expanding further.
 - Existing seeded/demo `Group` tournaments created before this pass can still reflect the older multi-team `team_matches` model until they are regenerated under the new two-team player-vs-player rules.
+- Free shared PHP hosting may still fail on this repo depending on provider-specific MySQL import/runtime limits; Oracle Cloud Always Free is the preferred free path if account setup succeeds.
+- Self-service password reset remains intentionally deferred; account recovery is currently a manual support/admin workflow.
 
 ## Remaining Priorities
 - Use `docs/TESTING_CHECKLIST.md` as the next-session manual verification order.
@@ -225,9 +249,18 @@
   - guest name-entry registration modal copy and flow
 - Clean up or retire remaining legacy admin pages once replacement coverage is confirmed.
 - Standardize any remaining asset-path or presentation inconsistencies and document SMTP expectations clearly for deployment.
+- Run the first real hosting deployment using `docs/FREE_DEPLOYMENT_GUIDE.md` and record the final host-specific notes once one path is proven end to end.
 
 ## Verification State
 - Verified in this pass:
+  - targeted PHP lint for the new shared mail helper, refreshed public pages, admin dashboard, legacy fallback admin pages, and regression scripts
+  - live HTTP/source checks for the rebuilt home page, about page, login page, public player profile, admin panel, and reset/help page
+  - live tournament registration confirmation path for signed-in users after introducing the shared mail helper contract
+  - local script verification for:
+    - `scripts/seed_large_tournaments.php`
+    - `scripts/lint_php.ps1`
+    - `scripts/run_smoke_checks.ps1`
+  - static repo scan confirming removed legacy assets/scripts are no longer referenced from active pages
   - live built-in-server HTTP verification that `services/get_tournaments.php` now returns `200` after restoring the missing tournament-view helper include
   - guest `services/get_session_context.php` now returns clean JSON even when the configured DB user cannot connect
   - DB-backed service CLI checks using `putenv(...)` overrides for blank-password local root access:

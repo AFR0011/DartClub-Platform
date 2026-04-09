@@ -108,7 +108,7 @@
     </a>
 
     <script src="../js/scrollreveal.min.js"></script>
-    <script src="../js/behaviour.js?v=20260402-2"></script>
+    <script src="../js/behaviour.js?v=20260409-1"></script>
     <script>
         function renderTournamentCards(tournaments) {
             if (!tournaments || tournaments.length === 0) {
@@ -250,14 +250,15 @@
             const form = event.currentTarget;
             const payload = Object.fromEntries(new FormData(form).entries());
 
-            const response = await fetch('../services/save_profile.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-            const data = await response.json();
-            if (!data.success) {
-                window.alert(data.message || 'Failed to save profile.');
+            let data;
+            try {
+                data = await window.appFetchJson('../services/save_profile.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+            } catch (error) {
+                window.alert(error.message || 'Failed to save profile.');
                 return;
             }
 
@@ -266,8 +267,7 @@
         }
 
         async function loadDashboard() {
-            const response = await fetch('../services/get_player_dashboard.php');
-            const data = await response.json();
+            const data = await window.appFetchJson('../services/get_player_dashboard.php');
             if (!data.success) {
                 throw new Error(data.message || 'Failed to load your dashboard.');
             }

@@ -72,7 +72,7 @@
     </a>
 
     <script src="../js/scrollreveal.min.js"></script>
-    <script src="../js/behaviour.js?v=20260402-2"></script>
+    <script src="../js/behaviour.js?v=20260409-1"></script>
     <script>
         function renderMembershipPage(context) {
             const shell = document.getElementById('membership-shell');
@@ -144,8 +144,7 @@
         }
 
         async function loadContext() {
-            const response = await fetch('../services/get_session_context.php');
-            return response.json();
+            return window.appFetchJson('../services/get_session_context.php');
         }
 
         async function submitMembershipApplication(event) {
@@ -159,13 +158,14 @@
             const formData = new FormData();
             formData.append('form', fileInput.files[0]);
 
-            const response = await fetch('../services/submit_membership_application.php', {
-                method: 'POST',
-                body: formData
-            });
-            const data = await response.json();
-            if (!data.success) {
-                window.alert(data.message || 'Failed to submit application.');
+            let data;
+            try {
+                data = await window.appFetchJson('../services/submit_membership_application.php', {
+                    method: 'POST',
+                    body: formData
+                });
+            } catch (error) {
+                window.alert(error.message || 'Failed to submit application.');
                 return;
             }
 

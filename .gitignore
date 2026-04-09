@@ -7,6 +7,9 @@ php-server-error.log
 .codex/*
 !.codex/config.toml
 
+# Local deployment overrides
+services/config.local.php
+
 # Runtime-generated uploads from local/dev usage
 files/applications/membership/[0-9]*_[0-9a-f]*.pdf
 files/applications/membership/[0-9]*_[0-9a-f]*.doc

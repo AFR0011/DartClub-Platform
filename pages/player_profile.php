@@ -17,7 +17,8 @@
 
         .surface,
         .stat-card,
-        .list-card {
+        .list-card,
+        .highlight-card {
             background: rgba(255, 255, 255, 0.04);
             border: 1px solid rgba(255, 255, 255, 0.08);
             border-radius: 18px;
@@ -26,7 +27,8 @@
 
         .hero-grid,
         .stats-grid,
-        .panel-grid {
+        .panel-grid,
+        .highlight-grid {
             display: grid;
             gap: 1rem;
             grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -52,6 +54,22 @@
             background: rgba(255, 107, 53, 0.18);
             color: #ffd7ca;
         }
+
+        .metric-label,
+        .muted-copy {
+            color: var(--text-color);
+        }
+
+        .placement-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.35rem 0.7rem;
+            border-radius: 999px;
+            background: rgba(37, 99, 235, 0.14);
+            color: #bfd5ff;
+            font-size: 0.85rem;
+        }
     </style>
 </head>
 <body>
@@ -61,7 +79,7 @@
                 <img src="../files/media/images/logo.png" alt="logo"> Famagusta Dart Club
             </a>
             <div class="nav__menu" id="nav-menu">
-                <ul class="nav__list"></ul>
+                <ul id="nav-list" class="nav__list"></ul>
                 <div class="nav__close" id="nav-close">
                     <i class="ri-close-line"></i>
                 </div>
@@ -83,35 +101,67 @@
     </a>
 
     <script src="../js/scrollreveal.min.js"></script>
-    <script src="../js/behaviour.js?v=20260402-2"></script>
+    <script src="../js/behaviour.js?v=20260409-1"></script>
     <script>
         const playerId = <?php echo $playerId; ?>;
 
-        function renderTournamentCards(tournaments) {
-            if (!tournaments || tournaments.length === 0) {
-                return '<p style="color: var(--text-color);">No tournament history is available yet.</p>';
+        function placementValue(label, fallbackRank) {
+            if (label) {
+                return label;
             }
 
-            return tournaments.map((tournament) => `
-                <article class="list-card">
-                    <h3>${tournament.tour_title}</h3>
-                    <p style="color: var(--text-color); margin-top: 0.5rem;">${tournament.tour_type} - ${tournament.status}</p>
-                    <p style="color: var(--text-color); margin-top: 0.35rem;">Entry status: ${tournament.player_status}</p>
-                    <a href="tournament_details.php?id=${tournament.tour_id}" class="ghost-button" style="margin-top: 0.85rem;">Open tournament</a>
+            if (fallbackRank) {
+                return `#${fallbackRank}`;
+            }
+
+            return "No recorded finish";
+        }
+
+        function renderTournamentCards(tournaments) {
+            if (!tournaments || tournaments.length === 0) {
+                return '<p class="muted-copy">No tournament history is available yet.</p>';
+            }
+
+            return tournaments.map((tournament) => {
+                const finish = placementValue(tournament.placement_label, tournament.final_rank);
+                return `
+                    <article class="list-card">
+                        <h3>${tournament.tour_title}</h3>
+                        <p class="muted-copy" style="margin-top: 0.5rem;">${tournament.tour_type} - ${tournament.status}</p>
+                        <p class="muted-copy" style="margin-top: 0.35rem;">Entry status: ${tournament.player_status}</p>
+                        ${tournament.final_rank !== null || tournament.placement_label ? `<div class="placement-pill" style="margin-top: 0.75rem;">Finish: ${finish}</div>` : ''}
+                        <a href="tournament_details.php?id=${tournament.tour_id}" class="ghost-button" style="margin-top: 0.85rem;">Open tournament</a>
+                    </article>
+                `;
+            }).join('');
+        }
+
+        function renderPlacementHighlights(highlights) {
+            if (!highlights || highlights.length === 0) {
+                return '<p class="muted-copy">No completed placements are recorded yet.</p>';
+            }
+
+            return highlights.map((highlight) => `
+                <article class="highlight-card">
+                    <div class="placement-pill">${placementValue(highlight.placement_label, highlight.final_rank)}</div>
+                    <h3 style="margin-top: 0.8rem;">${highlight.tour_title}</h3>
+                    <p class="muted-copy" style="margin-top: 0.45rem;">${highlight.tour_type}</p>
+                    ${highlight.winner_label ? `<p class="muted-copy" style="margin-top: 0.35rem;">Winner: ${highlight.winner_label}</p>` : ''}
+                    <a href="tournament_details.php?id=${highlight.tour_id}" class="ghost-button" style="margin-top: 0.9rem;">View tournament</a>
                 </article>
             `).join('');
         }
 
         function renderRecentResults(results) {
             if (!results || results.length === 0) {
-                return '<p style="color: var(--text-color);">No completed public match history is available yet.</p>';
+                return '<p class="muted-copy">No completed public match history is available yet.</p>';
             }
 
             return results.map((result) => `
                 <article class="list-card">
                     <strong>${result.player1_name || 'TBD'} ${result.player1_surname || ''} ${result.player1_score} - ${result.player2_score} ${result.player2_name || 'TBD'} ${result.player2_surname || ''}</strong>
-                    <p style="color: var(--text-color); margin-top: 0.45rem;">${result.tour_title}</p>
-                    <p style="color: var(--text-color);">${result.match_date} at ${String(result.match_time || '').slice(0, 5)}</p>
+                    <p class="muted-copy" style="margin-top: 0.45rem;">${result.tour_title}</p>
+                    <p class="muted-copy">${result.match_date} at ${String(result.match_time || '').slice(0, 5)}</p>
                 </article>
             `).join('');
         }
@@ -121,6 +171,7 @@
             const player = data.player;
             const displayName = `${player.plr_name || ''} ${player.plr_surname || ''}`.trim() || 'Club Player';
             const membershipLabel = (player.membership_status || 'not_submitted').replaceAll('_', ' ');
+            const bestFinish = data.stats.best_finish !== null ? `#${data.stats.best_finish}` : 'No ranking yet';
 
             shell.innerHTML = `
                 <section class="surface">
@@ -128,23 +179,43 @@
                         <div>
                             <div class="membership-chip"><i class="ri-user-star-line"></i> ${membershipLabel}</div>
                             <h1 style="margin-top: 1rem;">${displayName}</h1>
-                            <p style="color: var(--text-color); margin-top: 0.75rem;">Player handle: ${player.plr_username || player.user_name || 'club-player'}</p>
+                            <p class="muted-copy" style="margin-top: 0.75rem;">Player handle: ${player.plr_username || player.user_name || 'club-player'}</p>
+                            <p class="muted-copy" style="margin-top: 0.35rem;">Best recorded finish: ${bestFinish}</p>
                         </div>
                         <div>
                             <h3>Public profile</h3>
-                            <p style="color: var(--text-color); margin-top: 0.75rem;">
-                                This view shows safe public tournament history and current membership visibility only.
+                            <p class="muted-copy" style="margin-top: 0.75rem;">
+                                This view is meant for public-safe tournament context: placements, recent results, and current club visibility.
                             </p>
+                            <div class="highlight-grid" style="margin-top: 1rem;">
+                                <div class="highlight-card">
+                                    <strong>${data.stats.titles}</strong>
+                                    <p class="metric-label" style="margin-top: 0.45rem;">Titles</p>
+                                </div>
+                                <div class="highlight-card">
+                                    <strong>${data.stats.podium_finishes}</strong>
+                                    <p class="metric-label" style="margin-top: 0.45rem;">Podium finishes</p>
+                                </div>
+                            </div>
                             <a href="tournaments.html" class="ghost-button" style="margin-top: 1rem;">Browse tournaments</a>
                         </div>
                     </div>
                 </section>
 
                 <section class="stats-grid">
-                    <article class="stat-card"><strong>${data.stats.registered_tournaments}</strong><p style="color: var(--text-color); margin-top: 0.45rem;">Registered tournaments</p></article>
-                    <article class="stat-card"><strong>${data.stats.active_tournaments}</strong><p style="color: var(--text-color); margin-top: 0.45rem;">Active tournaments</p></article>
-                    <article class="stat-card"><strong>${data.stats.individual_matches_won} / ${data.stats.individual_matches_played}</strong><p style="color: var(--text-color); margin-top: 0.45rem;">Individual wins / played</p></article>
-                    <article class="stat-card"><strong>${data.stats.team_matches_won} / ${data.stats.team_matches_played}</strong><p style="color: var(--text-color); margin-top: 0.45rem;">Team wins / played</p></article>
+                    <article class="stat-card"><strong>${data.stats.registered_tournaments}</strong><p class="metric-label" style="margin-top: 0.45rem;">Registered tournaments</p></article>
+                    <article class="stat-card"><strong>${data.stats.completed_tournaments}</strong><p class="metric-label" style="margin-top: 0.45rem;">Completed tournaments</p></article>
+                    <article class="stat-card"><strong>${data.stats.combined_matches_won} / ${data.stats.combined_matches_played}</strong><p class="metric-label" style="margin-top: 0.45rem;">Total wins / played</p></article>
+                    <article class="stat-card"><strong>${data.stats.combined_win_rate}%</strong><p class="metric-label" style="margin-top: 0.45rem;">Overall win rate</p></article>
+                    <article class="stat-card"><strong>${data.stats.runner_up_finishes}</strong><p class="metric-label" style="margin-top: 0.45rem;">Runner-up finishes</p></article>
+                    <article class="stat-card"><strong>${data.stats.top_eight_finishes}</strong><p class="metric-label" style="margin-top: 0.45rem;">Top-eight finishes</p></article>
+                </section>
+
+                <section class="surface">
+                    <h2>Placement Highlights</h2>
+                    <div class="highlight-grid" style="margin-top: 1rem;">
+                        ${renderPlacementHighlights(data.placement_highlights)}
+                    </div>
                 </section>
 
                 <section class="panel-grid">
@@ -165,10 +236,9 @@
         }
 
         async function loadPlayerProfile() {
-            const response = await fetch(`../services/get_public_player_profile.php?id=${playerId}`);
-            const data = await response.json();
-            if (!data.success) {
-                throw new Error(data.message || 'Failed to load player profile.');
+            const data = await window.appFetchJson(`../services/get_public_player_profile.php?id=${playerId}`);
+            if (!data?.success) {
+                throw new Error(data?.message || 'Failed to load player profile.');
             }
 
             renderProfile(data);

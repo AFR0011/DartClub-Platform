@@ -3,6 +3,7 @@
 require_once __DIR__ . '/app_bootstrap.php';
 require_once __DIR__ . '/dbConnection.php';
 require_once __DIR__ . '/auth.php';
+require_once __DIR__ . '/shared/mail_helpers.php';
 
 app_start_session();
 
@@ -137,37 +138,13 @@ try {
     app_json_response(['success' => false, 'message' => $exception->getMessage()], 422);
 }
 
-$autoloadPath = __DIR__ . '/../vendor/autoload.php';
-if (is_file($autoloadPath)) {
-    require_once $autoloadPath;
-}
-
-try {
-    if (class_exists(\PHPMailer\PHPMailer\PHPMailer::class)) {
-        $mail = new \PHPMailer\PHPMailer\PHPMailer(true);
-        $mail->isSMTP();
-        $mail->Host = getenv('SMTP_HOST') ?: 'localhost';
-        $mail->SMTPAuth = filter_var(getenv('SMTP_AUTH') ?: false, FILTER_VALIDATE_BOOLEAN);
-        if ($mail->SMTPAuth) {
-            $mail->Username = getenv('SMTP_USER') ?: '';
-            $mail->Password = getenv('SMTP_PASS') ?: '';
-        }
-        $secure = getenv('SMTP_SECURE') ?: '';
-        if ($secure !== '') {
-            $mail->SMTPSecure = $secure;
-        }
-        $mail->Port = getenv('SMTP_PORT') ? (int) getenv('SMTP_PORT') : 25;
-        $mail->setFrom(getenv('SMTP_FROM') ?: 'noreply@example.com', 'Famagusta Dart Club');
-        $mail->addAddress($input['email']);
-        $mail->isHTML(true);
-        $mail->Subject = 'Your player account credentials';
-        $mail->Body = "Hello {$input['fName']} {$input['lName']},<br>Your account has been created.<br>Username: {$input['username']}<br>Temporary password: {$rawPassword}";
-        $mail->AltBody = "Hello {$input['fName']} {$input['lName']},\nYour account has been created.\nUsername: {$input['username']}\nTemporary password: {$rawPassword}";
-        $mail->send();
-    }
-} catch (Throwable $exception) {
-    // Best-effort email only.
-}
+app_send_best_effort_email(
+    $input['email'],
+    trim($input['fName'] . ' ' . $input['lName']),
+    'Your player account credentials',
+    "Hello {$input['fName']} {$input['lName']},<br>Your account has been created.<br>Username: {$input['username']}<br>Temporary password: {$rawPassword}",
+    "Hello {$input['fName']} {$input['lName']},\nYour account has been created.\nUsername: {$input['username']}\nTemporary password: {$rawPassword}"
+);
 
 app_json_response([
     'success' => true,

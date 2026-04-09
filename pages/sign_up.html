@@ -33,13 +33,17 @@
         <div class="loginBx">
           <h2><i class="ri-login-box-line"></i>Sign Up<i class="ri-flashlight-line"></i></h2>
           <form id="signup-form">
-            <input type="text" id="username" placeholder="Username..." required>
-            <input type="email" id="email" placeholder="Email..." required>
-            <input type="password" id="password" placeholder="Password..." required>
-            <input type="password" id="password2" placeholder="Repeat Password..." required>
+            <label class="sr-only" for="username">Username</label>
+            <input type="text" id="username" placeholder="Username..." autocomplete="username" required>
+            <label class="sr-only" for="email">Email address</label>
+            <input type="email" id="email" placeholder="Email..." autocomplete="email" required>
+            <label class="sr-only" for="password">Password</label>
+            <input type="password" id="password" placeholder="Password..." autocomplete="new-password" required>
+            <label class="sr-only" for="password2">Repeat password</label>
+            <input type="password" id="password2" placeholder="Repeat Password..." autocomplete="new-password" required>
             <input type="submit" value="Sign Up">
           </form>
-          <div id="error-message"></div>
+          <div id="error-message" role="status" aria-live="polite"></div>
           <div class="group">
             <a href="login.html"><pre>Already have an account? Login</pre></a>
           </div>
@@ -55,7 +59,7 @@
   <script src="../js/scrollreveal.min.js"></script>
 
   <!--primary js file-->
-    <script src="../js/behaviour.js?v=20260402-2"></script>
+    <script src="../js/behaviour.js?v=20260409-1"></script>
 
   <script>
    document.getElementById('signup-form').addEventListener('submit', function(event) {
@@ -71,14 +75,13 @@
     return;
   }
 
-  fetch('../services/signup.php', {
+  window.appFetchJson('../services/signup.php', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({ username: username, email: email, password: password })
   })
-  .then(response => response.json())
   .then(data => {
     if (data.success) {
       window.location.href = 'login.html';
@@ -88,7 +91,7 @@
   })
   .catch(error => {
     console.error('Error:', error);
-    document.getElementById('error-message').innerText = 'An error occurred during sign up.';
+    document.getElementById('error-message').innerText = error.message || 'An error occurred during sign up.';
   });
 });
   </script>

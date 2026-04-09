@@ -257,6 +257,10 @@ function updatePlayerStanding($db, $tour_id, $player_id, $player_score, $opponen
             <h1>Record Match Result</h1>
             <a href="show_tournament_details.php?id=<?php echo $match['tour_id']; ?>" class="back-btn">Back to Tournament</a>
         </div>
+
+        <div class="success-message" style="background:#eef5ff;color:#1d4ed8;border-left-color:#1d4ed8;">
+            Legacy fallback page. Use the consolidated tournament detail workspace for the primary admin scoring flow.
+        </div>
         
         <?php if (isset($_SESSION['error'])): ?>
             <div class="error-message">
