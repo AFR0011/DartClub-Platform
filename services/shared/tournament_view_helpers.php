@@ -96,6 +96,10 @@ function tournament_round_title(int $roundPosition, ?int $roundCount = null): st
 
 function tournament_bracket_round_title(string $bracketLabel, int $roundPosition, int $roundCount): string
 {
+    if ($bracketLabel === 'Opening Round') {
+        return 'Opening Round';
+    }
+
     if ($bracketLabel === 'Grand Final') {
         return 'Grand Final';
     }
@@ -107,27 +111,11 @@ function tournament_bracket_round_title(string $bracketLabel, int $roundPosition
     if ($bracketLabel === 'Winners Bracket') {
         $baseTitle = tournament_round_title($roundPosition, $roundCount);
 
-        if (str_starts_with($baseTitle, 'Round ')) {
-            return 'Winners ' . $baseTitle;
-        }
-
         return 'Winners ' . $baseTitle;
     }
 
     if ($bracketLabel === 'Losers Bracket') {
-        if ($roundCount === 1) {
-            return 'Losers Final';
-        }
-
-        if ($roundPosition === $roundCount) {
-            return 'Losers Final';
-        }
-
-        if ($roundPosition === ($roundCount - 1)) {
-            return 'Losers Semifinal';
-        }
-
-        return 'Losers Round ' . $roundPosition;
+        return 'Losers ' . tournament_round_title($roundPosition, $roundCount);
     }
 
     return tournament_round_title($roundPosition, $roundCount);

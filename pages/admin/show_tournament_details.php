@@ -98,12 +98,13 @@ foreach ($matches as $match) {
 
 ksort($groupMatches);
 $knockoutBracketPriority = [
-    'Winners Bracket' => 1,
-    'Elimination' => 1,
-    'Knockout' => 1,
+    'Opening Round' => 1,
     'Losers Bracket' => 2,
-    'Grand Final' => 3,
-    'Third Place Playoff' => 4,
+    'Winners Bracket' => 3,
+    'Elimination' => 2,
+    'Knockout' => 2,
+    'Grand Final' => 4,
+    'Third Place Playoff' => 5,
 ];
 uasort($knockoutBracketGroups, static function (array $left, array $right) use ($knockoutBracketPriority): int {
     $leftPriority = $knockoutBracketPriority[$left['source_label']] ?? 99;
@@ -143,39 +144,41 @@ $canStartTournament = in_array((string) ($tournament['status'] ?? ''), ['draft',
 $isDoubleElimination = $tournament['tour_type'] === 'Double Elimination';
 $bracketPanels = [];
 if ($isDoubleElimination) {
+    $openingBracketGroup = $knockoutBracketGroups['Opening Round'] ?? null;
     $winnersBracketGroup = $knockoutBracketGroups['Winners Bracket'] ?? null;
     $losersBracketGroup = $knockoutBracketGroups['Losers Bracket'] ?? null;
     $grandFinalGroup = $knockoutBracketGroups['Grand Final'] ?? null;
+    $thirdPlaceGroup = $knockoutBracketGroups['Third Place Playoff'] ?? null;
 
-    if ($winnersBracketGroup !== null || $losersBracketGroup !== null || $grandFinalGroup !== null) {
+    if ($openingBracketGroup !== null || $winnersBracketGroup !== null || $losersBracketGroup !== null) {
         $bracketPanels['merged'] = [
             'label' => 'Merged Bracket',
-            'groups' => array_values(array_filter([$winnersBracketGroup, $grandFinalGroup, $losersBracketGroup])),
-            'description' => 'Winners and losers paths stay in one workspace while the grand final remains visible as the deciding endpoint.',
+            'groups' => array_values(array_filter([$losersBracketGroup, $openingBracketGroup, $winnersBracketGroup])),
+            'description' => 'The opening round stays centered, then the field splits into a losers-side tree and a winners-side tree.',
         ];
     }
 
     if ($winnersBracketGroup !== null) {
         $bracketPanels['winners'] = [
             'label' => 'Winners Bracket',
-            'groups' => [$winnersBracketGroup],
-            'description' => 'Show only the upper bracket path.',
+            'groups' => array_values(array_filter([$openingBracketGroup, $winnersBracketGroup])),
+            'description' => 'Show the shared opening round plus the winners-side branch.',
         ];
     }
 
     if ($losersBracketGroup !== null) {
         $bracketPanels['losers'] = [
             'label' => 'Losers Bracket',
-            'groups' => [$losersBracketGroup],
-            'description' => 'Show only the lower bracket elimination path.',
+            'groups' => array_values(array_filter([$openingBracketGroup, $losersBracketGroup])),
+            'description' => 'Show the shared opening round plus the losers-side branch.',
         ];
     }
 
-    if ($grandFinalGroup !== null) {
+    if ($grandFinalGroup !== null || $thirdPlaceGroup !== null) {
         $bracketPanels['grand_final'] = [
             'label' => 'Grand Final',
-            'groups' => [$grandFinalGroup],
-            'description' => 'Show only the final deciding match.',
+            'groups' => array_values(array_filter([$grandFinalGroup, $thirdPlaceGroup])),
+            'description' => 'Show the grand final and the separate 3rd-place playoff.',
         ];
     }
 }
@@ -387,8 +390,9 @@ foreach ($matches as $match) {
             display: grid;
             gap: 18px;
             align-items: start;
-            grid-template-columns: minmax(0, 1.12fr) minmax(280px, 0.76fr) minmax(0, 1.12fr);
-            grid-template-areas: "winners final losers";
+            grid-template-columns: minmax(0, 1fr) minmax(240px, 280px) minmax(0, 1fr);
+            grid-template-areas: "losers opening winners";
+            transition: grid-template-columns 0.32s ease, gap 0.32s ease;
         }
 
         .merged-bracket-grid.is-single-view {
@@ -396,17 +400,148 @@ foreach ($matches as $match) {
             grid-template-areas: none;
         }
 
-        .merged-bracket-grid [data-bracket-group="Winners Bracket"] {
-            grid-area: winners;
+        .merged-bracket-grid [data-bracket-group] {
+            min-width: 0;
+            overflow: hidden;
+            transition:
+                opacity 0.28s ease,
+                transform 0.28s ease,
+                padding 0.28s ease,
+                border-color 0.28s ease,
+                box-shadow 0.28s ease,
+                max-width 0.28s ease,
+                max-height 0.28s ease,
+                margin 0.28s ease;
         }
 
         .merged-bracket-grid [data-bracket-group="Losers Bracket"] {
             grid-area: losers;
+            justify-self: stretch;
         }
 
-        .merged-bracket-grid [data-bracket-group="Grand Final"] {
-            grid-area: final;
-            align-self: center;
+        .merged-bracket-grid [data-bracket-group="Opening Round"] {
+            grid-area: opening;
+            justify-self: center;
+        }
+
+        .merged-bracket-grid [data-bracket-group="Winners Bracket"] {
+            grid-area: winners;
+            justify-self: stretch;
+        }
+
+        .merged-bracket-grid [data-bracket-group="Grand Final"],
+        .merged-bracket-grid [data-bracket-group="Third Place Playoff"] {
+            justify-self: stretch;
+        }
+
+        .merged-bracket-grid[data-active-view="merged"] [data-bracket-group="Opening Round"] {
+            width: min(100%, 280px);
+        }
+
+        .merged-bracket-grid[data-active-view="Winners Bracket"] {
+            grid-template-columns: 0fr minmax(240px, 280px) minmax(0, 1.45fr);
+        }
+
+        .merged-bracket-grid[data-active-view="Losers Bracket"] {
+            grid-template-columns: minmax(0, 1.45fr) minmax(240px, 280px) 0fr;
+        }
+
+        .merged-bracket-grid[data-active-view="Grand Final"] {
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            grid-template-areas: none;
+        }
+
+        .merged-bracket-grid[data-active-view="Winners Bracket"] [data-bracket-group="Opening Round"],
+        .merged-bracket-grid[data-active-view="Losers Bracket"] [data-bracket-group="Opening Round"] {
+            width: min(100%, 280px);
+        }
+
+        .merged-bracket-grid[data-active-view="merged"] [data-bracket-group="Losers Bracket"] .connected-bracket,
+        .merged-bracket-grid[data-active-view="Losers Bracket"] [data-bracket-group="Losers Bracket"] .connected-bracket {
+            display: flex;
+            flex-direction: row-reverse;
+            gap: 24px;
+            min-width: max-content;
+            align-items: start;
+        }
+
+        .merged-bracket-grid[data-active-view="merged"] [data-bracket-group="Losers Bracket"] .connected-bracket-round,
+        .merged-bracket-grid[data-active-view="Losers Bracket"] [data-bracket-group="Losers Bracket"] .connected-bracket-round {
+            flex: 0 0 224px;
+        }
+
+        .merged-bracket-grid[data-active-view="merged"] [data-bracket-group="Losers Bracket"] .connected-bracket-round h3,
+        .merged-bracket-grid[data-active-view="Losers Bracket"] [data-bracket-group="Losers Bracket"] .connected-bracket-round h3 {
+            text-align: right;
+        }
+
+        .merged-bracket-grid[data-active-view="merged"] [data-bracket-group="Losers Bracket"] .connected-bracket-node.has-incoming::before,
+        .merged-bracket-grid[data-active-view="Losers Bracket"] [data-bracket-group="Losers Bracket"] .connected-bracket-node.has-incoming::before {
+            left: auto;
+            right: -18px;
+        }
+
+        .merged-bracket-grid[data-active-view="merged"] [data-bracket-group="Losers Bracket"] .connected-bracket-node.has-incoming::after,
+        .merged-bracket-grid[data-active-view="Losers Bracket"] [data-bracket-group="Losers Bracket"] .connected-bracket-node.has-incoming::after {
+            left: auto;
+            right: -18px;
+        }
+
+        .merged-bracket-grid[data-active-view="merged"] [data-bracket-group="Losers Bracket"] .connected-bracket-matchup.has-outgoing::after,
+        .merged-bracket-grid[data-active-view="Losers Bracket"] [data-bracket-group="Losers Bracket"] .connected-bracket-matchup.has-outgoing::after {
+            left: -18px;
+            right: auto;
+        }
+
+        .merged-bracket-grid[data-active-view="merged"] [data-bracket-group="Losers Bracket"] .bracket-grid,
+        .merged-bracket-grid[data-active-view="Losers Bracket"] [data-bracket-group="Losers Bracket"] .bracket-grid {
+            flex-direction: row-reverse;
+        }
+
+        .merged-bracket-grid[data-active-view="merged"] [data-bracket-group="Losers Bracket"],
+        .merged-bracket-grid[data-active-view="merged"] [data-bracket-group="Opening Round"],
+        .merged-bracket-grid[data-active-view="merged"] [data-bracket-group="Winners Bracket"],
+        .merged-bracket-grid[data-active-view="Winners Bracket"] [data-bracket-group="Opening Round"],
+        .merged-bracket-grid[data-active-view="Winners Bracket"] [data-bracket-group="Winners Bracket"],
+        .merged-bracket-grid[data-active-view="Losers Bracket"] [data-bracket-group="Opening Round"],
+        .merged-bracket-grid[data-active-view="Losers Bracket"] [data-bracket-group="Losers Bracket"],
+        .merged-bracket-grid[data-active-view="Grand Final"] [data-bracket-group="Grand Final"],
+        .merged-bracket-grid[data-active-view="Grand Final"] [data-bracket-group="Third Place Playoff"] {
+            opacity: 1;
+            pointer-events: auto;
+            transform: none;
+            max-width: none;
+            max-height: none;
+            margin: 0;
+        }
+
+        .merged-bracket-grid[data-active-view="merged"] [data-bracket-group="Grand Final"],
+        .merged-bracket-grid[data-active-view="merged"] [data-bracket-group="Third Place Playoff"],
+        .merged-bracket-grid[data-active-view="Winners Bracket"] [data-bracket-group="Losers Bracket"],
+        .merged-bracket-grid[data-active-view="Winners Bracket"] [data-bracket-group="Grand Final"],
+        .merged-bracket-grid[data-active-view="Winners Bracket"] [data-bracket-group="Third Place Playoff"],
+        .merged-bracket-grid[data-active-view="Losers Bracket"] [data-bracket-group="Winners Bracket"],
+        .merged-bracket-grid[data-active-view="Losers Bracket"] [data-bracket-group="Grand Final"],
+        .merged-bracket-grid[data-active-view="Losers Bracket"] [data-bracket-group="Third Place Playoff"],
+        .merged-bracket-grid[data-active-view="Grand Final"] [data-bracket-group="Losers Bracket"],
+        .merged-bracket-grid[data-active-view="Grand Final"] [data-bracket-group="Opening Round"],
+        .merged-bracket-grid[data-active-view="Grand Final"] [data-bracket-group="Winners Bracket"] {
+            opacity: 0;
+            pointer-events: none;
+            border-color: transparent;
+            box-shadow: none;
+            padding: 0;
+            max-width: 0;
+            max-height: 0;
+            margin: 0;
+        }
+
+        .merged-bracket-grid[data-active-view="Winners Bracket"] [data-bracket-group="Losers Bracket"] {
+            transform: translateX(-44px);
+        }
+
+        .merged-bracket-grid[data-active-view="Losers Bracket"] [data-bracket-group="Winners Bracket"] {
+            transform: translateX(44px);
         }
 
         .bracket-focus-toolbar,
@@ -1128,18 +1263,63 @@ foreach ($matches as $match) {
                 justify-content: flex-start;
             }
 
+            .bracket-focus-toolbar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .bracket-jump-nav,
+            .bracket-view-toggle {
+                flex-wrap: nowrap;
+                overflow-x: auto;
+                padding-bottom: 0.35rem;
+            }
+
             .merged-bracket-grid,
             .merged-bracket-grid.is-single-view {
                 grid-template-columns: 1fr;
                 grid-template-areas: none;
             }
 
+            .merged-bracket-grid[data-active-view="Winners Bracket"] [data-bracket-group="Opening Round"],
+            .merged-bracket-grid[data-active-view="Losers Bracket"] [data-bracket-group="Opening Round"] {
+                width: 100%;
+            }
+
             .bracket-round {
-                min-width: 280px;
+                min-width: 220px;
             }
 
             .connected-bracket {
-                grid-auto-columns: minmax(212px, 212px);
+                --bracket-track: 92px;
+                grid-auto-columns: minmax(188px, 188px);
+                gap: 16px;
+            }
+
+            .connected-bracket-matchup {
+                padding: 8px;
+                border-radius: 16px;
+            }
+
+            .connected-bracket-summary {
+                font-size: 0.72rem;
+            }
+
+            .bracket-slot--compact {
+                padding: 6px 8px;
+            }
+
+            .bracket-slot--compact .bracket-slot-name {
+                font-size: 0.82rem;
+            }
+
+            .bracket-slot--compact .bracket-slot-hint {
+                font-size: 0.68rem;
+            }
+
+            .bracket-grid {
+                gap: 14px;
+                padding-bottom: 8px;
             }
         }
 
@@ -1752,7 +1932,7 @@ foreach ($matches as $match) {
                             <button type="button" class="action-btn" data-bracket-view-button="Winners Bracket" onclick="showBracketView('Winners Bracket')">Winners Bracket</button>
                             <button type="button" class="action-btn" data-bracket-view-button="Losers Bracket" onclick="showBracketView('Losers Bracket')">Losers Bracket</button>
                             <?php if (isset($knockoutBracketGroups['Grand Final'])): ?>
-                                <button type="button" class="action-btn" data-bracket-view-button="Grand Final" onclick="showBracketView('Grand Final')">Grand Final</button>
+                                <button type="button" class="action-btn" data-bracket-view-button="Grand Final" onclick="showBracketView('Grand Final')">Finals</button>
                             <?php endif; ?>
                         </div>
                     </div>
@@ -1767,23 +1947,27 @@ foreach ($matches as $match) {
                         </div>
                     </div>
                 <?php endif; ?>
-                <div class="<?php echo $isDoubleElimination ? 'merged-bracket-grid' : 'section-grid'; ?>" id="adminBracketGroups" data-bracket-groups-container>
+                <div class="<?php echo $isDoubleElimination ? 'merged-bracket-grid' : 'section-grid'; ?>" id="adminBracketGroups" data-bracket-groups-container<?php echo $isDoubleElimination ? ' data-active-view="merged"' : ''; ?>>
                     <?php foreach ($knockoutBracketGroups as $bracketGroup): ?>
                         <?php $bracketGroupDomId = 'admin-bracket-group-' . preg_replace('/[^a-z0-9]+/i', '-', strtolower((string) $bracketGroup['key'])); ?>
                         <div class="section-card" id="<?php echo htmlspecialchars($bracketGroupDomId); ?>" data-bracket-group="<?php echo htmlspecialchars((string) $bracketGroup['source_label']); ?>">
                             <h3><?php echo htmlspecialchars($bracketGroup['display_label']); ?></h3>
                             <?php if ($isDoubleElimination): ?>
                                 <p class="surface-note" style="margin-top:6px; margin-bottom:14px;">
-                                    <?php if ($bracketGroup['source_label'] === 'Winners Bracket'): ?>
-                                        The upper path keeps players alive until their first loss.
+                                    <?php if ($bracketGroup['source_label'] === 'Opening Round'): ?>
+                                        Every entrant starts here before the field splits into the winners and losers branches.
+                                    <?php elseif ($bracketGroup['source_label'] === 'Winners Bracket'): ?>
+                                        Winners from the opening round advance into this right-side single-elimination path.
                                     <?php elseif ($bracketGroup['source_label'] === 'Losers Bracket'): ?>
-                                        The lower path collects one-loss players and narrows down the challenger.
+                                        Opening-round losers advance into this left-side single-elimination path.
                                     <?php elseif ($bracketGroup['source_label'] === 'Grand Final'): ?>
-                                        The winners-bracket champion meets the last remaining lower-bracket player here.
+                                        The winners-side champion meets the losers-side champion here.
+                                    <?php elseif ($bracketGroup['source_label'] === 'Third Place Playoff'): ?>
+                                        The losing finalists from each branch meet here to settle third and fourth place.
                                     <?php endif; ?>
                                 </p>
                             <?php endif; ?>
-                            <div class="connected-bracket-shell">
+                            <div class="connected-bracket-shell"<?php echo $isDoubleElimination && $bracketGroup['source_label'] === 'Losers Bracket' ? ' data-mirrored-bracket-shell' : ''; ?>>
                                 <div class="connected-bracket">
                                 <?php foreach ($bracketGroup['rounds'] as $roundNumber => $roundMatches): ?>
                                     <?php $roundIndex = (int) ($bracketGroup['round_positions'][(int) $roundNumber] ?? 1); ?>
@@ -1892,12 +2076,12 @@ foreach ($matches as $match) {
                             <button type="button" class="action-btn" data-bracket-view-button="Winners Bracket" onclick="showBracketView('Winners Bracket')">Winners Bracket</button>
                             <button type="button" class="action-btn" data-bracket-view-button="Losers Bracket" onclick="showBracketView('Losers Bracket')">Losers Bracket</button>
                             <?php if (isset($knockoutBracketGroups['Grand Final'])): ?>
-                                <button type="button" class="action-btn" data-bracket-view-button="Grand Final" onclick="showBracketView('Grand Final')">Grand Final</button>
+                                <button type="button" class="action-btn" data-bracket-view-button="Grand Final" onclick="showBracketView('Grand Final')">Finals</button>
                             <?php endif; ?>
                         </div>
                     </div>
                 <?php endif; ?>
-                <div class="<?php echo $isDoubleElimination ? 'merged-bracket-grid' : 'section-grid'; ?>" id="adminBracketBoardGroups" data-bracket-groups-container>
+                <div class="<?php echo $isDoubleElimination ? 'merged-bracket-grid' : 'section-grid'; ?>" id="adminBracketBoardGroups" data-bracket-groups-container<?php echo $isDoubleElimination ? ' data-active-view="merged"' : ''; ?>>
                     <?php foreach ($knockoutBracketGroups as $bracketGroup): ?>
                         <div class="section-card" data-bracket-group="<?php echo htmlspecialchars((string) $bracketGroup['source_label']); ?>">
                             <h3><?php echo htmlspecialchars($bracketGroup['display_label']); ?></h3>

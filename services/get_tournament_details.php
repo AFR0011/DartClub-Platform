@@ -3,6 +3,7 @@
 require_once __DIR__ . '/app_bootstrap.php';
 require_once __DIR__ . '/dbConnection.php';
 require_once __DIR__ . '/shared/tournament_helpers.php';
+require_once __DIR__ . '/shared/tournament_view_helpers.php';
 
 $tourId = isset($_GET['id']) ? (int) $_GET['id'] : 0;
 if ($tourId <= 0) {

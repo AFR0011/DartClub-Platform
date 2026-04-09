@@ -100,9 +100,13 @@ For every failure, capture:
 6. Confirm bracket/player links never expose admin-only editing controls.
 7. For `Double Elimination`, confirm winners, losers, and grand-final sections render separately and stay readable.
 8. For `Double Elimination`, switch between `Merged Bracket`, `Winners Bracket`, `Losers Bracket`, and `Grand Final` and confirm each filter shows only the intended path.
-9. Use `Open focus mode` and confirm the bracket expands cleanly and remains scrollable.
-10. If multiple bracket paths exist, use the path-jump buttons and confirm they scroll to the correct section.
-11. Try invalid and missing tournament IDs and confirm the page fails gracefully.
+9. For `Double Elimination` winners-only and losers-only views, confirm the opposite branch visibly collapses away while the opening round stays mounted as the center spine.
+10. For `Double Elimination` `Grand Final`, confirm only the grand final and third-place playoff remain on screen.
+11. For `Double Elimination` merged view, confirm the opening round sits in the center, the losers path stays on the left, and the winners path stays on the right.
+12. Use `Open focus mode` and confirm the bracket expands cleanly and remains scrollable.
+13. Repeat the same public bracket checks at tablet and mobile widths and confirm the layout remains horizontally scrollable instead of overlapping.
+14. If multiple bracket paths exist, use the path-jump buttons and confirm they scroll to the correct section.
+15. Try invalid and missing tournament IDs and confirm the page fails gracefully.
 
 ## 7. Public Player Profile
 1. Open `pages/player_profile.php?id=<valid_player_id>`.
@@ -224,9 +228,13 @@ For every failure, capture:
 7. Confirm completed matches cannot be drag-reseeded.
 8. For `Double Elimination`, confirm loser-path feeds and the grand final are visually understandable.
 9. For `Double Elimination`, switch between `Merged Bracket`, `Winners Bracket`, `Losers Bracket`, and `Grand Final` in both bracket sections and confirm hidden paths stay hidden.
-10. Confirm the bracket board still reflects the latest state after changes.
-11. Use `Open focus mode` and confirm the connected bracket is easier to navigate at large sizes.
-12. If multiple bracket paths exist, use the jump buttons and confirm they scroll to the correct section.
+10. For `Double Elimination` winners-only and losers-only views, confirm the opposite branch collapses instead of staying visible, and the opening round remains mounted beside the active branch.
+11. For `Double Elimination` `Grand Final`, confirm both bracket sections show only the grand final and third-place playoff.
+12. For `Double Elimination` merged view, confirm the losers lane mirrors outward from the center opening round instead of rendering as another left-to-right stack.
+13. Confirm the bracket board still reflects the latest state after changes.
+14. Use `Open focus mode` and confirm the connected bracket is easier to navigate at large sizes.
+15. If multiple bracket paths exist, use the jump buttons and confirm they scroll to the correct section.
+16. Repeat the bracket and bracket-board checks at tablet and mobile widths and confirm both remain usable through horizontal scrolling without overlapping cards.
 
 ## 17. Tournament Type Regression Matrix
 Run these end to end:
@@ -255,6 +263,9 @@ Run these end to end:
 5. `Double Elimination`
    - create with at least four entrants
    - confirm merged, winners-only, losers-only, and grand-final filters
+   - confirm the shared opening round stays centered before the split
+   - confirm winners-only and losers-only collapse the opposite branch instead of rendering a second full merged layout
+   - confirm `Grand Final` shows only the grand final and third-place playoff
    - confirm completed winners-bracket matches feed the loser into the correct lower-path match
    - confirm the last lower-path survivor reaches the grand final
 

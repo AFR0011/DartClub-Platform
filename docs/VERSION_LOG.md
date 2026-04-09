@@ -1,5 +1,29 @@
 # VERSION_LOG
 
+## Double-Elimination View Behavior Pass
+- Date: 2026-04-08
+- Status: manual-verification follow-up focused on bracket-view behavior, finals rendering, and mobile usability
+- Main changes:
+  - changed the public `Tournament Bracket` filters so winners-only and losers-only keep the opening round mounted and collapse the opposite branch instead of re-rendering a separate broken layout
+  - fixed the public `Finals` view to render only `Grand Final` and `Third Place Playoff`
+  - changed the admin connected bracket and bracket board to use CSS-driven double-elimination view states instead of JS hard-hiding group cards
+  - fixed the admin `Finals` view so it isolates the deciding matches instead of reusing the merged layout
+  - tightened public/admin mobile bracket sizing, spacing, and horizontal-scroll behavior for large elimination trees
+- Verification in this pass:
+  - PHP lint for:
+    - `pages/tournament_details.php`
+    - `pages/admin/show_tournament_details.php`
+  - live HTTP checks for:
+    - `pages/tournament_details.php?id=8`
+    - `services/get_tournament_details.php?id=8`
+  - static/source checks for the new admin bracket view-state selectors and mirrored losers-lane logic in:
+    - `pages/admin/show_tournament_details.php`
+    - `js/admin_tournament_details.js`
+- Still pending:
+  - authenticated browser click-through of the admin connected bracket and bracket board
+  - browser-eye confirmation of the winners/losers collapse animation and finals-only layout on both public and admin pages
+  - pointer/touch drag-and-drop QA after the responsive bracket changes
+
 ## Pre-Mapped Legacy Snapshot
 - Date: before 2026-03-27 mapping pass
 - Status: imported legacy website snapshot with no usable repo history in the current checkout
@@ -374,3 +398,24 @@
   - browser-eye QA for the wider admin layout and the new sectioned tournament-detail workflow
   - browser rendering QA for the merged double-elimination views on desktop/tablet/mobile
   - manual regeneration and click-through of an existing `Group` tournament under the new two-team rules
+
+## Opening-Round Split And Mirrored Bracket Pass
+- Date: 2026-04-08
+- Status: manual-verification follow-up focused on the public/admin double-elimination presentation and the completed-tournament runtime fatal
+- Main changes:
+  - restored the missing tournament-view helper include in `services/get_tournament_details.php`, removing the `tournament_round_title()` fatal on completed public tournament detail reads
+  - rebuilt double-elimination generation around one shared opening round, then separate winners-side and losers-side single-elimination branches, plus third-place and grand-final matches
+  - updated the public tournament detail page so bracket matchup clicks open a larger modal and fixtures are grouped into toggleable `Waiting`, `Ready`, `Live`, and `Recorded` sections
+  - changed the merged double-elimination layout so the opening round is the center lane, the winners branch stays on the right, and the losers branch mirrors from the left toward the center
+  - corrected the admin bracket filters so winners-only and losers-only no longer show the same branch, and mirrored the admin merged losers lane to match the public split layout
+- Verification in this pass:
+  - PHP lint for:
+    - `pages/tournament_details.php`
+    - `pages/admin/show_tournament_details.php`
+    - `services/get_tournament_details.php`
+  - live `services/get_tournament_details.php?id=8` verification confirming the rebuilt `Opening Round`, `Winners Bracket`, `Losers Bracket`, `Third Place Playoff`, and `Grand Final` group counts
+  - Chrome headless screenshot verification for `pages/tournament_details.php?id=8`, confirming the opening-round-centered merged layout and mirrored public losers lane
+  - live service and page smoke checks after restarting the local PHP/MariaDB processes when the dev stack dropped during verification
+- Still pending:
+  - authenticated browser QA for the admin merged losers-lane layout
+  - browser-eye QA of the modal-first public bracket flow across desktop/tablet/mobile

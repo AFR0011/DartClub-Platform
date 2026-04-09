@@ -4,6 +4,7 @@ require_once __DIR__ . '/app_bootstrap.php';
 require_once __DIR__ . '/dbConnection.php';
 require_once __DIR__ . '/shared/player_helpers.php';
 require_once __DIR__ . '/shared/tournament_helpers.php';
+require_once __DIR__ . '/shared/tournament_view_helpers.php';
 
 app_start_session();
 
@@ -77,4 +78,3 @@ try {
 } catch (Throwable $exception) {
     app_json_response(['error' => 'Failed to fetch tournaments: ' . $exception->getMessage()], 500);
 }
-

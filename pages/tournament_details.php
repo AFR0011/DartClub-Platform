@@ -311,13 +311,40 @@
             font-size: 0.88rem;
         }
 
-        .selected-match-card {
-            margin-top: 1.2rem;
-            background:
-                radial-gradient(circle at top right, rgba(255, 107, 53, 0.08), transparent 34%),
-                rgba(255, 255, 255, 0.04);
+        .public-match-modal {
+            position: fixed;
+            inset: 0;
+            z-index: 1300;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            background: rgba(4, 10, 20, 0.82);
+            backdrop-filter: blur(12px);
         }
 
+        .public-match-modal-card {
+            width: min(760px, 100%);
+            max-height: min(88vh, 920px);
+            overflow: auto;
+            background:
+                radial-gradient(circle at top right, rgba(255, 107, 53, 0.14), transparent 30%),
+                linear-gradient(180deg, rgba(15, 23, 42, 0.98), rgba(8, 14, 28, 0.98));
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 24px;
+            padding: 1.35rem;
+            box-shadow: 0 28px 70px rgba(0, 0, 0, 0.45);
+        }
+
+        .public-match-modal-head,
+        .fixture-section-toggle {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .public-match-modal-grid,
         .selected-match-grid {
             display: grid;
             gap: 0.85rem;
@@ -346,6 +373,50 @@
             border-radius: 999px;
             background: rgba(255, 107, 53, 0.16);
             color: #ffd7ca;
+            font-weight: 700;
+        }
+
+        .fixture-section-stack {
+            display: grid;
+            gap: 0.9rem;
+        }
+
+        .fixture-section {
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 18px;
+            background: rgba(255, 255, 255, 0.03);
+            overflow: hidden;
+        }
+
+        .fixture-section-toggle {
+            width: 100%;
+            padding: 1rem 1.1rem;
+            border: 0;
+            background: transparent;
+            color: #fff;
+            cursor: pointer;
+            text-align: left;
+            font: inherit;
+        }
+
+        .fixture-section-body {
+            padding: 0 1rem 1rem;
+        }
+
+        .fixture-section.is-collapsed .fixture-section-body {
+            display: none;
+        }
+
+        .fixture-section-count {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 2rem;
+            padding: 0.2rem 0.55rem;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--text-color);
+            font-size: 0.82rem;
             font-weight: 700;
         }
 
@@ -405,23 +476,114 @@
             gap: 1.1rem;
         }
 
-        .bracket-group-stack--merged {
-            grid-template-columns: minmax(0, 1.12fr) minmax(240px, 0.78fr) minmax(0, 1.12fr);
-            grid-template-areas: "winners final losers";
-            align-items: start;
+        .bracket-group-stack--merged,
+        .bracket-group-stack--finals {
+            transition: grid-template-columns 0.32s ease, gap 0.32s ease;
         }
 
-        .bracket-group-stack--merged [data-public-bracket-group="Winners Bracket"] {
-            grid-area: winners;
+        .bracket-group-stack--merged {
+            grid-template-columns: minmax(0, 1fr) minmax(240px, 280px) minmax(0, 1fr);
+            grid-template-areas: "losers opening winners";
+            align-items: start;
         }
 
         .bracket-group-stack--merged [data-public-bracket-group="Losers Bracket"] {
             grid-area: losers;
+            justify-self: stretch;
         }
 
-        .bracket-group-stack--merged [data-public-bracket-group="Grand Final"] {
-            grid-area: final;
-            align-self: center;
+        .bracket-group-stack--merged [data-public-bracket-group="Opening Round"] {
+            grid-area: opening;
+            justify-self: center;
+        }
+
+        .bracket-group-stack--merged [data-public-bracket-group="Winners Bracket"] {
+            grid-area: winners;
+            justify-self: stretch;
+        }
+
+        .bracket-group-stack--finals {
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            align-items: start;
+        }
+
+        .bracket-group-stack--merged[data-public-active-view="merged"] [data-public-bracket-group="Opening Round"] {
+            width: min(100%, 280px);
+        }
+
+        .bracket-group-stack--merged[data-public-active-view="Winners Bracket"] {
+            grid-template-columns: 0fr minmax(240px, 280px) minmax(0, 1.45fr);
+        }
+
+        .bracket-group-stack--merged[data-public-active-view="Losers Bracket"] {
+            grid-template-columns: minmax(0, 1.45fr) minmax(240px, 280px) 0fr;
+        }
+
+        .bracket-group-stack--merged[data-public-active-view="Winners Bracket"] [data-public-bracket-group="Opening Round"],
+        .bracket-group-stack--merged[data-public-active-view="Losers Bracket"] [data-public-bracket-group="Opening Round"] {
+            width: min(100%, 280px);
+        }
+
+        .bracket-group-stack--merged[data-public-active-view="merged"] [data-public-bracket-group="Losers Bracket"] .read-bracket {
+            display: flex;
+            flex-direction: row-reverse;
+            gap: 26px;
+            min-width: max-content;
+            align-items: start;
+        }
+
+        .bracket-group-stack--merged[data-public-active-view="Losers Bracket"] [data-public-bracket-group="Losers Bracket"] .read-bracket {
+            display: flex;
+            flex-direction: row-reverse;
+            gap: 26px;
+            min-width: max-content;
+            align-items: start;
+        }
+
+        .bracket-group-stack--merged[data-public-active-view="merged"] [data-public-bracket-group="Losers Bracket"] .read-bracket-round {
+            flex: 0 0 220px;
+        }
+
+        .bracket-group-stack--merged[data-public-active-view="Losers Bracket"] [data-public-bracket-group="Losers Bracket"] .read-bracket-round {
+            flex: 0 0 220px;
+        }
+
+        .bracket-group-stack--merged[data-public-active-view="merged"] [data-public-bracket-group="Losers Bracket"] .read-bracket-round h3 {
+            text-align: right;
+        }
+
+        .bracket-group-stack--merged[data-public-active-view="Losers Bracket"] [data-public-bracket-group="Losers Bracket"] .read-bracket-round h3 {
+            text-align: right;
+        }
+
+        .bracket-group-stack--merged[data-public-active-view="merged"] [data-public-bracket-group="Losers Bracket"] .read-bracket-node.has-incoming::before {
+            left: auto;
+            right: -18px;
+        }
+
+        .bracket-group-stack--merged[data-public-active-view="Losers Bracket"] [data-public-bracket-group="Losers Bracket"] .read-bracket-node.has-incoming::before {
+            left: auto;
+            right: -18px;
+        }
+
+        .bracket-group-stack--merged[data-public-active-view="merged"] [data-public-bracket-group="Losers Bracket"] .read-bracket-node.has-incoming::after {
+            left: auto;
+            right: -18px;
+        }
+
+        .bracket-group-stack--merged[data-public-active-view="Losers Bracket"] [data-public-bracket-group="Losers Bracket"] .read-bracket-node.has-incoming::after {
+            left: auto;
+            right: -18px;
+        }
+
+        .bracket-group-stack--merged[data-public-active-view="merged"] [data-public-bracket-group="Losers Bracket"] .read-bracket-matchup.has-outgoing::after {
+            left: -18px;
+            right: auto;
+        }
+
+        .bracket-group-stack--merged[data-public-active-view="Losers Bracket"] [data-public-bracket-group="Losers Bracket"] .read-bracket-matchup.has-outgoing::after {
+            left: -18px;
+            right: auto;
         }
 
         .bracket-group {
@@ -429,6 +591,43 @@
             border-radius: 20px;
             padding: 1rem;
             background: rgba(255, 255, 255, 0.03);
+            min-width: 0;
+            overflow: hidden;
+            transition:
+                opacity 0.32s ease,
+                transform 0.32s ease,
+                padding 0.32s ease,
+                border-color 0.32s ease,
+                max-width 0.32s ease,
+                max-height 0.32s ease;
+        }
+
+        .bracket-group-stack--merged[data-public-active-view="Winners Bracket"] [data-public-bracket-group="Losers Bracket"],
+        .bracket-group-stack--merged[data-public-active-view="Losers Bracket"] [data-public-bracket-group="Winners Bracket"] {
+            opacity: 0;
+            pointer-events: none;
+            border-color: transparent;
+            padding: 0;
+            max-width: 0;
+            max-height: 0;
+        }
+
+        .bracket-group-stack--merged[data-public-active-view="Winners Bracket"] [data-public-bracket-group="Losers Bracket"] {
+            transform: translateX(-44px);
+        }
+
+        .bracket-group-stack--merged[data-public-active-view="Losers Bracket"] [data-public-bracket-group="Winners Bracket"] {
+            transform: translateX(44px);
+        }
+
+        .bracket-group-stack--merged[data-public-active-view="merged"] [data-public-bracket-group="Losers Bracket"],
+        .bracket-group-stack--merged[data-public-active-view="merged"] [data-public-bracket-group="Opening Round"],
+        .bracket-group-stack--merged[data-public-active-view="merged"] [data-public-bracket-group="Winners Bracket"] {
+            opacity: 1;
+            pointer-events: auto;
+            transform: none;
+            max-width: none;
+            max-height: none;
         }
 
         .bracket-group h3 {
@@ -476,10 +675,6 @@
             max-height: calc(100vh - 18rem);
             overflow: auto;
             padding-right: 0.6rem;
-        }
-
-        .bracket-section:fullscreen .selected-match-card {
-            margin-bottom: 0.75rem;
         }
 
         .detail-button,
@@ -563,9 +758,53 @@
                 align-items: stretch;
             }
 
-            .bracket-group-stack--merged {
+            .public-bracket-view-toggle {
+                flex-wrap: nowrap;
+                overflow-x: auto;
+                padding-bottom: 0.35rem;
+            }
+
+            .bracket-path-button {
+                flex: 0 0 auto;
+            }
+
+            .bracket-group-stack--merged,
+            .bracket-group-stack--finals {
                 grid-template-columns: 1fr;
                 grid-template-areas: none;
+            }
+
+            .bracket-group-stack--merged[data-public-active-view="Winners Bracket"] [data-public-bracket-group="Opening Round"],
+            .bracket-group-stack--merged[data-public-active-view="Losers Bracket"] [data-public-bracket-group="Opening Round"] {
+                width: 100%;
+            }
+
+            .read-bracket {
+                --bracket-track: 58px;
+                grid-auto-columns: minmax(176px, 176px);
+                gap: 16px;
+            }
+
+            .read-bracket-matchup {
+                padding: 0.62rem 0.7rem;
+                border-radius: 14px;
+            }
+
+            .read-bracket-player {
+                padding: 0.3rem 0.45rem;
+                align-items: flex-start;
+            }
+
+            .read-bracket-player strong {
+                font-size: 0.78rem;
+                white-space: normal;
+                overflow: visible;
+                text-overflow: clip;
+                line-height: 1.2;
+            }
+
+            .read-bracket-summary {
+                font-size: 0.72rem;
             }
         }
     </style>
@@ -605,6 +844,13 @@
         let currentTournamentData = null;
         let selectedBracketMatchId = null;
         let selectedPublicBracketView = 'merged';
+        let isPublicMatchModalOpen = false;
+        const fixtureSectionState = {
+            waiting: true,
+            ready: true,
+            live: true,
+            recorded: true
+        };
 
         function roundTitle(roundNumber, totalRounds) {
             if (totalRounds <= 1 || roundNumber >= totalRounds) {
@@ -667,18 +913,22 @@
 
         function bracketGroupOrder(label) {
             const order = {
-                'Winners Bracket': 1,
+                'Opening Round': 1,
+                'Losers Bracket': 2,
+                'Winners Bracket': 3,
                 'Elimination': 1,
                 'Knockout': 1,
-                'Losers Bracket': 2,
-                'Grand Final': 3,
-                'Third Place Playoff': 4
+                'Grand Final': 4,
+                'Third Place Playoff': 5
             };
 
             return order[label] || 99;
         }
 
         function bracketRoundTitle(label, roundNumber, totalRounds) {
+            if (label === 'Opening Round') {
+                return 'Opening Round';
+            }
             if (label === 'Grand Final') {
                 return 'Grand Final';
             }
@@ -689,16 +939,26 @@
                 return `Winners ${roundTitle(roundNumber, totalRounds)}`;
             }
             if (label === 'Losers Bracket') {
-                if (totalRounds <= 1 || roundNumber >= totalRounds) {
-                    return 'Losers Final';
-                }
-                if (roundNumber === totalRounds - 1) {
-                    return 'Losers Semifinal';
-                }
-                return `Losers Round ${roundNumber}`;
+                return `Losers ${roundTitle(roundNumber, totalRounds)}`;
             }
 
             return roundTitle(roundNumber, totalRounds);
+        }
+
+        function allowedPublicBracketGroups(viewKey) {
+            if (viewKey === 'Winners Bracket') {
+                return ['Opening Round', 'Winners Bracket'];
+            }
+
+            if (viewKey === 'Losers Bracket') {
+                return ['Opening Round', 'Losers Bracket'];
+            }
+
+            if (viewKey === 'Grand Final') {
+                return ['Grand Final', 'Third Place Playoff'];
+            }
+
+            return ['Losers Bracket', 'Opening Round', 'Winners Bracket'];
         }
 
         function bracketDomKey(value) {
@@ -715,7 +975,7 @@
                     <span class="legend-chip"><span class="legend-swatch legend-swatch--ready"></span> Ready to play</span>
                     <span class="legend-chip"><span class="legend-swatch legend-swatch--live"></span> Live or highlighted</span>
                     <span class="legend-chip"><span class="legend-swatch legend-swatch--completed"></span> Result recorded</span>
-                    ${includeBracketPaths ? '<span class="legend-chip">Winners, losers, and grand final paths stay in one merged layout below.</span>' : ''}
+                    ${includeBracketPaths ? '<span class="legend-chip">Opening round stays in the center, then the field splits into the losers path on the left and winners path on the right.</span>' : ''}
                 </div>
             `;
         }
@@ -809,11 +1069,42 @@
             `;
         }
 
-        function renderIndividualMatches(matches) {
-            if (!matches || matches.length === 0) {
-                return '<p style="color: var(--text-color);">No fixtures yet.</p>';
+        function fixtureCategoryConfig() {
+            return [
+                { key: 'waiting', label: 'Waiting for an opponent' },
+                { key: 'ready', label: 'Ready to play' },
+                { key: 'live', label: 'Live or highlighted' },
+                { key: 'recorded', label: 'Result recorded' }
+            ];
+        }
+
+        function fixtureCategoryKey(match) {
+            const visualState = bracketVisualState(match);
+            const bracketLabel = String(match.bracket || '').trim();
+
+            if (visualState === 'completed') {
+                return 'recorded';
             }
 
+            if (visualState === 'live' || bracketLabel === 'Grand Final' || bracketLabel === 'Third Place Playoff') {
+                return 'live';
+            }
+
+            if (visualState === 'ready') {
+                return 'ready';
+            }
+
+            return 'waiting';
+        }
+
+        function toggleFixtureCategory(categoryKey) {
+            fixtureSectionState[categoryKey] = !fixtureSectionState[categoryKey];
+            if (currentTournamentData) {
+                renderTournamentPage(currentTournamentData);
+            }
+        }
+
+        function renderFixtureCards(matches) {
             return `
                 <div class="match-grid">
                     ${matches.map((match) => {
@@ -827,13 +1118,49 @@
                             <h3>${playerLabel(match, 'player1')} vs ${playerLabel(match, 'player2')}</h3>
                             ${teamMeta}
                             <p style="color: var(--text-color); margin-top: 0.75rem;">
-                                ${match.match_date} at ${match.match_time}
+                                ${match.match_date} at ${String(match.match_time || '').slice(0, 5)}
                             </p>
                             <p style="margin-top: 0.5rem;">
-                                ${match.match_status === 'Completed' ? `<strong>${match.player1_score} - ${match.player2_score}</strong>` : 'Scheduled'}
+                                ${match.match_status === 'Completed' ? `<strong>${match.player1_score} - ${match.player2_score}</strong>` : detailEscapeHtml(match.match_status || 'Scheduled')}
                             </p>
                         </article>
                     `;
+                    }).join('')}
+                </div>
+            `;
+        }
+
+        function renderIndividualMatches(matches) {
+            if (!matches || matches.length === 0) {
+                return '<p style="color: var(--text-color);">No fixtures yet.</p>';
+            }
+
+            const groupedMatches = {
+                waiting: [],
+                ready: [],
+                live: [],
+                recorded: []
+            };
+            matches.forEach((match) => {
+                groupedMatches[fixtureCategoryKey(match)].push(match);
+            });
+
+            return `
+                <div class="fixture-section-stack">
+                    ${fixtureCategoryConfig().map((category) => {
+                        const rows = groupedMatches[category.key] || [];
+                        const isOpen = fixtureSectionState[category.key] !== false;
+                        return `
+                            <section class="fixture-section ${isOpen ? '' : 'is-collapsed'}">
+                                <button type="button" class="fixture-section-toggle" onclick="toggleFixtureCategory('${category.key}')">
+                                    <strong>${category.label}</strong>
+                                    <span class="fixture-section-count">${rows.length}</span>
+                                </button>
+                                <div class="fixture-section-body">
+                                    ${rows.length > 0 ? renderFixtureCards(rows) : '<p style="color: var(--text-color);">No fixtures in this category yet.</p>'}
+                                </div>
+                            </section>
+                        `;
                     }).join('')}
                 </div>
             `;
@@ -902,29 +1229,35 @@
 
             const hasScore = match.player1_score !== null && match.player2_score !== null;
             return `
-                <article class="surface selected-match-card">
-                    <div class="read-bracket-meta">
-                        <strong>${bracketDisplayTitle(match, group.label, group.rounds.length)}</strong>
-                        <span>${match.match_status}</span>
-                    </div>
-                    <div class="selected-match-grid">
-                        <div class="selected-match-slot">
-                            <span>Top slot</span>
-                            <strong>${playerProfileLink(match, 'player1')}</strong>
+                <div class="public-match-modal" id="publicMatchModal" onclick="handlePublicMatchModalBackdrop(event)">
+                    <article class="public-match-modal-card">
+                        <div class="public-match-modal-head">
+                            <div>
+                                <div class="pill">${group.label || (match.bracket || 'Fixture')}</div>
+                                <h3 style="margin-top:0.5rem;">${bracketDisplayTitle(match, group.label, group.rounds.length)}</h3>
+                                <p style="color: var(--text-color); margin-top: 0.55rem;">This matchup is opened in focus mode so the scoreline, path, and competitors are easier to read than inside the bracket node.</p>
+                            </div>
+                            <button type="button" class="detail-button-secondary" onclick="closePublicMatchModal()">Close</button>
                         </div>
-                        <div class="selected-match-slot">
-                            <span>Bottom slot</span>
-                            <strong>${playerProfileLink(match, 'player2')}</strong>
+                        <div class="public-match-modal-grid">
+                            <div class="selected-match-slot">
+                                <span>Top slot</span>
+                                <strong>${playerProfileLink(match, 'player1')}</strong>
+                            </div>
+                            <div class="selected-match-slot">
+                                <span>Bottom slot</span>
+                                <strong>${playerProfileLink(match, 'player2')}</strong>
+                            </div>
                         </div>
-                    </div>
-                    <div class="selected-match-meta" style="margin-top: 1rem;">
-                        <span>${match.match_date} at ${String(match.match_time || '').slice(0, 5)}</span>
-                        <span>${group.label || (match.bracket || (match.group_number ? `Group ${match.group_number}` : 'Knockout fixture'))}</span>
-                    </div>
-                    <div style="margin-top: 1rem;">
-                        <span class="selected-match-result">${hasScore ? `${match.player1_score} - ${match.player2_score}` : 'Waiting for result'}</span>
-                    </div>
-                </article>
+                        <div class="selected-match-meta" style="margin-top: 1rem;">
+                            <span>${match.match_date} at ${String(match.match_time || '').slice(0, 5)}</span>
+                            <span>${match.match_status}</span>
+                        </div>
+                        <div style="margin-top: 1rem;">
+                            <span class="selected-match-result">${hasScore ? `${match.player1_score} - ${match.player2_score}` : 'Waiting for result'}</span>
+                        </div>
+                    </article>
+                </div>
             `;
         }
 
@@ -960,7 +1293,7 @@
             ];
 
             if (groupEntries.some((group) => group.rawLabel === 'Grand Final')) {
-                views.push({ key: 'Grand Final', label: 'Grand Final' });
+                views.push({ key: 'Grand Final', label: 'Finals' });
             }
 
             return `
@@ -1027,15 +1360,23 @@
                     return left.label.localeCompare(right.label, undefined, { sensitivity: 'base' });
                 });
 
-            const visibleGroupEntries = tournamentType === 'Double Elimination' && selectedPublicBracketView !== 'merged'
-                ? groupEntries.filter((group) => group.rawLabel === selectedPublicBracketView)
-                : groupEntries;
-            const renderedGroups = visibleGroupEntries.length > 0 ? visibleGroupEntries : groupEntries;
+            const renderedGroups = (() => {
+                if (tournamentType !== 'Double Elimination') {
+                    return groupEntries;
+                }
+
+                if (selectedPublicBracketView === 'Grand Final') {
+                    const finalsGroups = groupEntries.filter((group) => ['Grand Final', 'Third Place Playoff'].includes(group.rawLabel));
+                    return finalsGroups.length > 0 ? finalsGroups : groupEntries;
+                }
+
+                const pathGroups = groupEntries.filter((group) => ['Losers Bracket', 'Opening Round', 'Winners Bracket'].includes(group.rawLabel));
+                return pathGroups.length > 0 ? pathGroups : groupEntries;
+            })();
             const visibleMatches = renderedGroups.flatMap((group) => group.matches);
             const selectedMatch = visibleMatches.find((match) => Number(match.match_id) === Number(selectedBracketMatchId)) || visibleMatches[0] || knockoutMatches[0];
-            const selectedGroup = renderedGroups.find((group) => group.matches.some((match) => Number(match.match_id) === Number(selectedMatch?.match_id))) || renderedGroups[0];
-            const groupStackClass = tournamentType === 'Double Elimination' && selectedPublicBracketView === 'merged'
-                ? 'bracket-group-stack bracket-group-stack--merged'
+            const groupStackClass = tournamentType === 'Double Elimination'
+                ? `bracket-group-stack ${selectedPublicBracketView === 'Grand Final' ? 'bracket-group-stack--finals' : 'bracket-group-stack--merged'}`
                 : 'bracket-group-stack';
 
             return `
@@ -1043,21 +1384,31 @@
                 <div class="bracket-toolbar">
                     <p class="bracket-toolbar-copy">
                         ${tournamentType === 'Double Elimination'
-                            ? 'Start from the merged bracket for the full tournament picture, then switch to a single path when you want to inspect just the winners side, losers side, or the final.'
+                            ? 'The opening round anchors the center lane. From there the field splits into the losers bracket on the left and the winners bracket on the right, with a dedicated finals view for the deciding matches.'
                             : 'Open focus mode for a larger, scrollable bracket view when the elimination paths get crowded.'}
                     </p>
                     ${groupEntries.length > 1 ? '<span class="legend-chip">Bracket placeholders keep bye lines visible even when the entrant count is not a power of two.</span>' : ''}
                 </div>
                 ${renderBracketViewToggle(groupEntries, tournamentType)}
                 ${tournamentType !== 'Double Elimination' ? renderBracketPathNav(groupEntries) : ''}
-                <div class="${groupStackClass}">
+                <div class="${groupStackClass}" data-public-active-view="${detailEscapeHtml(selectedPublicBracketView)}">
                     ${renderedGroups.map((group) => {
                         const slotCount = Math.pow(2, group.rounds.length);
                         return `
                             <div class="bracket-group" id="public-bracket-group-${bracketDomKey(group.key)}" data-public-bracket-group="${detailEscapeHtml(group.rawLabel)}">
                                 <h3>${group.label}</h3>
-                                <p>${group.rawLabel === 'Grand Final' ? 'The winners-bracket champion meets the last survivor from the lower path here.' : (group.rawLabel === 'Third Place Playoff' ? 'The semifinal losers meet here to settle third and fourth place.' : 'Follow this path round by round through the connected bracket below.')}</p>
-                                <div class="read-bracket-shell">
+                                <p>${group.rawLabel === 'Opening Round'
+                                    ? 'Every entrant starts here before the bracket splits into the left-side losers path and the right-side winners path.'
+                                    : (group.rawLabel === 'Grand Final'
+                                        ? 'The winners-side champion meets the losers-side champion here.'
+                                        : (group.rawLabel === 'Third Place Playoff'
+                                            ? 'The losing finalists from each branch meet here to settle third and fourth place.'
+                                            : (group.rawLabel === 'Winners Bracket'
+                                                ? 'Opening-round winners continue through this right-side single-elimination path.'
+                                                : (group.rawLabel === 'Losers Bracket'
+                                                    ? 'Opening-round losers continue through this left-side single-elimination path.'
+                                                    : 'Follow this path round by round through the connected bracket below.'))))}</p>
+                                <div class="read-bracket-shell" ${group.rawLabel === 'Losers Bracket' ? 'data-mirrored-bracket-shell' : ''}>
                                     <div class="read-bracket">
                                         ${group.rounds.map(([roundNumber, roundMatches], roundIndex) => `
                                             <div class="read-bracket-round">
@@ -1111,7 +1462,6 @@
                         `;
                     }).join('')}
                 </div>
-                ${selectedMatch ? renderSelectedBracketMatch(selectedMatch, selectedGroup) : ''}
             `;
         }
 
@@ -1120,6 +1470,17 @@
             const shell = document.getElementById('detail-shell');
             const knockoutBracket = tournament.tour_type !== 'Group' ? renderBracket(data.matches, tournament.tour_type) : '';
             const hasPlayerPlacements = (data.players || []).some((player) => playerPlacementLabel(player));
+            const modalMatch = isPublicMatchModalOpen
+                ? (data.matches || []).find((match) => Number(match.match_id) === Number(selectedBracketMatchId))
+                : null;
+            const modalBracketLabel = modalMatch ? (String(modalMatch.bracket || '').trim() || 'Elimination') : '';
+            const modalGroupMatches = modalMatch
+                ? (data.matches || []).filter((match) => match.group_number === null && (String(match.bracket || '').trim() || 'Elimination') === modalBracketLabel)
+                : [];
+            const modalGroup = modalMatch ? {
+                label: modalBracketLabel === 'Opening Round' ? 'Opening Round' : modalBracketLabel,
+                rounds: new Array(Math.max(1, ...modalGroupMatches.map((match) => Number(match.round_number || 1)))).fill(null)
+            } : null;
 
             shell.innerHTML = `
                 <section class="surface hero-surface">
@@ -1211,7 +1572,7 @@
                             <div class="bracket-section-head">
                                 <div>
                                     <h2>Tournament Bracket</h2>
-                                    <p style="color: var(--text-color); margin-top: 0.6rem;">${tournament.tour_type === 'Double Elimination' ? 'Follow the winners-bracket, losers-bracket, and grand-final flow visually on the main website.' : 'Follow the knockout structure visually on the main website when elimination fixtures are available.'}</p>
+                                    <p style="color: var(--text-color); margin-top: 0.6rem;">${tournament.tour_type === 'Double Elimination' ? 'Click any matchup to open a larger match-details view. The double-elimination layout starts from the center opening round, then splits into the losers path on the left and winners path on the right.' : 'Click any matchup to open a larger match-details view when elimination fixtures are available.'}</p>
                                 </div>
                                 <button type="button" class="detail-button-secondary" onclick="togglePublicBracketFocus()">
                                     <i class="ri-fullscreen-line"></i> Open focus mode
@@ -1255,7 +1616,10 @@
                         </section>
                       `
                 }
+                ${modalMatch && modalGroup ? renderSelectedBracketMatch(modalMatch, modalGroup) : ''}
             `;
+
+            window.requestAnimationFrame(syncMirroredPublicBracketShells);
         }
 
         function showBracketMatch(matchId) {
@@ -1264,6 +1628,7 @@
             }
 
             selectedBracketMatchId = Number(matchId);
+            isPublicMatchModalOpen = true;
             renderTournamentPage(currentTournamentData);
         }
 
@@ -1273,19 +1638,34 @@
                 return;
             }
 
+            const allowedGroups = allowedPublicBracketGroups(selectedPublicBracketView);
             const visibleMatches = (currentTournamentData.matches || []).filter((match) => {
-                if (selectedPublicBracketView === 'merged') {
-                    return match.group_number === null;
-                }
-
-                return match.group_number === null && String(match.bracket || '').trim() === selectedPublicBracketView;
+                const matchGroup = String(match.bracket || '').trim() || 'Elimination';
+                return match.group_number === null && allowedGroups.includes(matchGroup);
             });
 
             if (!visibleMatches.some((match) => Number(match.match_id) === Number(selectedBracketMatchId))) {
                 selectedBracketMatchId = visibleMatches[0] ? Number(visibleMatches[0].match_id) : null;
             }
 
+            if (isPublicMatchModalOpen && !visibleMatches.some((match) => Number(match.match_id) === Number(selectedBracketMatchId))) {
+                isPublicMatchModalOpen = false;
+            }
+
             renderTournamentPage(currentTournamentData);
+        }
+
+        function closePublicMatchModal() {
+            isPublicMatchModalOpen = false;
+            if (currentTournamentData) {
+                renderTournamentPage(currentTournamentData);
+            }
+        }
+
+        function handlePublicMatchModalBackdrop(event) {
+            if (event.target?.id === 'publicMatchModal') {
+                closePublicMatchModal();
+            }
         }
 
         async function togglePublicBracketFocus() {
@@ -1317,6 +1697,14 @@
             target.scrollIntoView({ behavior: 'smooth', block: 'start', inline: 'nearest' });
         }
 
+        function syncMirroredPublicBracketShells() {
+            document.querySelectorAll('[data-mirrored-bracket-shell]').forEach((shell) => {
+                shell.scrollLeft = selectedPublicBracketView === 'merged' || selectedPublicBracketView === 'Losers Bracket'
+                    ? shell.scrollWidth
+                    : 0;
+            });
+        }
+
         async function loadTournamentDetails() {
             if (!tournamentId) {
                 throw new Error('Tournament id is missing.');
@@ -1339,12 +1727,21 @@
             loadTournamentDetails().catch((error) => {
                 document.getElementById('detail-shell').innerHTML = `<div class="surface">${detailEscapeHtml(error.message)}</div>`;
             });
+
+            document.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape' && isPublicMatchModalOpen) {
+                    closePublicMatchModal();
+                }
+            });
         });
 
         window.showBracketMatch = showBracketMatch;
         window.setPublicBracketView = setPublicBracketView;
         window.togglePublicBracketFocus = togglePublicBracketFocus;
         window.focusPublicBracketGroup = focusPublicBracketGroup;
+        window.toggleFixtureCategory = toggleFixtureCategory;
+        window.closePublicMatchModal = closePublicMatchModal;
+        window.handlePublicMatchModalBackdrop = handlePublicMatchModalBackdrop;
     </script>
 </body>
 </html>

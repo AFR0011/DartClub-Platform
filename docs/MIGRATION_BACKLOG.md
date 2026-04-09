@@ -46,6 +46,13 @@
 - Added single-elimination third-place playoff generation plus automatic placement syncing.
 - Reworked the public/admin double-elimination views into merged layouts with winners-only, losers-only, and grand-final filters.
 - Added placeholder/bye nodes so non-power-of-two brackets keep a consistent structure instead of dropping connector lines.
+- Fixed the missing `tournament_round_title()` helper include on the public tournament-detail service path.
+- Rebuilt double-elimination around a centered opening round, mirrored losers branch, right-side winners branch, third-place playoff, and grand final.
+- Updated the public tournament-detail flow so bracket matchups open in a larger modal and fixtures are grouped into toggleable status buckets.
+- Corrected the admin bracket filters so winners-only and losers-only stop showing the same branch, and mirrored the merged admin losers lane to match the public layout.
+- Changed the public and admin double-elimination filters so winners-only and losers-only collapse the opposite branch while keeping the opening round visible as the anchor lane.
+- Fixed the public and admin `Finals` button behavior so it renders only the grand final plus third-place playoff instead of falling back to a combined bracket state.
+- Tightened mobile bracket behavior on the public tournament page plus the admin connected-bracket and bracket-board views.
 - Added repo mapping docs and repo-local Codex config.
 - Added the global `repo-map` skill scaffold.
 - Centralized DB/bootstrap usage.
@@ -89,6 +96,10 @@
     - public player-profile navigation from tournament pages
     - public and admin `Double Elimination` bracket readability plus loser-path progression
     - merged vs filtered double-elimination bracket behavior on both the connected bracket and bracket-board views
+    - centered-opening-round and mirrored-losers-lane readability in both public and admin merged views
+    - winners-only and losers-only collapse behavior on both public/admin double-elimination pages
+    - finals-only rendering on both public/admin double-elimination pages
+    - mobile/tablet usability of the public bracket plus admin bracket-board after the latest responsive pass
     - two-team `Group` regeneration under the new player-vs-player rules
     - elimination third-place playoff and placement labels after recording results
     - seeded `Scale Test - Double Elimination 64` browser-eye pass across desktop/tablet/mobile widths

@@ -898,28 +898,66 @@ function scrollToBracketGroup(groupId) {
     target.scrollIntoView({ behavior: 'smooth', block: 'start', inline: 'nearest' });
 }
 
+function syncMirroredBracketShells(activeView) {
+    document.querySelectorAll('[data-mirrored-bracket-shell]').forEach((shell) => {
+        shell.scrollLeft = activeView === 'merged' || activeView === 'Losers Bracket'
+            ? shell.scrollWidth
+            : 0;
+    });
+}
+
 function showBracketView(viewKey) {
     const groups = Array.from(document.querySelectorAll('[data-bracket-group]'));
     if (groups.length === 0) {
         return;
     }
 
-    const activeView = viewKey || readRememberedBracketView() || 'merged';
-    groups.forEach((group) => {
-        const groupLabel = group.dataset.bracketGroup || '';
-        const shouldShow = activeView === 'merged' ? true : groupLabel === activeView;
-        group.classList.toggle('is-hidden', !shouldShow);
-    });
+    const isDoubleElimination = TournamentAdminPage.type === 'Double Elimination'
+        || groups.some((group) => (group.dataset.bracketGroup || '') === 'Opening Round');
+    const rememberedView = readRememberedBracketView();
+    let activeView = viewKey || rememberedView || (isDoubleElimination ? 'merged' : 'all');
+
+    if (isDoubleElimination && !['merged', 'Winners Bracket', 'Losers Bracket', 'Grand Final'].includes(activeView)) {
+        activeView = 'merged';
+    }
+
+    if (!isDoubleElimination) {
+        groups.forEach((group) => {
+            group.classList.remove('is-hidden');
+        });
+
+        document.querySelectorAll('[data-bracket-view-button]').forEach((button) => {
+            button.classList.remove('active');
+        });
+
+        document.querySelectorAll('[data-bracket-groups-container]').forEach((container) => {
+            container.dataset.activeView = 'all';
+            container.classList.toggle('is-single-view', container.querySelectorAll('[data-bracket-group]').length <= 1);
+        });
+
+        window.requestAnimationFrame(() => syncMirroredBracketShells('all'));
+        return;
+    }
+
+    const allowedGroupsByView = {
+        merged: ['Losers Bracket', 'Opening Round', 'Winners Bracket'],
+        'Winners Bracket': ['Opening Round', 'Winners Bracket'],
+        'Losers Bracket': ['Opening Round', 'Losers Bracket'],
+        'Grand Final': ['Grand Final', 'Third Place Playoff']
+    };
 
     document.querySelectorAll('[data-bracket-view-button]').forEach((button) => {
         button.classList.toggle('active', button.dataset.bracketViewButton === activeView);
     });
 
     document.querySelectorAll('[data-bracket-groups-container]').forEach((container) => {
+        container.dataset.activeView = activeView;
         const visibleGroups = Array.from(container.querySelectorAll('[data-bracket-group]'))
-            .filter((group) => !group.classList.contains('is-hidden'));
-        container.classList.toggle('is-single-view', activeView !== 'merged' || visibleGroups.length <= 1);
+            .filter((group) => (allowedGroupsByView[activeView] || []).includes(group.dataset.bracketGroup || ''));
+        container.classList.toggle('is-single-view', activeView === 'Grand Final' || visibleGroups.length <= 1);
     });
+
+    window.requestAnimationFrame(() => syncMirroredBracketShells(activeView));
 
     rememberBracketView(activeView);
 }

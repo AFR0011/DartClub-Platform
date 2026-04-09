@@ -2,7 +2,7 @@
 
 ## Metadata
 - Project: `Dart Club`
-- Last updated: 2026-04-06
+- Last updated: 2026-04-08
 - Repo type: legacy PHP/MySQL website
 - Current repo status: mapped, documented, runtime-tested on XAMPP, and further debug-hardened across the shared public shell, JSON service layer, tournament engine, and public content/community surfaces
 
@@ -53,7 +53,7 @@
   - `League` = group-stage plus knockout
   - `Group` = two-team competition where every player from one team plays every player from the other team
   - `Elimination` = single-elimination bracket with a third-place playoff and placement sync
-  - `Double Elimination` = winners bracket plus losers bracket plus grand final, with merged and path-filtered public/admin views
+  - `Double Elimination` = shared opening round, then separate winners-side and losers-side single-elimination branches, followed by a third-place playoff and grand final
 - Current audience model:
   - guests
   - signed-in players
@@ -66,6 +66,7 @@
   - managers/admins can publish and moderate
 
 ## What Changed In This Pass
+- Restored `services/get_tournaments.php` runtime loading by requiring `services/shared/tournament_view_helpers.php`, fixing the public tournament feed under the local built-in PHP server.
 - Hardened the shared public-shell fetch path so guests no longer need a working DB connection just to load navigation/session context.
 - Added service-level exception/error handling so JSON endpoints return JSON failures instead of leaking HTML warning/fatal output into frontend `.json()` callers.
 - Fixed config env parsing so empty-string DB passwords are no longer overwritten by fallback defaults.
@@ -103,6 +104,10 @@
 - Added active `Double Elimination` support end to end, including winners-bracket, losers-bracket, and grand-final generation plus loser-path propagation.
 - Added bracket-aware display labels and separate bracket-group rendering on both the public tournament page and the admin tournament console for multi-path brackets.
 - Added `scripts/seed_large_tournaments.php` plus deterministic 64-player seed data for `League`, `Group`, `Elimination`, and `Double Elimination` scale verification.
+- Fixed the missing `tournament_round_title()` helper include on the public tournament-detail service path so completed tournament reads stop failing at runtime.
+- Rebuilt double-elimination generation around a shared opening round that then splits into a left-side losers branch and a right-side winners branch, with dedicated third-place and grand-final matches.
+- Updated the public tournament-detail page so double-elimination matchups open in a larger modal, fixtures are grouped into toggleable status sections, and the merged bracket now treats the opening round as the center spine.
+- Updated the admin tournament-detail bracket filters and merged-lane rendering so winners-only and losers-only views stop showing the same branch and the losers lane mirrors outward from the center opening round.
 - Rebuilt `pages/blog.html` into a clean event-delegated implementation so the preview rail, featured announcement, tag/category filters, and multi-image reader all execute reliably in a real browser.
 - Switched the public gallery page and public tournament-detail page onto the shared `window.appFetchJson(...)` helper so service failures stop degrading into raw `.json()` parser crashes.
 - Restored the shared `js/ui_feedback.js` helper and versioned its page includes so stale cached 404s stop breaking blog, gallery, and admin feedback flows.
@@ -116,6 +121,9 @@
 - Added single-elimination third-place playoff generation plus placement syncing so champion, runner-up, third place, fourth place, and earlier elimination labels now populate automatically as results land.
 - Reworked the public and admin double-elimination bracket views into merged three-lane layouts with explicit winners-only, losers-only, and grand-final filters instead of always dumping every path together.
 - Added bye/placeholder bracket nodes to keep knockout connectors stable when the entrant count is not a power of two.
+- Changed the public and admin double-elimination view toggles so winners-only and losers-only collapse the opposite branch instead of removing the whole layout outright, keeping the opening round visible as the center spine.
+- Fixed the public/admin `Finals` view so it renders only the grand final and third-place playoff cards instead of falling back to a broken combined bracket state.
+- Tightened the mobile bracket fallbacks on the public tournament page plus the admin connected-bracket and bracket-board views so large elimination trees remain scrollable and readable on narrower screens.
 - Rebuilt `dart_club.sql` around the productized data model:
   - membership state
   - membership applications
@@ -196,8 +204,11 @@
 - Do a manual browser pass on the new double-elimination workflow:
   - create/update a `Double Elimination` tournament from admin
   - verify merged, winners-only, losers-only, and grand-final filters on public/admin pages
+  - verify the opening round stays centered while the losers path stays left and the winners path stays right in merged view
+  - verify winners-only and losers-only animate by collapsing the opposite branch while keeping the opening round visible in both the connected bracket and bracket-board views
+  - verify the `Finals` button shows only the grand final and third-place playoff on both the public page and the admin page
   - record results deep enough to verify loser-path propagation and the grand final
-  - verify the seeded `Scale Test - Double Elimination 64` tournament remains readable across viewport sizes
+  - verify the seeded `Scale Test - Double Elimination 64` tournament remains readable across desktop, tablet, and mobile widths
   - verify the new public/admin bracket focus mode is usable at scale
 - Regenerate and manually QA a fresh `Group` tournament under the new rules:
   - exactly two teams
@@ -217,6 +228,7 @@
 
 ## Verification State
 - Verified in this pass:
+  - live built-in-server HTTP verification that `services/get_tournaments.php` now returns `200` after restoring the missing tournament-view helper include
   - guest `services/get_session_context.php` now returns clean JSON even when the configured DB user cannot connect
   - DB-backed service CLI checks using `putenv(...)` overrides for blank-password local root access:
     - `services/get_tournaments.php`
@@ -302,6 +314,9 @@
     - merged double-elimination bracket group layout hooks
   - live HTTP verification that `js/ui_feedback.js?v=20260406-1` now returns `200`
   - live `Double Elimination` payload verification for `services/get_tournament_details.php?id=8`, including winners/losers/grand-final bracket metadata and loser-path source labels
+  - live public tournament-detail verification after the opening-round split rewrite, including:
+    - `services/get_tournament_details.php?id=8` returning `Opening Round: 32`, `Winners Bracket: 31`, `Losers Bracket: 31`, `Third Place Playoff: 1`, and `Grand Final: 1`
+    - Chrome headless screenshot confirmation that the merged public view now places the opening round in the center and mirrors the losers branch from the left side toward that center lane
   - temporary transaction-backed tournament helper verification proving that:
     - fresh `Group` tournaments now generate exactly two teams, four cross-team player fixtures for a 2x2 sample, and zero `team_matches`
     - fresh 4-player elimination brackets now generate a third-place playoff and sync `Champion`, `Runner-up`, `3rd Place`, and `4th Place`
@@ -338,6 +353,7 @@
   - real drag-and-drop interaction under an actual browser pointer/touch session
   - real browser rendering of the new connected public/admin bracket layouts
   - real browser rendering of the new merged double-elimination bracket layouts and view filters
+  - authenticated browser rendering of the admin merged losers-side lane after the new mirrored-lane layout fix
   - real browser-eye QA for the new click-to-expand public bracket interaction
   - real browser-eye QA for the admin bracket after switching from selected detail cards to a modal-first workflow
   - authenticated browser execution of the new admin `Start Tournament` action
