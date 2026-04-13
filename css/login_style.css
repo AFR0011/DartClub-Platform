@@ -208,17 +208,18 @@ body.auth-shell-page .footer--compact .footer__group {
 .loginBx input[type="submit"] {
     margin-top: 0.2rem;
     border: 1px solid rgba(255, 215, 202, 0.28);
-    background: linear-gradient(180deg, #ff7c4d, #ef5a29);
+    background: linear-gradient(180deg, #ff4f5f, #c91733);
     color: #fff;
     font-size: 1rem;
     font-weight: var(--font-bold);
     letter-spacing: 0.04em;
     cursor: pointer;
-    box-shadow: 0 16px 28px rgba(239, 90, 41, 0.22);
+    box-shadow: 0 16px 28px rgba(201, 23, 51, 0.26);
 }
 
 .loginBx input[type="submit"]:hover {
-    box-shadow: 0 18px 32px rgba(239, 90, 41, 0.3);
+    background: linear-gradient(180deg, #ff6170, #b50f2a);
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12), 0 0 24px rgba(255, 89, 109, 0.32), 0 18px 32px rgba(181, 15, 42, 0.34);
 }
 
 #error-message {
@@ -246,14 +247,66 @@ body.auth-shell-page .footer--compact .footer__group {
     white-space: normal;
 }
 
+.group a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 46px;
+    padding: 0.75rem 1rem;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    background: rgba(255, 255, 255, 0.04);
+    transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
+}
+
 .group a:hover {
     color: #fff;
+    transform: translateY(-1px);
+    border-color: rgba(255, 79, 95, 0.38);
+    background: rgba(255, 79, 95, 0.12);
+    box-shadow: 0 0 18px rgba(255, 79, 95, 0.18);
 }
 
 .group a:nth-child(2),
 .group a:only-child {
     color: #ffd7ca;
     font-weight: var(--font-bold);
+    background: rgba(255, 79, 95, 0.12);
+    border-color: rgba(255, 79, 95, 0.26);
+}
+
+@media (max-width: 768px), (hover: none), (pointer: coarse) {
+    main {
+        align-items: flex-start;
+        padding-top: 5.75rem;
+        padding-bottom: 3rem;
+    }
+
+    .box {
+        height: auto;
+        min-height: 600px;
+    }
+
+    .box:hover {
+        height: auto;
+    }
+
+    .login {
+        inset: 28px 18px;
+    }
+
+    .box:hover .login {
+        inset: 28px 18px;
+    }
+
+    .loginBx {
+        width: 100%;
+        transform: translateY(0);
+    }
+
+    .box:hover .loginBx {
+        transform: translateY(0);
+    }
 }
 
 @media (max-width: 540px) {
@@ -262,11 +315,7 @@ body.auth-shell-page .footer--compact .footer__group {
     }
 
     .box {
-        height: 240px;
-    }
-
-    .box:hover {
-        height: 540px;
+        min-height: 620px;
     }
 
     .login {

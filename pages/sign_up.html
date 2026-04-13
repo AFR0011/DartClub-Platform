@@ -31,21 +31,22 @@
     <div class="box">
       <div class="login">
         <div class="loginBx">
-          <h2><i class="ri-login-box-line"></i>Sign Up<i class="ri-flashlight-line"></i></h2>
+          <h2><i class="ri-login-box-line"></i><span data-i18n-en="Sign Up" data-i18n-tr="Kayit Ol">Sign Up</span><i class="ri-flashlight-line"></i></h2>
           <form id="signup-form">
             <label class="sr-only" for="username">Username</label>
-            <input type="text" id="username" placeholder="Username..." autocomplete="username" required>
+            <input type="text" id="username" placeholder="Username..." data-i18n-en="Username..." data-i18n-tr="Kullanici adi..." data-i18n-attr="placeholder" autocomplete="username" required>
             <label class="sr-only" for="email">Email address</label>
-            <input type="email" id="email" placeholder="Email..." autocomplete="email" required>
+            <input type="email" id="email" placeholder="Email..." data-i18n-en="Email..." data-i18n-tr="E-posta..." data-i18n-attr="placeholder" autocomplete="email" required>
             <label class="sr-only" for="password">Password</label>
-            <input type="password" id="password" placeholder="Password..." autocomplete="new-password" required>
+            <input type="password" id="password" placeholder="Password..." data-i18n-en="Password..." data-i18n-tr="Sifre..." data-i18n-attr="placeholder" autocomplete="new-password" minlength="8" pattern="(?=.*[A-Za-z])(?=.*\\d).{8,}" title="Use at least 8 characters with at least one letter and one number." required>
             <label class="sr-only" for="password2">Repeat password</label>
-            <input type="password" id="password2" placeholder="Repeat Password..." autocomplete="new-password" required>
-            <input type="submit" value="Sign Up">
+            <input type="password" id="password2" placeholder="Repeat Password..." data-i18n-en="Repeat Password..." data-i18n-tr="Sifreyi tekrar edin..." data-i18n-attr="placeholder" autocomplete="new-password" required>
+            <p style="width:100%; color:#c7d0de; font-size:0.88rem;" data-i18n-en="Use at least 8 characters with at least one letter and one number." data-i18n-tr="En az 8 karakter kullanin; en az bir harf ve bir rakam ekleyin.">Use at least 8 characters with at least one letter and one number.</p>
+            <input type="submit" value="Sign Up" data-i18n-en="Sign Up" data-i18n-tr="Kayit Ol" data-i18n-attr="value">
           </form>
           <div id="error-message" role="status" aria-live="polite"></div>
           <div class="group">
-            <a href="login.html"><pre>Already have an account? Login</pre></a>
+            <a href="login.html" data-i18n-en="Already have an account? Login" data-i18n-tr="Zaten hesabin var mi? Giris yap">Already have an account? Login</a>
           </div>
         </div>
       </div>
@@ -59,7 +60,7 @@
   <script src="../js/scrollreveal.min.js"></script>
 
   <!--primary js file-->
-    <script src="../js/behaviour.js?v=20260409-1"></script>
+    <script src="../js/behaviour.js?v=20260413-1"></script>
 
   <script>
    document.getElementById('signup-form').addEventListener('submit', function(event) {
@@ -72,6 +73,14 @@
   
   if (password !== password2) {
     document.getElementById('error-message').innerText = 'Passwords do not match';
+    return;
+  }
+
+  if (!/(?=.*[A-Za-z])(?=.*\d).{8,}/.test(password)) {
+    document.getElementById('error-message').innerText =
+      window.getAppLocale && window.getAppLocale() === 'tr'
+        ? 'Sifre en az 8 karakter olmali ve en az bir harf ile bir rakam icermelidir.'
+        : 'Password must be at least 8 characters and include at least one letter and one number.';
     return;
   }
 

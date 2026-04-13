@@ -1,6 +1,13 @@
 # MIGRATION_BACKLOG
 
 ## Completed In This Pass
+- Applied the `docs/Dart Club SRE 120426.md` follow-up with a persistent EN/TR language toggle in the shared shell plus localized hooks for key public/auth/tournament/community pages.
+- Expanded the login/signup card by default on small/touch layouts, enforced a stronger signup password rule, and added a best-effort welcome email path after signup.
+- Smoothed public-shell UX with footer-safe scroll-up spacing, brighter shared button hover treatment, a light page-transition overlay, and a small homepage/about image-positioning pass.
+- Added `pages/developers.html` plus homepage/about links to it, kept the Neo DoubleEdged logo in the homepage rail, and reserved placeholder slots for pending personal/team identity assets.
+- Added an explicit gallery lightbox close button, split fixture counts from the collapse arrow, and synced the public/admin bracket focus-mode buttons so they switch between open/close labels while tightening mobile bracket fallbacks again.
+- Added a root `index.php` redirect so shared-host docroots like Hostinger `public_html` can open the public site without moving files out of `pages/`.
+- Whitelisted the two public membership-form DOCX downloads through root `.htaccess` so they no longer 403 while the rest of `other/` stays blocked.
 - Rebuilt `pages/about.html` into a current production page with working asset paths, working navigation, and real club/platform copy.
 - Replaced the remaining placeholder homepage copy in `pages/main.php` and removed the dead footer newsletter/contact form path from the public-shell direction.
 - Removed the fake login-side password-reset link and converted `pages/reset_password.html` into an explicit account-help/support page until a real reset backend exists.
@@ -100,6 +107,14 @@
 ## Next High-Priority Validation
 - Follow `docs/TESTING_CHECKLIST.md` in order.
 - Use `docs/FREE_DEPLOYMENT_GUIDE.md` for the first real host rollout. Prefer Oracle Cloud Always Free for full PHP/MySQL compatibility; use free shared PHP hosting only as a fallback.
+- Finish browser QA for the latest SRE-note fixes:
+  - EN/TR language toggle persistence and copy coverage
+  - mobile login/signup expansion and stronger password guidance
+  - gallery lightbox close affordance
+  - footer-safe scroll-up position
+  - page-transition feel plus browser back/forward behavior
+  - public/admin focus-mode label sync and the latest mobile bracket layout
+  - `pages/developers.html` once real LinkedIn URLs/photos/logos are available
 - Finish the remaining runtime/manual gaps:
   - SMTP-backed credential delivery
   - Apache visual and navigation QA
@@ -151,6 +166,8 @@
 ## Product/UX Follow-Up
 - Replace placeholder logos/photos where still pending.
 - Review broken or placeholder anchor targets across public pages.
+- Expand locale coverage if Turkish support is meant to cover the full legacy/public/admin surface instead of only the most important public flows.
+- Decide whether the super-optional light/dark mode request is worth a full theming pass or should stay deferred.
 - Improve error/success messaging for profile, membership, tournament registration, and community flows.
 - Improve the tournament hub registration UX further if manual QA still shows confusion around guest vs signed-in registration behavior.
 - Continue polishing tournament admin density and readability if manual QA still shows cramped layouts on smaller screens.

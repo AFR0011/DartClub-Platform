@@ -337,7 +337,7 @@
         }
 
         .public-match-modal-head,
-        .fixture-section-toggle {
+        .fixture-section-head {
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -388,15 +388,34 @@
             overflow: hidden;
         }
 
-        .fixture-section-toggle {
-            width: 100%;
+        .fixture-section-head {
             padding: 1rem 1.1rem;
-            border: 0;
-            background: transparent;
+        }
+
+        .fixture-section-summary {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .fixture-section-toggle {
+            width: 2.35rem;
+            height: 2.35rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: rgba(255, 255, 255, 0.04);
             color: #fff;
             cursor: pointer;
-            text-align: left;
             font: inherit;
+            flex-shrink: 0;
+        }
+
+        .fixture-section-toggle i {
+            transition: transform 0.18s ease;
         }
 
         .fixture-section-body {
@@ -405,6 +424,10 @@
 
         .fixture-section.is-collapsed .fixture-section-body {
             display: none;
+        }
+
+        .fixture-section.is-collapsed .fixture-section-toggle i {
+            transform: rotate(-90deg);
         }
 
         .fixture-section-count {
@@ -728,6 +751,11 @@
         .detail-button-secondary:hover,
         .detail-button-danger:hover {
             transform: translateY(-1px);
+            box-shadow: 0 0 24px rgba(255, 92, 92, 0.2), 0 16px 28px rgba(0, 0, 0, 0.18);
+        }
+
+        .detail-button:hover {
+            background: linear-gradient(180deg, #ff6057, #d7263d);
         }
 
         .detail-input,
@@ -753,7 +781,8 @@
 
         @media (max-width: 820px) {
             .bracket-section-head,
-            .bracket-toolbar {
+            .bracket-toolbar,
+            .fixture-section-head {
                 flex-direction: column;
                 align-items: stretch;
             }
@@ -807,6 +836,53 @@
                 font-size: 0.72rem;
             }
         }
+
+        @media (max-width: 640px) {
+            .bracket-section:fullscreen {
+                padding: 0.85rem;
+            }
+
+            .bracket-section:fullscreen .read-bracket-shell {
+                max-height: calc(100vh - 12rem);
+            }
+
+            .read-bracket {
+                --bracket-track: 52px;
+                grid-auto-columns: minmax(154px, 154px);
+                gap: 12px;
+            }
+
+            .read-bracket-matchup {
+                padding: 0.55rem 0.62rem;
+            }
+
+            .read-bracket-summary {
+                font-size: 0.64rem;
+                gap: 0.35rem;
+            }
+
+            .read-bracket-player {
+                gap: 0.32rem;
+                padding: 0.26rem 0.38rem;
+            }
+
+            .read-bracket-player span {
+                display: none;
+            }
+
+            .read-bracket-player strong {
+                font-size: 0.72rem;
+                line-height: 1.15;
+            }
+
+            .bracket-group {
+                padding: 0.82rem;
+            }
+
+            .public-match-modal-card {
+                padding: 1rem;
+            }
+        }
     </style>
 </head>
 <body>
@@ -838,7 +914,7 @@
     </a>
 
     <script src="../js/scrollreveal.min.js"></script>
-    <script src="../js/behaviour.js?v=20260409-1"></script>
+    <script src="../js/behaviour.js?v=20260413-1"></script>
     <script>
         const tournamentId = <?php echo $tourId; ?>;
         let currentTournamentData = null;
@@ -851,6 +927,7 @@
             live: true,
             recorded: true
         };
+        const pageText = (en, tr) => window.appLocaleText ? window.appLocaleText({ en, tr }) : en;
 
         function roundTitle(roundNumber, totalRounds) {
             if (totalRounds <= 1 || roundNumber >= totalRounds) {
@@ -971,11 +1048,11 @@
         function renderBracketLegend(includeBracketPaths = false) {
             return `
                 <div class="bracket-legend">
-                    <span class="legend-chip"><span class="legend-swatch legend-swatch--waiting"></span> Waiting for an opponent</span>
-                    <span class="legend-chip"><span class="legend-swatch legend-swatch--ready"></span> Ready to play</span>
-                    <span class="legend-chip"><span class="legend-swatch legend-swatch--live"></span> Live or highlighted</span>
-                    <span class="legend-chip"><span class="legend-swatch legend-swatch--completed"></span> Result recorded</span>
-                    ${includeBracketPaths ? '<span class="legend-chip">Opening round stays in the center, then the field splits into the losers path on the left and winners path on the right.</span>' : ''}
+                    <span class="legend-chip"><span class="legend-swatch legend-swatch--waiting"></span> ${pageText('Waiting for an opponent', 'Rakip bekleniyor')}</span>
+                    <span class="legend-chip"><span class="legend-swatch legend-swatch--ready"></span> ${pageText('Ready to play', 'Oynamaya hazir')}</span>
+                    <span class="legend-chip"><span class="legend-swatch legend-swatch--live"></span> ${pageText('Live or highlighted', 'Canli veya one cikan')}</span>
+                    <span class="legend-chip"><span class="legend-swatch legend-swatch--completed"></span> ${pageText('Result recorded', 'Sonuc kaydedildi')}</span>
+                    ${includeBracketPaths ? `<span class="legend-chip">${pageText('Opening round stays in the center, then the field splits into the losers path on the left and winners path on the right.', 'Acilis turu merkezde kalir; ardindan alan soldaki kaybedenler yoluna ve sagdaki kazananlar yoluna ayrilir.')}</span>` : ''}
                 </div>
             `;
         }
@@ -1071,10 +1148,10 @@
 
         function fixtureCategoryConfig() {
             return [
-                { key: 'waiting', label: 'Waiting for an opponent' },
-                { key: 'ready', label: 'Ready to play' },
-                { key: 'live', label: 'Live or highlighted' },
-                { key: 'recorded', label: 'Result recorded' }
+                { key: 'waiting', label: pageText('Waiting for an opponent', 'Rakip bekleniyor') },
+                { key: 'ready', label: pageText('Ready to play', 'Oynamaya hazir') },
+                { key: 'live', label: pageText('Live or highlighted', 'Canli veya one cikan') },
+                { key: 'recorded', label: pageText('Result recorded', 'Sonuc kaydedildi') }
             ];
         }
 
@@ -1132,7 +1209,7 @@
 
         function renderIndividualMatches(matches) {
             if (!matches || matches.length === 0) {
-                return '<p style="color: var(--text-color);">No fixtures yet.</p>';
+                return `<p style="color: var(--text-color);">${pageText('No fixtures yet.', 'Henuz fikstur yok.')}</p>`;
             }
 
             const groupedMatches = {
@@ -1152,12 +1229,17 @@
                         const isOpen = fixtureSectionState[category.key] !== false;
                         return `
                             <section class="fixture-section ${isOpen ? '' : 'is-collapsed'}">
-                                <button type="button" class="fixture-section-toggle" onclick="toggleFixtureCategory('${category.key}')">
-                                    <strong>${category.label}</strong>
-                                    <span class="fixture-section-count">${rows.length}</span>
-                                </button>
+                                <div class="fixture-section-head">
+                                    <div class="fixture-section-summary">
+                                        <strong>${category.label}</strong>
+                                        <span class="fixture-section-count">${rows.length}</span>
+                                    </div>
+                                    <button type="button" class="fixture-section-toggle" aria-expanded="${isOpen ? 'true' : 'false'}" aria-label="${pageText('Expand or collapse this fixture group', 'Bu fikstur grubunu ac veya kapat')}" onclick="toggleFixtureCategory('${category.key}')">
+                                        <i class="ri-arrow-down-s-line"></i>
+                                    </button>
+                                </div>
                                 <div class="fixture-section-body">
-                                    ${rows.length > 0 ? renderFixtureCards(rows) : '<p style="color: var(--text-color);">No fixtures in this category yet.</p>'}
+                                    ${rows.length > 0 ? renderFixtureCards(rows) : `<p style="color: var(--text-color);">${pageText('No fixtures in this category yet.', 'Bu kategoride henuz fikstur yok.')}</p>`}
                                 </div>
                             </section>
                         `;
@@ -1168,7 +1250,7 @@
 
         function renderTeamMatches(matches) {
             if (!matches || matches.length === 0) {
-                return '<p style="color: var(--text-color);">No team fixtures yet.</p>';
+                return `<p style="color: var(--text-color);">${pageText('No team fixtures yet.', 'Henuz takim fiksturu yok.')}</p>`;
             }
 
             return `
@@ -1518,16 +1600,16 @@
         </section>
 
                 <section class="summary-grid">
-                    <article class="summary-card"><strong>${data.players.length}</strong><span>Registered entrants</span></article>
-                    <article class="summary-card"><strong>${data.matches.length}</strong><span>Fixtures created</span></article>
-                    <article class="summary-card"><strong>${data.recent_results.length}</strong><span>Recent results</span></article>
-                    <article class="summary-card"><strong>${tournament.winner_label || 'TBD'}</strong><span>Current winner</span></article>
+                    <article class="summary-card"><strong>${data.players.length}</strong><span>${pageText('Registered entrants', 'Kayitli katilimcilar')}</span></article>
+                    <article class="summary-card"><strong>${data.matches.length}</strong><span>${pageText('Fixtures created', 'Olusturulan fiksturler')}</span></article>
+                    <article class="summary-card"><strong>${data.recent_results.length}</strong><span>${pageText('Recent results', 'Son sonuclar')}</span></article>
+                    <article class="summary-card"><strong>${tournament.winner_label || 'TBD'}</strong><span>${pageText('Current winner', 'Guncel kazanan')}</span></article>
                 </section>
 
                 <section class="results-grid">
                     <div class="surface">
-                        <h2>Participants</h2>
-                        <p style="color: var(--text-color); margin-bottom: 1rem;">${data.players.length} registered players</p>
+                        <h2>${pageText('Participants', 'Katilimcilar')}</h2>
+                        <p style="color: var(--text-color); margin-bottom: 1rem;">${data.players.length} ${pageText('registered players', 'kayitli oyuncu')}</p>
                         <div class="data-table-wrapper">
                             <table class="data-table">
                                 <thead>
@@ -1552,10 +1634,10 @@
                         </div>
                     </div>
                     <div class="surface">
-                        <h2>Recent Results</h2>
+                        <h2>${pageText('Recent Results', 'Son Sonuclar')}</h2>
                         ${
                           data.recent_results.length === 0
-                            ? '<p style="color: var(--text-color);">No results reported yet.</p>'
+                            ? `<p style="color: var(--text-color);">${pageText('No results reported yet.', 'Henuz sonuc bildirilmedi.')}</p>`
                             : data.recent_results.map((result) => `
                                 <p style="margin-bottom: 0.75rem;">
                                     ${result.team1_name ? `${result.team1_name} ${result.team1_score} - ${result.team2_score} ${result.team2_name}` : `${result.player1_name || 'TBD'} ${result.player1_score} - ${result.player2_score} ${result.player2_name || 'TBD'}`}
@@ -1571,11 +1653,11 @@
                         <section class="surface bracket-section" id="publicBracketSection">
                             <div class="bracket-section-head">
                                 <div>
-                                    <h2>Tournament Bracket</h2>
-                                    <p style="color: var(--text-color); margin-top: 0.6rem;">${tournament.tour_type === 'Double Elimination' ? 'Click any matchup to open a larger match-details view. The double-elimination layout starts from the center opening round, then splits into the losers path on the left and winners path on the right.' : 'Click any matchup to open a larger match-details view when elimination fixtures are available.'}</p>
+                                    <h2>${pageText('Tournament Bracket', 'Turnuva Braketi')}</h2>
+                                    <p style="color: var(--text-color); margin-top: 0.6rem;">${tournament.tour_type === 'Double Elimination' ? pageText('Click any matchup to open a larger match-details view. The double-elimination layout starts from the center opening round, then splits into the losers path on the left and winners path on the right.', 'Daha buyuk bir mac detayi gormek icin herhangi bir eslesmeye tiklayin. Double-elimination duzeni merkezdeki acilis turundan baslar, sonra solda kaybedenler yoluna ve sagda kazananlar yoluna ayrilir.') : pageText('Click any matchup to open a larger match-details view when elimination fixtures are available.', 'Eliminasyon fiksturleri olustugunda daha buyuk bir mac detayi gormek icin herhangi bir eslesmeye tiklayin.')}</p>
                                 </div>
-                                <button type="button" class="detail-button-secondary" onclick="togglePublicBracketFocus()">
-                                    <i class="ri-fullscreen-line"></i> Open focus mode
+                                <button type="button" class="detail-button-secondary" id="publicBracketFocusButton" onclick="togglePublicBracketFocus()">
+                                    <i class="ri-fullscreen-line"></i> ${pageText('Open focus mode', 'Odak modunu ac')}
                                 </button>
                             </div>
                             ${knockoutBracket}
@@ -1585,7 +1667,7 @@
                 }
 
                 <section class="surface">
-                    <h2>Competition View</h2>
+                    <h2>${pageText('Competition View', 'Yarisma Gorunumu')}</h2>
                     ${
                       tournament.tour_type === 'Round Robin'
                         ? renderStandingsTable(data.standings)
@@ -1601,17 +1683,17 @@
                   tournament.tour_type === 'Group'
                     ? `
                         <section class="surface">
-                            <h2>Teams</h2>
+                            <h2>${pageText('Teams', 'Takimlar')}</h2>
                             ${renderTeams(data.teams)}
                         </section>
                         <section class="surface">
-                            <h2>${(data.matches || []).length > 0 ? 'Player Fixtures' : 'Team Fixtures'}</h2>
+                            <h2>${(data.matches || []).length > 0 ? pageText('Player Fixtures', 'Oyuncu Fiksturleri') : pageText('Team Fixtures', 'Takim Fiksturleri')}</h2>
                             ${(data.matches || []).length > 0 ? renderIndividualMatches(data.matches) : renderTeamMatches(data.team_matches)}
                         </section>
                       `
                     : `
                         <section class="surface">
-                            <h2>Fixtures List</h2>
+                            <h2>${pageText('Fixtures List', 'Fikstur Listesi')}</h2>
                             ${renderIndividualMatches(data.matches)}
                         </section>
                       `
@@ -1620,6 +1702,7 @@
             `;
 
             window.requestAnimationFrame(syncMirroredPublicBracketShells);
+            window.requestAnimationFrame(syncPublicBracketFocusButton);
         }
 
         function showBracketMatch(matchId) {
@@ -1668,6 +1751,17 @@
             }
         }
 
+        function syncPublicBracketFocusButton() {
+            const button = document.getElementById('publicBracketFocusButton');
+            const bracketSection = document.getElementById('publicBracketSection');
+            if (!button || !bracketSection) {
+                return;
+            }
+
+            const isFocused = document.fullscreenElement === bracketSection;
+            button.innerHTML = `<i class="${isFocused ? 'ri-fullscreen-exit-line' : 'ri-fullscreen-line'}"></i> ${isFocused ? pageText('Close focus mode', 'Odak modunu kapat') : pageText('Open focus mode', 'Odak modunu ac')}`;
+        }
+
         async function togglePublicBracketFocus() {
             const bracketSection = document.getElementById('publicBracketSection');
             if (!bracketSection) {
@@ -1677,11 +1771,13 @@
             try {
                 if (document.fullscreenElement === bracketSection) {
                     await document.exitFullscreen();
+                    syncPublicBracketFocusButton();
                     return;
                 }
 
                 if (bracketSection.requestFullscreen) {
                     await bracketSection.requestFullscreen();
+                    syncPublicBracketFocusButton();
                 }
             } catch (error) {
                 console.warn('Failed to toggle public bracket focus mode:', error);
@@ -1733,6 +1829,13 @@
                     closePublicMatchModal();
                 }
             });
+        });
+
+        document.addEventListener('fullscreenchange', syncPublicBracketFocusButton);
+        window.addEventListener('app:localechange', () => {
+            if (currentTournamentData) {
+                renderTournamentPage(currentTournamentData);
+            }
         });
 
         window.showBracketMatch = showBracketMatch;

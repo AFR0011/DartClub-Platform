@@ -114,6 +114,245 @@ async function appFetchJson(url, options = {}) {
 
 window.appFetchJson = appFetchJson;
 
+const APP_LOCALE_STORAGE_KEY = "dartClubLocale";
+const APP_SUPPORTED_LOCALES = new Set(["en", "tr"]);
+let appLocale = "en";
+let scrollUpFooterObserver = null;
+let pageNavigationLocked = false;
+
+function readStoredLocale() {
+  try {
+    const storedLocale = window.localStorage.getItem(APP_LOCALE_STORAGE_KEY);
+    return APP_SUPPORTED_LOCALES.has(storedLocale) ? storedLocale : "en";
+  } catch (error) {
+    return "en";
+  }
+}
+
+function appLocaleText(copy) {
+  if (typeof copy === "string") {
+    return copy;
+  }
+
+  if (!copy || typeof copy !== "object") {
+    return "";
+  }
+
+  return copy[appLocale] ?? copy.en ?? Object.values(copy)[0] ?? "";
+}
+
+function applyLocaleAttributes(root = document) {
+  document.documentElement.lang = appLocale === "tr" ? "tr" : "en";
+
+  root.querySelectorAll("[data-i18n-en]").forEach((element) => {
+    const nextValue = appLocale === "tr" ? element.dataset.i18nTr : element.dataset.i18nEn;
+    const attr = element.dataset.i18nAttr || "text";
+
+    if (typeof nextValue === "undefined") {
+      return;
+    }
+
+    if (attr === "html") {
+      element.innerHTML = nextValue;
+      return;
+    }
+
+    if (attr === "placeholder") {
+      element.setAttribute("placeholder", nextValue);
+      return;
+    }
+
+    if (attr === "value") {
+      element.value = nextValue;
+      return;
+    }
+
+    element.textContent = nextValue;
+  });
+
+  root.querySelectorAll("[data-i18n-aria-label-en]").forEach((element) => {
+    const nextValue =
+      appLocale === "tr"
+        ? element.dataset.i18nAriaLabelTr
+        : element.dataset.i18nAriaLabelEn;
+
+    if (typeof nextValue !== "undefined") {
+      element.setAttribute("aria-label", nextValue);
+    }
+  });
+}
+
+function updateLanguageDock() {
+  const dock = document.querySelector(".language-dock");
+  if (!dock) {
+    return;
+  }
+
+  const label = dock.querySelector(".language-dock__label");
+  if (label) {
+    label.textContent = appLocaleText({ en: "Language", tr: "Dil" });
+  }
+
+  dock.querySelectorAll("[data-locale]").forEach((button) => {
+    button.classList.toggle("is-active", button.dataset.locale === appLocale);
+    button.setAttribute("aria-pressed", button.dataset.locale === appLocale ? "true" : "false");
+  });
+}
+
+function ensureLanguageDock() {
+  if (!document.body) {
+    return;
+  }
+
+  let dock = document.querySelector(".language-dock");
+  if (!dock) {
+    dock = document.createElement("div");
+    dock.className = "language-dock";
+    dock.innerHTML = `
+      <span class="language-dock__label"></span>
+      <div class="language-dock__buttons">
+        <button type="button" class="language-dock__button" data-locale="en">EN</button>
+        <button type="button" class="language-dock__button" data-locale="tr">TR</button>
+      </div>
+    `;
+    dock.addEventListener("click", (event) => {
+      const nextButton = event.target.closest("[data-locale]");
+      if (!nextButton) {
+        return;
+      }
+
+      setAppLocale(nextButton.dataset.locale || "en");
+    });
+    document.body.appendChild(dock);
+  }
+
+  updateLanguageDock();
+}
+
+function setAppLocale(nextLocale) {
+  const normalizedLocale = APP_SUPPORTED_LOCALES.has(nextLocale) ? nextLocale : "en";
+  if (normalizedLocale === appLocale) {
+    updateLanguageDock();
+    return;
+  }
+
+  appLocale = normalizedLocale;
+
+  try {
+    window.localStorage.setItem(APP_LOCALE_STORAGE_KEY, appLocale);
+  } catch (error) {
+    console.warn("Failed to store locale preference:", error);
+  }
+
+  applyLocaleAttributes();
+  updateLanguageDock();
+  window.dispatchEvent(
+    new CustomEvent("app:localechange", {
+      detail: { locale: appLocale },
+    })
+  );
+}
+
+function initScrollUpFooterAvoidance() {
+  const scrollUpButton = document.getElementById("scroll-up");
+  const footer = document.getElementById("footer");
+
+  if (!scrollUpButton || !footer || typeof IntersectionObserver === "undefined") {
+    return;
+  }
+
+  if (scrollUpFooterObserver) {
+    scrollUpFooterObserver.disconnect();
+  }
+
+  scrollUpFooterObserver = new IntersectionObserver(
+    (entries) => {
+      const footerVisible = entries.some((entry) => entry.isIntersecting);
+      scrollUpButton.classList.toggle("scrollup--avoid-footer", footerVisible);
+    },
+    { threshold: 0.18 }
+  );
+
+  scrollUpFooterObserver.observe(footer);
+}
+
+function ensurePageTransitionOverlay() {
+  if (!document.body || document.querySelector(".page-transition-overlay")) {
+    return;
+  }
+
+  const overlay = document.createElement("div");
+  overlay.className = "page-transition-overlay";
+  document.body.appendChild(overlay);
+}
+
+function initPageTransitions() {
+  if (!document.body) {
+    return;
+  }
+
+  ensurePageTransitionOverlay();
+  window.requestAnimationFrame(() => {
+    document.body.classList.add("page-ready");
+    document.body.classList.remove("page-is-leaving");
+  });
+
+  if (document.body.dataset.pageTransitionsBound === "true") {
+    return;
+  }
+
+  document.body.dataset.pageTransitionsBound = "true";
+  document.addEventListener("click", (event) => {
+    const anchor = event.target.closest("a[href]");
+    if (!anchor || pageNavigationLocked) {
+      return;
+    }
+
+    if (
+      event.defaultPrevented ||
+      event.metaKey ||
+      event.ctrlKey ||
+      event.shiftKey ||
+      event.altKey ||
+      anchor.target === "_blank" ||
+      anchor.hasAttribute("download")
+    ) {
+      return;
+    }
+
+    const rawHref = anchor.getAttribute("href") || "";
+    if (
+      rawHref === "" ||
+      rawHref.startsWith("#") ||
+      rawHref.startsWith("javascript:") ||
+      rawHref === "#"
+    ) {
+      return;
+    }
+
+    const targetUrl = new URL(anchor.href, window.location.href);
+    if (targetUrl.origin !== window.location.origin) {
+      return;
+    }
+
+    if (
+      targetUrl.pathname === window.location.pathname &&
+      targetUrl.search === window.location.search &&
+      targetUrl.hash
+    ) {
+      return;
+    }
+
+    event.preventDefault();
+    pageNavigationLocked = true;
+    document.body.classList.add("page-is-leaving");
+
+    window.setTimeout(() => {
+      window.location.href = targetUrl.href;
+    }, 180);
+  });
+}
+
 // Smooth scrolling
 document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
   anchor.addEventListener("click", function (e) {
@@ -188,19 +427,31 @@ async function logoutFromShell() {
 
 function buildNavItems(context) {
   const items = [
-    { href: "main.php", label: "Home" },
-    { href: "tournaments.html", label: "Tournaments" },
-    { href: "blog.html", label: "Blog" },
-    { href: "gallery.html", label: "Gallery" },
-    { href: "register.html", label: "Join the Club" },
+    { href: "main.php", label: appLocaleText({ en: "Home", tr: "Ana Sayfa" }) },
+    {
+      href: "tournaments.html",
+      label: appLocaleText({ en: "Tournaments", tr: "Turnuvalar" }),
+    },
+    { href: "blog.html", label: appLocaleText({ en: "Blog", tr: "Blog" }) },
+    { href: "gallery.html", label: appLocaleText({ en: "Gallery", tr: "Galeri" }) },
+    {
+      href: "register.html",
+      label: appLocaleText({ en: "Join the Club", tr: "Kulube Katil" }),
+    },
   ];
 
   if (context.logged_in) {
-    items.push({ href: "profile.html", label: "Profile" });
+    items.push({
+      href: "profile.html",
+      label: appLocaleText({ en: "Profile", tr: "Profil" }),
+    });
   }
 
   if (context.can_manage_club) {
-    items.push({ href: "admin/admin_panel.php", label: "Admin" });
+    items.push({
+      href: "admin/admin_panel.php",
+      label: appLocaleText({ en: "Admin", tr: "Yonetim" }),
+    });
   }
 
   return items
@@ -212,14 +463,23 @@ function buildAuthActions(context) {
   if (context.logged_in) {
     return `
       <li class="nav__item">
-        <a href="#" class="button nav__button" id="shell-logout-btn">Logout</a>
+        <a href="#" class="button nav__button" id="shell-logout-btn">${appLocaleText({
+          en: "Logout",
+          tr: "Cikis Yap",
+        })}</a>
       </li>
     `;
   }
 
   return `
-    <li class="nav__item"><a href="login.html" class="${setActiveLinkClass("login.html")}">Sign In</a></li>
-    <li class="nav__item"><a href="sign_up.html" class="button nav__button">Create Account</a></li>
+    <li class="nav__item"><a href="login.html" class="${setActiveLinkClass("login.html")}">${appLocaleText({
+      en: "Sign In",
+      tr: "Giris Yap",
+    })}</a></li>
+    <li class="nav__item"><a href="sign_up.html" class="button nav__button">${appLocaleText({
+      en: "Create Account",
+      tr: "Hesap Olustur",
+    })}</a></li>
   `;
 }
 
@@ -232,31 +492,64 @@ function buildFooterHtml(context) {
             <img src="${PUBLIC_LOGO}" alt="logo" /> Famagusta Dart Club
           </a>
           <p class="footer__description">
-            Follow public brackets, match results, club news, and membership updates in one place.
+            ${appLocaleText({
+              en: "Follow public brackets, match results, club news, and membership updates in one place.",
+              tr: "Acik fiksturleri, mac sonuclarini, kulup haberlerini ve uyelik guncellemelerini tek yerden takip edin.",
+            })}
           </p>
           <p class="footer__description">
             ${
               context.logged_in
-                ? `Signed in as ${escapeHtml(context.user_name)}`
-                : "Create an account to register for tournaments and submit membership paperwork."
+                ? appLocaleText({
+                    en: `Signed in as ${escapeHtml(context.user_name)}`,
+                    tr: `${escapeHtml(context.user_name)} olarak giris yaptiniz`,
+                  })
+                : appLocaleText({
+                    en: "Create an account to register for tournaments and submit membership paperwork.",
+                    tr: "Turnuvalara kaydolmak ve uyelik belgelerini gondermek icin hesap olusturun.",
+                  })
             }
           </p>
         </div>
         <div class="footer__content">
           <div>
-            <h3 class="footer__title">EXPLORE</h3>
+            <h3 class="footer__title">${appLocaleText({
+              en: "EXPLORE",
+              tr: "KESFET",
+            })}</h3>
             <ul class="footer__links">
-              <li><a href="tournaments.html" class="${footerLinkClass("tournaments.html")}">Tournament Hub</a></li>
-              <li><a href="blog.html" class="${footerLinkClass("blog.html")}">Club Blog</a></li>
-              <li><a href="gallery.html" class="${footerLinkClass("gallery.html")}">Gallery</a></li>
+              <li><a href="tournaments.html" class="${footerLinkClass("tournaments.html")}">${appLocaleText({
+                en: "Tournament Hub",
+                tr: "Turnuva Merkezi",
+              })}</a></li>
+              <li><a href="blog.html" class="${footerLinkClass("blog.html")}">${appLocaleText({
+                en: "Club Blog",
+                tr: "Kulup Blogu",
+              })}</a></li>
+              <li><a href="gallery.html" class="${footerLinkClass("gallery.html")}">${appLocaleText({
+                en: "Gallery",
+                tr: "Galeri",
+              })}</a></li>
             </ul>
           </div>
           <div>
-            <h3 class="footer__title">CLUB</h3>
+            <h3 class="footer__title">${appLocaleText({
+              en: "CLUB",
+              tr: "KULUP",
+            })}</h3>
             <ul class="footer__links">
-              <li><a href="profile.html" class="${footerLinkClass("profile.html")}">Player Dashboard</a></li>
-              <li><a href="register.html" class="${footerLinkClass("register.html")}">Membership</a></li>
-              <li><a href="about.html" class="${footerLinkClass("about.html")}">About</a></li>
+              <li><a href="profile.html" class="${footerLinkClass("profile.html")}">${appLocaleText({
+                en: "Player Dashboard",
+                tr: "Oyuncu Paneli",
+              })}</a></li>
+              <li><a href="register.html" class="${footerLinkClass("register.html")}">${appLocaleText({
+                en: "Membership",
+                tr: "Uyelik",
+              })}</a></li>
+              <li><a href="about.html" class="${footerLinkClass("about.html")}">${appLocaleText({
+                en: "About",
+                tr: "Hakkinda",
+              })}</a></li>
             </ul>
           </div>
         </div>
@@ -273,7 +566,10 @@ function buildFooterHtml(context) {
             <i class="ri-team-fill"></i>
           </a>
         </ul>
-        <span class="footer__copy">&#169; Famagusta Dart Club. All rights reserved.</span>
+        <span class="footer__copy">${appLocaleText({
+          en: "&#169; Famagusta Dart Club. All rights reserved.",
+          tr: "&#169; Famagusta Dart Club. Tum haklari saklidir.",
+        })}</span>
       </div>
     </footer>
   `;
@@ -284,7 +580,10 @@ function buildCompactFooterHtml() {
     <footer class="footer section footer--compact" id="footer">
       <div class="container">
         <div class="footer__group">
-          <span class="footer__copy">&#169; Famagusta Dart Club. All rights reserved.</span>
+          <span class="footer__copy">${appLocaleText({
+            en: "&#169; Famagusta Dart Club. All rights reserved.",
+            tr: "&#169; Famagusta Dart Club. Tum haklari saklidir.",
+          })}</span>
         </div>
       </div>
     </footer>
@@ -338,6 +637,9 @@ async function hydratePublicShell() {
         logoutFromShell();
       });
     }
+
+    applyLocaleAttributes();
+    initScrollUpFooterAvoidance();
   } catch (error) {
     console.error("Failed to hydrate public shell", error);
   }
@@ -363,5 +665,28 @@ function bindHomepageEventCards() {
   });
 }
 
+appLocale = readStoredLocale();
+
 document.addEventListener("DOMContentLoaded", hydratePublicShell);
 document.addEventListener("DOMContentLoaded", bindHomepageEventCards);
+document.addEventListener("DOMContentLoaded", () => {
+  applyLocaleAttributes();
+  ensureLanguageDock();
+  initPageTransitions();
+  initScrollUpFooterAvoidance();
+});
+window.addEventListener("app:localechange", () => {
+  hydratePublicShell();
+});
+window.addEventListener("pageshow", () => {
+  pageNavigationLocked = false;
+  ensurePageTransitionOverlay();
+  window.requestAnimationFrame(() => {
+    document.body.classList.add("page-ready");
+    document.body.classList.remove("page-is-leaving");
+  });
+});
+
+window.getAppLocale = () => appLocale;
+window.appLocaleText = appLocaleText;
+window.setAppLocale = setAppLocale;

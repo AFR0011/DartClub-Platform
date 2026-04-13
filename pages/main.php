@@ -41,13 +41,13 @@
       <section class="home section" id="home">
         <div class="home__container container grid">
           <div class="home_data">
-            <h2 class="home__subtitle">Play. Compete. Belong.</h2>
-            <h1 class="home__title" style="color: red">Famagusta Dart Club</h1>
-            <p class="home__desctiption">
+            <h2 class="home__subtitle" data-i18n-en="Play. Compete. Belong." data-i18n-tr="Oyna. Yaris. Ait ol.">Play. Compete. Belong.</h2>
+            <h1 class="home__title" style="color: red" data-i18n-en="Famagusta Dart Club" data-i18n-tr="Gazimagusa Dart Kulubu">Famagusta Dart Club</h1>
+            <p class="home__desctiption" data-i18n-en="Follow club tournaments, player stories, public brackets, and membership activity from one shared home base." data-i18n-tr="Kulup turnuvalarini, oyuncu hikayelerini, acik braketleri ve uyelik sureclerini tek bir merkezden takip edin.">
               Follow club tournaments, player stories, public brackets, and membership activity from one shared home base.
             </p>
             <a href="tournaments.html" class="button button__flex">
-              Explore Tournaments <i class="ri-arrow-right-line"></i>
+              <span data-i18n-en="Explore Tournaments" data-i18n-tr="Turnuvalari Kesfet">Explore Tournaments</span> <i class="ri-arrow-right-line"></i>
             </a>
           </div>
 
@@ -69,22 +69,23 @@
         <div class="logos__container container grid">
           <img
             src="../files/media/images/emulogo.png"
-            alt="partner logo"
+            alt="Eastern Mediterranean University logo"
             class="logos__img"
             loading="lazy"
           />
           <img
             src="../files/media/images/doubleedgedlogo.png"
-            alt="partner logo"
+            alt="Neo DoubleEdged logo"
             class="logos__img"
             loading="lazy"
           />
           <img
             src="../files/media/images/logoblackandgray.png"
-            alt="partner logo"
+            alt="Studio logo placeholder"
             class="logos__img"
             loading="lazy"
           />
+          <div class="logos__placeholder" data-i18n-en="Personal logo slot reserved" data-i18n-tr="Kisisel logo alani ayrildi">Personal logo slot reserved</div>
         </div>
       </section>
 
@@ -109,7 +110,7 @@
               </div>
               <h3 class="event__title">Tournaments</h3>
 
-              <p class="event__description">
+              <p class="event__description" data-i18n-en="Track open registrations, published fixtures, and live results across round robin, league, group, elimination, and double-elimination events." data-i18n-tr="Acik kayitlari, yayinlanan fiksturleri ve round robin, lig, grup, eliminasyon ile double-elimination turnuvalarindaki canli sonuclari takip edin.">
                 Track open registrations, published fixtures, and live results across round robin, league, group, elimination, and double-elimination events.
               </p>
 
@@ -128,7 +129,7 @@
               </div>
               <h3 class="event__title">Gallery</h3>
 
-              <p class="event__description">
+              <p class="event__description" data-i18n-en="Browse match-day photography, club moments, and media pulled directly from tournament recaps and community posts." data-i18n-tr="Mac gunu fotograflarini, kulup anlarini ve turnuva ozetleriyle topluluk paylasimlarindan gelen medyalari inceleyin.">
                 Browse match-day photography, club moments, and media pulled directly from tournament recaps and community posts.
               </p>
 
@@ -147,7 +148,7 @@
               </div>
               <h3 class="event__title">Blog</h3>
 
-              <p class="event__description">
+              <p class="event__description" data-i18n-en="Read announcements, recap articles, and member-authored updates that document what is happening around the club." data-i18n-tr="Duyurulari, ozet yazilarini ve kulupte olup biteni anlatan uye paylasimlarini okuyun.">
                 Read announcements, recap articles, and member-authored updates that document what is happening around the club.
               </p>
 
@@ -166,12 +167,12 @@
               <div class="section__data">
                 <h2 class="section__subtitle">Our Contact Information</h2>
                 <div class="section__titles">
-                  <h1 class="section__title__border">Reach out</h1>
-                  <h1 class="section__title">Anytime</h1>
+                  <h1 class="section__title__border" data-i18n-en="Reach out" data-i18n-tr="Bize ulasin">Reach out</h1>
+                  <h1 class="section__title" data-i18n-en="Anytime" data-i18n-tr="Her zaman">Anytime</h1>
                 </div>
               </div>
 
-              <p class="contactus__description">
+              <p class="contactus__description" data-i18n-en="Tournament questions, membership paperwork, and general club updates are coordinated through the official Facebook page and club phone line." data-i18n-tr="Turnuva sorulari, uyelik belgeleri ve genel kulup guncellemeleri resmi Facebook sayfasi ile kulup telefon hatti uzerinden yonetilir.">
                 Tournament questions, membership paperwork, and general club updates are coordinated through the official Facebook page and club phone line.
               </p>
 
@@ -217,19 +218,24 @@
             <div class="about__content">
               <div class="section__data">
                 <div class="section__titles">
-                  <h1 class="section__title__border">About</h1>
-                  <h1 class="section__title">Us</h1>
+                  <h1 class="section__title__border" data-i18n-en="About" data-i18n-tr="Hakkinda">About</h1>
+                  <h1 class="section__title" data-i18n-en="Us" data-i18n-tr="Biz">Us</h1>
                 </div>
               </div>
 
-              <p class="about__description">
+              <p class="about__description" data-i18n-en="Famagusta Dart Club brings together local players, club members, and competition organizers around one shared darts calendar. The website now handles public tournament discovery, player profiles, membership applications, club news, and media so the whole community can follow the same workflow. Whether you are joining your first event or tracking a full bracket run, the goal is the same: make the club easy to follow and easy to participate in." data-i18n-tr="Gazimagusa Dart Kulubu; yerel oyunculari, kulup uyelerini ve organizatorleri tek bir ortak dart takvimi etrafinda bulusturur. Web sitesi artik acik turnuva kesfini, oyuncu profillerini, uyelik basvurularini, kulup haberlerini ve medyayi tek bir akista topluyor. Ister ilk etkinliginize katilin ister tam bir braket kosusunu takip edin, amac ayni: kulubu takip etmeyi ve katilimi kolaylastirmak.">
                 Famagusta Dart Club brings together local players, club members, and competition organizers around one shared darts calendar.
                 The website now handles public tournament discovery, player profiles, membership applications, club news, and media so the whole community can follow the same workflow.
                 Whether you are joining your first event or tracking a full bracket run, the goal is the same: make the club easy to follow and easy to participate in.
               </p>
-              <a href="about.html" class="button button__flex">
-                About the Club & Platform <i class="ri-information-2-line"></i>
-              </a>
+              <div style="display:flex; flex-wrap:wrap; gap:0.85rem;">
+                <a href="about.html" class="button button__flex">
+                  <span data-i18n-en="About the Club & Platform" data-i18n-tr="Kulup ve Platform Hakkinda">About the Club & Platform</span> <i class="ri-information-2-line"></i>
+                </a>
+                <a href="developers.html" class="button button__flex" style="background:rgba(255,255,255,0.05); color:#fff; border-color:rgba(255,255,255,0.16);">
+                  <span data-i18n-en="Meet the Build Team" data-i18n-tr="Ekibi Taniyin">Meet the Build Team</span> <i class="ri-team-line"></i>
+                </a>
+              </div>
             </div>
 
             <div class="about__images">
@@ -323,6 +329,6 @@
     </a>
 
     <script src="../js/scrollreveal.min.js"></script>
-    <script src="../js/behaviour.js?v=20260409-1"></script>
+    <script src="../js/behaviour.js?v=20260413-1"></script>
   </body>
 </html>

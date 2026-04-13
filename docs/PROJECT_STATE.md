@@ -2,14 +2,14 @@
 
 ## Metadata
 - Project: `Dart Club`
-- Last updated: 2026-04-09
+- Last updated: 2026-04-13
 - Repo type: legacy PHP/MySQL website
-- Current repo status: mapped, documented, runtime-tested on XAMPP, and further debug-hardened across the shared public shell, JSON service layer, tournament engine, and public content/community surfaces
+- Current repo status: mapped, documented, runtime-tested on XAMPP, and further debug-hardened across the shared public shell, JSON service layer, tournament engine, public/community surfaces, and the latest SRE-note follow-up polish pass
 
 ## Current Objective
 - Finish the migration from an ad-hoc legacy codebase to a maintainable public club platform.
 - Keep the existing plain PHP/MySQL stack.
-- Complete visual/manual QA and polish after the new tournament model, membership workflow, and public/community surfaces are in place.
+- Complete visual/manual QA and polish after the new tournament model, membership workflow, public/community surfaces, and the new EN/TR shell/auth/public-UX fixes are in place.
 
 ## Current Technical Status
 - The repo now has:
@@ -66,6 +66,13 @@
   - managers/admins can publish and moderate
 
 ## What Changed In This Pass
+- Applied the `docs/Dart Club SRE 120426.md` follow-up across the shared public shell with a persistent EN/TR language toggle, shell text hydration, and locale hooks for key public/auth/tournament/community pages.
+- Smoothed the public-shell UX with a lightweight page-transition overlay, footer-aware scroll-up spacing, brighter shared button hover treatment, and a small homepage/about image-alignment pass.
+- Improved auth/signup behavior by expanding the login/signup card by default on small/touch layouts, enforcing a stronger-but-still-light password rule, and sending a best-effort welcome email after signup.
+- Added `pages/developers.html`, linked it from the homepage and about page, preserved the Neo DoubleEdged logo in the homepage logo rail, and reserved placeholder slots for pending team/personal identity assets.
+- Added an explicit gallery lightbox close button, split fixture counts from the fixture-section collapse control, and synced the public/admin bracket focus-mode buttons so they flip between open/close labels while tightening mobile bracket fallbacks again.
+- Added a root `index.php` redirect to `pages/main.php` so shared-host docroots like Hostinger `public_html` can open the site without manually moving page files out of `pages/`.
+- Whitelisted the two public registration-form DOCX files in root `.htaccess` so the membership downloads linked from `pages/register.html` no longer 403 behind the broader `other/` directory deny rule.
 - Finished the largest remaining public-content cleanup items by rebuilding `pages/about.html`, replacing placeholder homepage copy in `pages/main.php`, and removing the fake footer newsletter/contact form from the live public shell direction.
 - Removed the fake self-service password-reset flow from the login path and replaced `pages/reset_password.html` with an explicit account-help/support page until a real reset backend exists.
 - Added `services/shared/mail_helpers.php` and unified best-effort outbound email handling so player-creation emails and signed-in tournament registration confirmations now use one SMTP-aware helper.
@@ -186,7 +193,7 @@
 
 ## Open Risks
 - Visual/manual QA under Apache/XAMPP still needs a real click-through pass.
-- `create_player.php` plus SMTP/email delivery has not been exercised end to end.
+- `create_player.php` plus SMTP/email delivery, including the new signup welcome email path, has not been exercised end to end.
 - Public registration still stores roster registration only; admins decide whether and when registrations become active competition entries.
 - Final UI polish still needs a true browser/responsive pass on the public and admin shells.
 - Some local XAMPP/MariaDB installs may still have broken or missing grants for `dartadmin`; the repo now surfaces clean JSON failures in that state, but the DB user itself still needs an environment-level fix.
@@ -195,6 +202,8 @@
 - Existing seeded/demo `Group` tournaments created before this pass can still reflect the older multi-team `team_matches` model until they are regenerated under the new two-team player-vs-player rules.
 - Free shared PHP hosting may still fail on this repo depending on provider-specific MySQL import/runtime limits; Oracle Cloud Always Free is the preferred free path if account setup succeeds.
 - Self-service password reset remains intentionally deferred; account recovery is currently a manual support/admin workflow.
+- `pages/developers.html` still uses placeholder avatars and pending LinkedIn targets because real team photos/URLs were not supplied in the repo.
+- EN/TR localization is partial; the shared shell and key public flows are translated, but some legacy/admin strings still remain English-only.
 
 ## Remaining Priorities
 - Use `docs/TESTING_CHECKLIST.md` as the next-session manual verification order.
@@ -203,6 +212,11 @@
   - responsive/mobile review
   - SMTP-backed credential email behavior
   - visual/admin navigation click-through
+- Do a manual browser pass on the new shared public-shell polish:
+  - EN/TR language toggle persistence and copy coverage
+  - page-transition feel, including browser back/forward behavior
+  - footer-safe scroll-up spacing near the social links
+  - `pages/developers.html` once real LinkedIn URLs/photos/logos are available
 - Do a manual browser pass on the new deferred tournament workflow:
   - empty tournament creation
   - guest registration modal
@@ -253,6 +267,28 @@
 
 ## Verification State
 - Verified in this pass:
+  - targeted PHP lint for:
+    - `services/signup.php`
+    - `pages/main.php`
+    - `pages/tournament_details.php`
+    - `pages/admin/show_tournament_details.php`
+  - live built-in-server HTTP `200` checks for:
+    - `pages/main.php`
+    - `pages/about.html`
+    - `pages/developers.html`
+    - `pages/login.html`
+    - `pages/sign_up.html`
+  - live page/source marker checks for:
+    - homepage build-team CTA plus logo placeholder rail
+    - gallery lightbox close button hooks
+    - public bracket focus-mode button wiring
+    - membership-shell render target on `pages/register.html`
+    - registration-modal wiring on `pages/tournaments.html`
+  - static JS/CSS inspection for:
+    - shared locale toggle and locale persistence in `js/behaviour.js`
+    - footer-aware scroll-up spacing and page-transition shell hooks
+    - mobile auth-card default expansion in `css/login_style.css`
+    - separated fixture-summary count vs toggle button behavior in `pages/tournament_details.php`
   - targeted PHP lint for the new shared mail helper, refreshed public pages, admin dashboard, legacy fallback admin pages, and regression scripts
   - live HTTP/source checks for the rebuilt home page, about page, login page, public player profile, admin panel, and reset/help page
   - live tournament registration confirmation path for signed-in users after introducing the shared mail helper contract
@@ -378,6 +414,10 @@
     - soft-refresh tournament admin flow in `js/admin_tournament_details.js`
     - admin bracket focus-mode button and bracket-path jump controls
 - Not verified in this pass:
+  - real browser-eye QA for the new EN/TR language toggle across the public pages that now opt into locale switching
+  - real browser/mobile QA for the updated login-card expansion, page-transition overlay, gallery close button, scroll-up spacing, and latest public/admin bracket focus/mobile tweaks
+  - SMTP delivery for the new signup welcome email path
+  - JS syntax checks via `node --check` because `node` is not installed on PATH in this environment
   - Apache-backed visual QA
   - SMTP/email delivery
   - full manual click-through of all admin navigation/items under a real browser

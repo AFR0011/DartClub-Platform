@@ -3,6 +3,7 @@ Options -Indexes
 <IfModule mod_rewrite.c>
     RewriteEngine On
 
+    RewriteRule ^other/(?:athleteform|memberform)\.docx$ - [L,NC]
     RewriteRule ^(?:\.git|\.codex|docs|other|vendor)(?:/|$) - [F,L,NC]
     RewriteRule ^(?:dart_club\.sql|composer\.(?:json|lock)|README\.md|progress\.md|todolist\.md|tournament-errors\.md|AGENTS\.md|Manual\ Verification\.txt|Finalization\ Options\.txt|php-server(?:-live)?(?:-error)?\.log|mysql-server(?:-error)?\.log)$ - [F,L,NC]
 </IfModule>

@@ -193,7 +193,7 @@ require_role('admin');
                 </div>
                 <div class="summary-card">
                     <span class="mini-note">Membership stays separate</span>
-                    <strong>`user_role` != membership</strong>
+                    <strong>Roles is not membership</strong>
                 </div>
             </div>
         </div>

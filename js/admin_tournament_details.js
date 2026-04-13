@@ -866,6 +866,17 @@ function selectAdminBracketMatch(matchId) {
     openMatchModal(matchId);
 }
 
+function syncBracketFocusButton() {
+    const button = document.getElementById('adminBracketFocusButton');
+    const section = document.getElementById('adminBracketSection');
+    if (!button || !section) {
+        return;
+    }
+
+    const isFocused = document.fullscreenElement === section;
+    button.textContent = isFocused ? 'Close focus mode' : 'Open focus mode';
+}
+
 async function toggleBracketSectionFocus() {
     const section = document.getElementById('adminBracketSection');
     if (!section) {
@@ -875,11 +886,13 @@ async function toggleBracketSectionFocus() {
     try {
         if (document.fullscreenElement === section) {
             await document.exitFullscreen();
+            syncBracketFocusButton();
             return;
         }
 
         if (section.requestFullscreen) {
             await section.requestFullscreen();
+            syncBracketFocusButton();
             return;
         }
 
@@ -1189,12 +1202,14 @@ function initializeTournamentPage(preferredSection = null) {
     refreshSelectionMeta();
     showSection(preferredSection || readRememberedSection() || getCurrentSectionName() || 'details');
     showBracketView(readRememberedBracketView() || 'merged');
+    syncBracketFocusButton();
 }
 
 document.addEventListener('DOMContentLoaded', () => {
     hydrateTournamentPageData(document);
     initializeTournamentPage();
 });
+document.addEventListener('fullscreenchange', syncBracketFocusButton);
 
 window.showSection = showSection;
 window.generateStructure = generateStructure;

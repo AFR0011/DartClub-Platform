@@ -2,6 +2,7 @@
 
 require_once __DIR__ . '/app_bootstrap.php';
 require_once __DIR__ . '/dbConnection.php';
+require_once __DIR__ . '/shared/mail_helpers.php';
 
 app_start_session();
 header('Content-Type: application/json');
@@ -13,6 +14,17 @@ $password = (string) ($input['password'] ?? '');
 
 if ($username === '' || $email === '' || $password === '') {
     app_json_response(['success' => false, 'message' => 'All fields are required.'], 422);
+}
+
+if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+    app_json_response(['success' => false, 'message' => 'Enter a valid email address.'], 422);
+}
+
+if (strlen($password) < 8 || !preg_match('/[A-Za-z]/', $password) || !preg_match('/\d/', $password)) {
+    app_json_response([
+        'success' => false,
+        'message' => 'Password must be at least 8 characters and include at least one letter and one number.',
+    ], 422);
 }
 
 $emailCheck = $conn->prepare('SELECT user_id FROM users WHERE email = ?');
@@ -47,5 +59,12 @@ $insert->bind_param('sssss', $username, $email, $passwordHash, $role, $membershi
 $insert->execute();
 $insert->close();
 
-app_json_response(['success' => true, 'message' => 'User registered successfully.']);
+app_send_best_effort_email(
+    $email,
+    $username,
+    'Welcome to Famagusta Dart Club',
+    '<p>Your account is now active on Famagusta Dart Club.</p><p>You can sign in, build your player profile, and register for tournaments whenever registration opens.</p>',
+    "Your account is now active on Famagusta Dart Club.\n\nYou can sign in, build your player profile, and register for tournaments whenever registration opens."
+);
 
+app_json_response(['success' => true, 'message' => 'User registered successfully.']);

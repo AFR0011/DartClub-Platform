@@ -1921,7 +1921,7 @@ foreach ($matches as $match) {
                         </p>
                     </div>
                     <div class="dense-actions">
-                        <button type="button" class="action-btn" onclick="toggleBracketSectionFocus()">Open focus mode</button>
+                        <button type="button" class="action-btn" id="adminBracketFocusButton" onclick="toggleBracketSectionFocus()">Open focus mode</button>
                     </div>
                 </div>
                 <?php if ($isDoubleElimination): ?>

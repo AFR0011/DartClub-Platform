@@ -291,6 +291,7 @@
     .ui-button {
       background: linear-gradient(180deg, #ff7c4d, #ef5a29);
       color: #fff;
+      box-shadow: 0 12px 24px rgba(239, 90, 41, 0.18);
     }
 
     .ui-button-secondary {
@@ -303,6 +304,25 @@
       background: rgba(220, 38, 38, 0.12);
       border-color: rgba(220, 38, 38, 0.25);
       color: #fecaca;
+    }
+
+    .ui-button:hover,
+    .ui-button-secondary:hover,
+    .ui-button-danger:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 0 22px rgba(255, 92, 92, 0.2), 0 16px 28px rgba(0, 0, 0, 0.18);
+    }
+
+    .ui-button:hover {
+      background: linear-gradient(180deg, #ff6057, #d7263d);
+    }
+
+    .ui-button-secondary:hover {
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .ui-button-danger:hover {
+      background: rgba(220, 38, 38, 0.18);
     }
 
     .filter-grid {
@@ -385,7 +405,7 @@
   </a>
 
   <script src="../js/scrollreveal.min.js"></script>
-  <script src="../js/behaviour.js?v=20260409-1"></script>
+  <script src="../js/behaviour.js?v=20260413-1"></script>
   <script src="../js/ui_feedback.js?v=20260406-1"></script>
   <script>
     let sessionContext = null;

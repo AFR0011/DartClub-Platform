@@ -103,6 +103,7 @@
 
         .filter-chip-button:hover:not(:disabled) {
             transform: translateY(-1px);
+            box-shadow: 0 0 20px rgba(255, 92, 92, 0.18);
         }
 
         .filter-chip-button:disabled {
@@ -205,6 +206,12 @@
             background: transparent;
         }
 
+        .ghost-button:hover:not(:disabled) {
+            transform: translateY(-1px);
+            border-color: rgba(255, 92, 92, 0.28);
+            box-shadow: 0 0 20px rgba(255, 92, 92, 0.16);
+        }
+
         .empty-message {
             padding: 1rem;
             border: 1px dashed rgba(255, 255, 255, 0.12);
@@ -284,15 +291,15 @@
         <section class="page-shell container">
             <div class="hub-hero">
                 <div>
-                    <div class="hub-pill"><i class="ri-focus-3-line"></i> Public tournament hub</div>
-                    <h1 class="section__title" style="margin-top: 1rem;">Track every competition stage in one place</h1>
-                    <p style="margin-top: 1rem; color: var(--text-color);">
+                    <div class="hub-pill"><i class="ri-focus-3-line"></i> <span data-i18n-en="Public tournament hub" data-i18n-tr="Acik turnuva merkezi">Public tournament hub</span></div>
+                    <h1 class="section__title" style="margin-top: 1rem;" data-i18n-en="Track every competition stage in one place" data-i18n-tr="Her yarisma asamasini tek yerden takip edin">Track every competition stage in one place</h1>
+                    <p style="margin-top: 1rem; color: var(--text-color);" data-i18n-en="Browse upcoming events, follow live brackets, review completed tournaments, and revisit archived seasons." data-i18n-tr="Yaklasan etkinlikleri inceleyin, canli braketleri takip edin, tamamlanan turnuvalari gozden gecirin ve arsiv sezonlara donun.">
                         Browse upcoming events, follow live brackets, review completed tournaments, and revisit archived seasons.
                     </p>
                 </div>
                 <div>
-                    <h3>What you can do here</h3>
-                    <p style="color: var(--text-color); margin-top: 0.75rem;">
+                    <h3 data-i18n-en="What you can do here" data-i18n-tr="Burada neler yapabilirsiniz">What you can do here</h3>
+                    <p style="color: var(--text-color); margin-top: 0.75rem;" data-i18n-en="Guests can explore public results and live brackets. Signed-in players can register directly, review only their own tournaments, and jump into detailed competition views." data-i18n-tr="Misafirler acik sonuclari ve canli braketleri inceleyebilir. Giris yapan oyuncular dogrudan kaydolabilir, yalnizca kendi turnuvalarini gorebilir ve detayli yarisma gorunumlerine gecebilir.">
                         Guests can explore public results and live brackets. Signed-in players can register directly, review only their own tournaments, and jump into detailed competition views.
                     </p>
                 </div>
@@ -301,7 +308,7 @@
             <div id="hub-summary" class="hub-summary"></div>
             <div id="hub-controls" class="hub-controls"></div>
             <div id="hub-sections" class="hub-sections">
-                <div class="empty-message">Loading tournaments...</div>
+                <div class="empty-message" data-i18n-en="Loading tournaments..." data-i18n-tr="Turnuvalar yukleniyor...">Loading tournaments...</div>
             </div>
         </section>
     </main>
@@ -314,31 +321,31 @@
         <div class="modal-card">
             <div style="display:flex;justify-content:space-between;gap:1rem;align-items:flex-start;">
                 <div>
-                    <h3>Complete Registration</h3>
-                    <p style="color: var(--text-color); margin-top: 0.5rem;">
+                    <h3 data-i18n-en="Complete Registration" data-i18n-tr="Kaydi Tamamla">Complete Registration</h3>
+                    <p style="color: var(--text-color); margin-top: 0.5rem;" data-i18n-en="Guests can still join public tournaments. Enter the first name and surname that should appear in this bracket or standings list." data-i18n-tr="Misafirler hala acik turnuvalara katilabilir. Bu brakette veya puan tablosunda gorunmesi gereken ad ve soyadi girin.">
                         Guests can still join public tournaments. Enter the first name and surname that should appear in this bracket or standings list.
                     </p>
                 </div>
-                <button type="button" class="ghost-button" onclick="closeRegistrationModal()">Close</button>
+                <button type="button" class="ghost-button" onclick="closeRegistrationModal()" data-i18n-en="Close" data-i18n-tr="Kapat">Close</button>
             </div>
             <div class="modal-grid">
                 <div>
-                    <label for="registration-first-name">First Name</label>
+                    <label for="registration-first-name" data-i18n-en="First Name" data-i18n-tr="Ad">First Name</label>
                     <input type="text" id="registration-first-name" autocomplete="given-name">
                 </div>
                 <div>
-                    <label for="registration-surname">Surname</label>
+                    <label for="registration-surname" data-i18n-en="Surname" data-i18n-tr="Soyad">Surname</label>
                     <input type="text" id="registration-surname" autocomplete="family-name">
                 </div>
             </div>
             <div class="card-actions">
-                <button type="button" class="button" onclick="submitRegistrationWithName()">Submit Registration</button>
+                <button type="button" class="button" onclick="submitRegistrationWithName()" data-i18n-en="Submit Registration" data-i18n-tr="Kaydi Gonder">Submit Registration</button>
             </div>
         </div>
     </div>
 
     <script src="../js/scrollreveal.min.js"></script>
-    <script src="../js/behaviour.js?v=20260409-1"></script>
+    <script src="../js/behaviour.js?v=20260413-1"></script>
     <script>
         const sectionConfig = {
             registration_open: { title: 'Upcoming', description: 'Registration is open right now.' },
@@ -360,6 +367,7 @@
             view: 'all'
         };
         let pendingTournamentId = null;
+        const pageText = (en, tr) => window.appLocaleText ? window.appLocaleText({ en, tr }) : en;
 
         function statusCount(tournaments, statuses) {
             return tournaments.filter((tournament) => statuses.includes(tournament.status)).length;
@@ -370,24 +378,24 @@
             document.getElementById('hub-summary').innerHTML = `
                 <article class="summary-card">
                     <strong>${tournaments.length}</strong>
-                    <span>Public tournaments</span>
+                    <span>${pageText('Public tournaments', 'Acik turnuvalar')}</span>
                 </article>
                 <article class="summary-card">
                     <strong>${statusCount(tournaments, ['registration_open', 'registration_closed', 'draft'])}</strong>
-                    <span>Upcoming</span>
+                    <span>${pageText('Upcoming', 'Yaklasan')}</span>
                 </article>
                 <article class="summary-card">
                     <strong>${statusCount(tournaments, ['in_progress'])}</strong>
-                    <span>Live now</span>
+                    <span>${pageText('Live now', 'Su an canli')}</span>
                 </article>
                 <article class="summary-card">
                     <strong>${statusCount(tournaments, ['completed', 'archived'])}</strong>
-                    <span>Finished</span>
+                    <span>${pageText('Finished', 'Tamamlandi')}</span>
                 </article>
                 ${sessionContext.logged_in ? `
                     <article class="summary-card">
                         <strong>${myCount}</strong>
-                        <span>My tournaments</span>
+                        <span>${pageText('My tournaments', 'Turnuvalarim')}</span>
                     </article>
                 ` : ''}
             `;
@@ -396,18 +404,18 @@
         function renderControls() {
             const accountNote = sessionContext.logged_in
                 ? (sessionContext.has_player_profile
-                    ? 'Your account can use quick registration on open tournaments.'
-                    : 'Your account can still register instantly. If no player profile exists yet, we seed a lightweight profile from your account name.')
-                : 'Guests can still register for open tournaments by entering a first name and surname once.';
+                    ? pageText('Your account can use quick registration on open tournaments.', 'Hesabiniz acik turnuvalarda hizli kayit kullanabilir.')
+                    : pageText('Your account can still register instantly. If no player profile exists yet, we seed a lightweight profile from your account name.', 'Hesabiniz yine aninda kayit olabilir. Henuz oyuncu profili yoksa hesap adinizdan hafif bir profil olusturuyoruz.'))
+                : pageText('Guests can still register for open tournaments by entering a first name and surname once.', 'Misafirler bir kez ad ve soyad girerek acik turnuvalara kaydolabilir.');
 
             document.getElementById('hub-controls').innerHTML = `
                 <div class="filter-group">
                     <button type="button" class="filter-chip-button ${hubState.view === 'all' ? 'active' : ''}" onclick="setTournamentView('all')">
-                        <i class="ri-apps-line"></i> All tournaments
+                        <i class="ri-apps-line"></i> ${pageText('All tournaments', 'Tum turnuvalar')}
                     </button>
                     ${sessionContext.logged_in ? `
                         <button type="button" class="filter-chip-button ${hubState.view === 'mine' ? 'active' : ''}" onclick="setTournamentView('mine')">
-                            <i class="ri-user-star-line"></i> My tournaments
+                            <i class="ri-user-star-line"></i> ${pageText('My tournaments', 'Turnuvalarim')}
                         </button>
                     ` : ''}
                 </div>
@@ -427,15 +435,15 @@
             const canRegister = tournament.status === 'registration_open' && !tournament.registered;
             const registerDisabled = !canRegister;
             const registerLabel = tournament.registered
-                ? `Registered${tournament.player_status ? ` (${tournament.player_status})` : ''}`
+                ? `${pageText('Registered', 'Kayitli')}${tournament.player_status ? ` (${tournament.player_status})` : ''}`
                 : (canRegister
-                    ? (sessionContext.logged_in ? 'Quick Register' : 'Register')
-                    : 'Registration Closed');
+                    ? (sessionContext.logged_in ? pageText('Quick Register', 'Hizli Kayit') : pageText('Register', 'Kaydol'))
+                    : pageText('Registration Closed', 'Kayit Kapali'));
 
             return `
                 <article class="tournament-card ${tournament.registered ? 'is-mine' : ''}">
                     <span class="status-chip status-${tournament.status}">${tournament.status.replaceAll('_', ' ')}</span>
-                    ${tournament.registered ? `<div class="registered-chip"><i class="ri-bookmark-3-fill"></i> My tournament</div>` : ''}
+                    ${tournament.registered ? `<div class="registered-chip"><i class="ri-bookmark-3-fill"></i> ${pageText('My tournament', 'Turnuvam')}</div>` : ''}
                     <h3>${tournament.tour_title}</h3>
                     <div class="tournament-meta">
                         <span><strong>Format:</strong> ${tournament.tour_type}</span>
@@ -444,7 +452,7 @@
                         ${tournament.winner_label ? `<span><strong>Winner:</strong> ${tournament.winner_label}</span>` : ''}
                     </div>
                     <div class="card-actions">
-                        <a href="${tournament.detail_url}" class="button">Open Tournament</a>
+                        <a href="${tournament.detail_url}" class="button">${pageText('Open Tournament', 'Turnuvayi Ac')}</a>
                         <button class="ghost-button" ${registerDisabled ? 'disabled' : ''} onclick="registerForTournament(${tournament.tour_id})">
                             ${registerLabel}
                         </button>
@@ -480,8 +488,8 @@
                 .join('');
 
             const emptyMessage = hubState.view === 'mine'
-                ? 'You are not registered in any public tournaments yet.'
-                : 'No public tournaments are available right now.';
+                ? pageText('You are not registered in any public tournaments yet.', 'Henuz hicbir acik turnuvaya kayitli degilsiniz.')
+                : pageText('No public tournaments are available right now.', 'Su anda acik turnuva bulunmuyor.');
 
             document.getElementById('hub-sections').innerHTML = html || `<div class="empty-message">${emptyMessage}</div>`;
         }
@@ -573,7 +581,7 @@
             const firstName = document.getElementById('registration-first-name').value.trim();
             const surname = document.getElementById('registration-surname').value.trim();
             if (!firstName || !surname) {
-                window.alert('Please enter both first name and surname.');
+                window.alert(pageText('Please enter both first name and surname.', 'Lutfen hem adi hem soyadi girin.'));
                 return;
             }
 
@@ -614,6 +622,8 @@
                 }
             });
         });
+
+        window.addEventListener('app:localechange', renderHub);
 
         window.setTournamentView = setTournamentView;
     </script>

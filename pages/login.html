@@ -29,18 +29,18 @@
     <div class="box">
       <div class="login">
         <div class="loginBx">
-          <h2><i class="ri-login-box-line"></i>Login<i class="ri-flashlight-line"></i></h2>
+          <h2><i class="ri-login-box-line"></i><span data-i18n-en="Login" data-i18n-tr="Giris Yap">Login</span><i class="ri-flashlight-line"></i></h2>
           <form id="login-form">
             <label class="sr-only" for="email">Email address</label>
-            <input type="email" id="email" placeholder="Email..." autocomplete="email" required>
+            <input type="email" id="email" placeholder="Email..." data-i18n-en="Email..." data-i18n-tr="E-posta..." data-i18n-attr="placeholder" autocomplete="email" required>
             <label class="sr-only" for="password">Password</label>
-            <input type="password" id="password" placeholder="Password..." autocomplete="current-password" required>
-            <input type="submit" value="Sign In">
+            <input type="password" id="password" placeholder="Password..." data-i18n-en="Password..." data-i18n-tr="Sifre..." data-i18n-attr="placeholder" autocomplete="current-password" required>
+            <input type="submit" value="Sign In" data-i18n-en="Sign In" data-i18n-tr="Giris Yap" data-i18n-attr="value">
           </form>
           <div id="error-message" role="status" aria-live="polite"></div>
           <div class="group">
-            <span style="color: #c7d0de;">Need access help? Contact a club admin.</span>
-            <a href="sign_up.html">Sign Up</a>
+            <span style="color: #c7d0de;" data-i18n-en="Need access help? Contact a club admin." data-i18n-tr="Giris yardimina mi ihtiyaciniz var? Bir kulup yoneticisiyle iletisime gecin.">Need access help? Contact a club admin.</span>
+            <a href="sign_up.html" data-i18n-en="Sign Up" data-i18n-tr="Kayit Ol">Sign Up</a>
           </div>
         </div>
       </div>
@@ -54,7 +54,7 @@
   <script src="../js/scrollreveal.min.js"></script>
 
   <!--primary js file-->
-    <script src="../js/behaviour.js?v=20260409-1"></script>
+    <script src="../js/behaviour.js?v=20260413-1"></script>
 
   <script>
     document.getElementById('login-form').addEventListener('submit', function(event) {

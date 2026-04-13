@@ -63,7 +63,7 @@
 
     <main class="main">
         <section class="membership-shell container" id="membership-shell">
-            <div class="surface">Loading membership workflow...</div>
+            <div class="surface" data-i18n-en="Loading membership workflow..." data-i18n-tr="Uyelik sureci yukleniyor...">Loading membership workflow...</div>
         </section>
     </main>
 
@@ -72,67 +72,69 @@
     </a>
 
     <script src="../js/scrollreveal.min.js"></script>
-    <script src="../js/behaviour.js?v=20260409-1"></script>
+    <script src="../js/behaviour.js?v=20260413-1"></script>
     <script>
+        const pageText = (en, tr) => window.appLocaleText ? window.appLocaleText({ en, tr }) : en;
+
         function renderMembershipPage(context) {
             const shell = document.getElementById('membership-shell');
             shell.innerHTML = `
                 <section class="surface">
-                    <h1>Join the club</h1>
+                    <h1>${pageText('Join the club', 'Kulube katil')}</h1>
                     <p style="color: var(--text-color); margin-top: 0.9rem;">
-                        Club membership is separate from platform roles. Players stay players, and approved club members unlock member-only features such as blog draft authoring.
+                        ${pageText('Club membership is separate from platform roles. Players stay players, and approved club members unlock member-only features such as blog draft authoring.', 'Kulup uyeligi platform rollerinden ayridir. Oyuncular oyuncu olarak kalir; onayli kulup uyeleri blog taslagi yazmak gibi uye-ozel ozelliklerin kilidini acar.')}
                     </p>
                 </section>
 
                 <section class="surface">
-                    <h2>How the workflow works</h2>
+                    <h2>${pageText('How the workflow works', 'Surec nasil isliyor')}</h2>
                     <div class="step-grid" style="margin-top: 1rem;">
                         <article class="step-card">
-                            <strong>1. Create your player profile</strong>
-                            <p style="color: var(--text-color); margin-top: 0.6rem;">Your profile powers tournament registration and helps managers identify you.</p>
+                            <strong>${pageText('1. Create your player profile', '1. Oyuncu profilinizi olusturun')}</strong>
+                            <p style="color: var(--text-color); margin-top: 0.6rem;">${pageText('Your profile powers tournament registration and helps managers identify you.', 'Profiliniz turnuva kayitlarini destekler ve yoneticilerin sizi tanimasina yardim eder.')}</p>
                         </article>
                         <article class="step-card">
-                            <strong>2. Submit your membership form</strong>
-                            <p style="color: var(--text-color); margin-top: 0.6rem;">Upload the filled membership form from this page.</p>
+                            <strong>${pageText('2. Submit your membership form', '2. Uyelik formunuzu gonderin')}</strong>
+                            <p style="color: var(--text-color); margin-top: 0.6rem;">${pageText('Upload the filled membership form from this page.', 'Doldurulmus uyelik formunu bu sayfadan yukleyin.')}</p>
                         </article>
                         <article class="step-card">
-                            <strong>3. Wait for review</strong>
-                            <p style="color: var(--text-color); margin-top: 0.6rem;">Managers and admins review applications and approve or reject them.</p>
+                            <strong>${pageText('3. Wait for review', '3. Inceleme icin bekleyin')}</strong>
+                            <p style="color: var(--text-color); margin-top: 0.6rem;">${pageText('Managers and admins review applications and approve or reject them.', 'Yoneticiler ve adminler basvurulari inceler, onaylar veya reddeder.')}</p>
                         </article>
                     </div>
                 </section>
 
                 <section class="surface">
-                    <h2>Membership status</h2>
-                    <p style="margin-top: 0.75rem;"><strong>Current state:</strong> ${context.membership_status.replaceAll('_', ' ')}</p>
+                    <h2>${pageText('Membership status', 'Uyelik durumu')}</h2>
+                    <p style="margin-top: 0.75rem;"><strong>${pageText('Current state:', 'Guncel durum:')}</strong> ${context.membership_status.replaceAll('_', ' ')}</p>
                     <p style="color: var(--text-color); margin-top: 0.6rem;">
                         ${
                           !context.logged_in
-                            ? 'Sign in first to submit an application.'
+                            ? pageText('Sign in first to submit an application.', 'Basvuru gondermek icin once giris yapin.')
                             : !context.has_player_profile
-                                ? 'Complete your player profile before submitting the form.'
+                                ? pageText('Complete your player profile before submitting the form.', 'Formu gondermeden once oyuncu profilinizi tamamlayin.')
                                 : context.membership_status === 'approved'
-                                    ? 'You are already an approved club member.'
-                                    : 'Upload your latest membership form below.'
+                                    ? pageText('You are already an approved club member.', 'Zaten onayli bir kulup uyesisiniz.')
+                                    : pageText('Upload your latest membership form below.', 'En guncel uyelik formunuzu asagidan yukleyin.')
                         }
                     </p>
                 </section>
 
                 <section class="surface">
-                    <h2>Downloads</h2>
-                    <p style="color: var(--text-color); margin-top: 0.75rem;">Download the club forms, complete them, and upload the membership form below.</p>
+                    <h2>${pageText('Downloads', 'Indirmeler')}</h2>
+                    <p style="color: var(--text-color); margin-top: 0.75rem;">${pageText('Download the club forms, complete them, and upload the membership form below.', 'Kulup formlarini indirin, doldurun ve uyelik formunu asagidan yukleyin.')}</p>
                     <div class="step-grid" style="margin-top: 1rem;">
-                        <a class="button" href="../other/athleteform.docx">Athlete Registration Form</a>
-                        <a class="button" href="../other/memberform.docx">Member Registration Form</a>
+                        <a class="button" href="../other/athleteform.docx">${pageText('Athlete Registration Form', 'Sporcu Kayit Formu')}</a>
+                        <a class="button" href="../other/memberform.docx">${pageText('Member Registration Form', 'Uye Kayit Formu')}</a>
                     </div>
                 </section>
 
                 <section class="surface">
-                    <h2>Submit membership application</h2>
+                    <h2>${pageText('Submit membership application', 'Uyelik basvurusu gonder')}</h2>
                     <form id="membership-form" style="margin-top: 1rem;">
-                        <label for="membership-file">Membership form</label>
+                        <label for="membership-file">${pageText('Membership form', 'Uyelik formu')}</label>
                         <input id="membership-file" name="form" type="file" accept=".pdf,.doc,.docx" ${(!context.logged_in || !context.has_player_profile || context.membership_status === 'approved') ? 'disabled' : ''} required>
-                        <button type="submit" class="button" style="margin-top: 1rem;" ${(!context.logged_in || !context.has_player_profile || context.membership_status === 'approved') ? 'disabled' : ''}>Submit application</button>
+                        <button type="submit" class="button" style="margin-top: 1rem;" ${(!context.logged_in || !context.has_player_profile || context.membership_status === 'approved') ? 'disabled' : ''}>${pageText('Submit application', 'Basvuruyu gonder')}</button>
                     </form>
                 </section>
             `;
@@ -151,7 +153,7 @@
             event.preventDefault();
             const fileInput = document.getElementById('membership-file');
             if (!fileInput.files[0]) {
-                window.alert('Please choose a file first.');
+                window.alert(pageText('Please choose a file first.', 'Lutfen once bir dosya secin.'));
                 return;
             }
 
@@ -175,6 +177,15 @@
         }
 
         document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                const context = await loadContext();
+                renderMembershipPage(context);
+            } catch (error) {
+                document.getElementById('membership-shell').innerHTML = `<div class="surface">${error.message}</div>`;
+            }
+        });
+
+        window.addEventListener('app:localechange', async () => {
             try {
                 const context = await loadContext();
                 renderMembershipPage(context);

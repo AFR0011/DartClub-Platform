@@ -169,6 +169,20 @@
     .ui-button-secondary:hover,
     .ui-button-danger:hover {
       transform: translateY(-1px);
+      box-shadow: 0 0 22px rgba(255, 92, 92, 0.2), 0 16px 28px rgba(0, 0, 0, 0.18);
+    }
+
+    .ui-button:hover {
+      background: linear-gradient(180deg, #ff6057, #d7263d);
+    }
+
+    .ui-button-secondary:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+    }
+
+    .ui-button-danger:hover {
+      background: rgba(220, 38, 38, 0.18);
     }
 
     .lightbox {
@@ -208,6 +222,24 @@
       flex-wrap: wrap;
       gap: 0.75rem;
       justify-content: center;
+    }
+
+    .lightbox-close {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      width: 44px;
+      height: 44px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      background: rgba(7, 12, 20, 0.72);
+      color: #fff;
+      font-size: 1.3rem;
+      cursor: pointer;
+      box-shadow: 0 14px 26px rgba(0, 0, 0, 0.22);
     }
 
     @media (max-width: 1100px) {
@@ -255,6 +287,9 @@
 
   <div class="lightbox" id="lightbox">
     <div class="lightbox-card">
+      <button type="button" class="lightbox-close" id="lightbox-close" aria-label="Close image preview">
+        <i class="ri-close-line"></i>
+      </button>
       <img id="lightbox-image" alt="Gallery preview" />
       <div class="lightbox-caption">
         <strong id="lightbox-title">Gallery image</strong>
@@ -269,11 +304,12 @@
   </a>
 
   <script src="../js/scrollreveal.min.js"></script>
-  <script src="../js/behaviour.js?v=20260409-1"></script>
+  <script src="../js/behaviour.js?v=20260413-1"></script>
   <script src="../js/ui_feedback.js?v=20260406-1"></script>
   <script>
     let galleryContext = null;
     let galleryImages = [];
+    const pageText = (en, tr) => window.appLocaleText ? window.appLocaleText({ en, tr }) : en;
 
     function galleryEscapeHtml(value) {
       return String(value ?? "")
@@ -321,7 +357,7 @@
                 <span class="gallery-card__meta">${galleryEscapeHtml(image.source_blog_id ? `Linked to blog post: ${image.source_blog_title || `#${image.source_blog_id}`}` : 'Standalone gallery image')}</span>
                 ${
                   galleryContext?.can_manage_club && Number(image.id) > 0
-                    ? `<button type="button" class="ui-button-danger" onclick="deleteImage(${image.id}, ${image.source_blog_id ? 'true' : 'false'})">${image.source_blog_id ? 'Remove from gallery' : 'Delete'}</button>`
+                    ? `<button type="button" class="ui-button-danger" onclick="deleteImage(${image.id}, ${image.source_blog_id ? 'true' : 'false'})">${image.source_blog_id ? pageText('Remove from gallery', 'Galeriden kaldir') : pageText('Delete', 'Sil')}</button>`
                     : ''
                 }
               </div>
@@ -347,40 +383,40 @@
       shell.innerHTML = `
         <section class="surface hero-surface">
           <div>
-            <div class="membership-chip"><i class="ri-image-2-line"></i> Club memories</div>
-            <h1 style="margin-top: 1rem;">Club Gallery</h1>
+            <div class="membership-chip"><i class="ri-image-2-line"></i> ${pageText('Club memories', 'Kulup anilari')}</div>
+            <h1 style="margin-top: 1rem;">${pageText('Club Gallery', 'Kulup Galerisi')}</h1>
             <p style="color: var(--text-color); margin-top: 0.85rem;">
-              Photos from blog posts, events, tournaments, and club life all collect here.
+              ${pageText('Photos from blog posts, events, tournaments, and club life all collect here.', 'Blog yazilarindan, etkinliklerden, turnuvalardan ve kulup hayatindan gelen fotograflar burada toplanir.')}
             </p>
           </div>
           <div>
-            <h3>What lives here</h3>
+            <h3>${pageText('What lives here', 'Burada neler var')}</h3>
             <p style="color: var(--text-color); margin-top: 0.75rem;">
-              Gallery images can be uploaded directly by managers/admins, and blog images can also appear here automatically.
+              ${pageText('Gallery images can be uploaded directly by managers/admins, and blog images can also appear here automatically.', 'Galeri gorselleri yoneticiler tarafindan dogrudan yuklenebilir; blog gorselleri de otomatik olarak burada gorunebilir.')}
             </p>
           </div>
         </section>
         <section class="summary-strip">
-          <article class="summary-card"><strong>${images.length}</strong><span>Visible images</span></article>
-          <article class="summary-card"><strong>${images.filter((image) => Number(image.source_blog_id) > 0).length}</strong><span>Linked to blog posts</span></article>
-          <article class="summary-card"><strong>${galleryContext?.can_manage_club ? 'Yes' : 'No'}</strong><span>You can manage uploads</span></article>
+          <article class="summary-card"><strong>${images.length}</strong><span>${pageText('Visible images', 'Gorunen gorseller')}</span></article>
+          <article class="summary-card"><strong>${images.filter((image) => Number(image.source_blog_id) > 0).length}</strong><span>${pageText('Linked to blog posts', 'Blog yazilarina bagli')}</span></article>
+          <article class="summary-card"><strong>${galleryContext?.can_manage_club ? pageText('Yes', 'Evet') : pageText('No', 'Hayir')}</strong><span>${pageText('You can manage uploads', 'Yuklemeleri yonetebilirsiniz')}</span></article>
         </section>
         ${
           galleryContext?.can_manage_club
             ? `
               <section class="surface">
-                <h2>Upload gallery image</h2>
+                <h2>${pageText('Upload gallery image', 'Galeri gorseli yukle')}</h2>
                 <form id="gallery-upload-form" class="upload-form">
-                  <input type="text" name="title" class="ui-input" placeholder="Image title">
+                  <input type="text" name="title" class="ui-input" placeholder="${pageText('Image title', 'Gorsel basligi')}">
                   <input type="file" name="image" class="ui-input" accept="image/*" required>
-                  <button type="submit" class="ui-button">Upload image</button>
+                  <button type="submit" class="ui-button">${pageText('Upload image', 'Gorsel yukle')}</button>
                 </form>
               </section>
             `
             : ''
         }
         <section class="surface">
-          ${images.length > 0 ? renderGallery(images) : '<p style="color: var(--text-color);">No images available yet.</p>'}
+          ${images.length > 0 ? renderGallery(images) : `<p style="color: var(--text-color);">${pageText('No images available yet.', 'Henuz gorsel yok.')}</p>`}
         </section>
       `;
 
@@ -401,20 +437,20 @@
         return;
       }
 
-      galleryToast('Image uploaded successfully.', 'success');
+      galleryToast(pageText('Image uploaded successfully.', 'Gorsel basariyla yuklendi.'), 'success');
       await loadGalleryPage();
     }
 
     async function deleteImage(id, linkedToBlog) {
       const message = linkedToBlog
-        ? 'Remove this image from the gallery? The blog post will keep its image.'
-        : 'Delete this image from the gallery?';
+        ? pageText('Remove this image from the gallery? The blog post will keep its image.', 'Bu gorsel galeriden kaldirilsin mi? Blog yazisi gorseli koruyacak.')
+        : pageText('Delete this image from the gallery?', 'Bu gorsel galeriden silinsin mi?');
 
       const confirmed = await requestGalleryConfirm({
         title: linkedToBlog ? 'Remove linked gallery image' : 'Delete gallery image',
         message,
-        confirmLabel: linkedToBlog ? 'Remove from gallery' : 'Delete image',
-        cancelLabel: 'Cancel',
+        confirmLabel: linkedToBlog ? pageText('Remove from gallery', 'Galeriden kaldir') : pageText('Delete image', 'Gorseli sil'),
+        cancelLabel: pageText('Cancel', 'Iptal'),
         tone: 'danger'
       });
       if (!confirmed) {
@@ -432,11 +468,11 @@
       }
 
       if (data.removed_from_gallery_only) {
-        galleryToast('Image removed from the gallery. The blog post keeps its image.', 'success');
+        galleryToast(pageText('Image removed from the gallery. The blog post keeps its image.', 'Gorsel galeriden kaldirildi. Blog yazisi gorseli koruyor.'), 'success');
       }
 
       if (!data.removed_from_gallery_only) {
-        galleryToast('Image deleted successfully.', 'success');
+        galleryToast(pageText('Image deleted successfully.', 'Gorsel basariyla silindi.'), 'success');
       }
       await loadGalleryPage();
     }
@@ -450,25 +486,39 @@
       document.getElementById('lightbox-image').src = image.file_path;
       document.getElementById('lightbox-title').textContent = image.title || 'Club memory';
       document.getElementById('lightbox-meta').textContent = image.source_blog_id
-        ? `This image is linked to blog post ${image.source_blog_title || `#${image.source_blog_id}`}.`
-        : 'This image lives only in the gallery.';
+        ? pageText(`This image is linked to blog post ${image.source_blog_title || `#${image.source_blog_id}`}.`, `Bu gorsel ${image.source_blog_title || `#${image.source_blog_id}`} blog yazisina baglidir.`)
+        : pageText('This image lives only in the gallery.', 'Bu gorsel yalnizca galeride bulunur.');
       document.getElementById('lightbox-actions').innerHTML = image.source_blog_id
-        ? `<a class="ui-button" href="blog.html?post=${Number(image.source_blog_id)}">Open linked post</a>`
+        ? `<a class="ui-button" href="blog.html?post=${Number(image.source_blog_id)}">${pageText('Open linked post', 'Bagli yaziyi ac')}</a>`
         : '';
       document.getElementById('lightbox').style.display = 'flex';
+    }
+
+    function closeLightbox() {
+      document.getElementById('lightbox').style.display = 'none';
     }
 
     document.getElementById('lightbox').addEventListener('click', (event) => {
       if (event.target !== event.currentTarget) {
         return;
       }
-      document.getElementById('lightbox').style.display = 'none';
+      closeLightbox();
     });
+
+    document.getElementById('lightbox-close').addEventListener('click', closeLightbox);
 
     document.addEventListener('DOMContentLoaded', () => {
       loadGalleryPage().catch((error) => {
         document.getElementById('gallery-shell').innerHTML = `<div class="surface">${galleryEscapeHtml(error.message)}</div>`;
       });
+    });
+
+    window.addEventListener('app:localechange', () => {
+      if (galleryContext) {
+        loadGalleryPage().catch((error) => {
+          document.getElementById('gallery-shell').innerHTML = `<div class="surface">${galleryEscapeHtml(error.message)}</div>`;
+        });
+      }
     });
 
     window.openLightboxById = openLightboxById;

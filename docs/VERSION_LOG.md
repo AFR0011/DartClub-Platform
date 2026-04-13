@@ -1,5 +1,36 @@
 # VERSION_LOG
 
+## SRE Notes Follow-Up Pass
+- Date: 2026-04-13
+- Status: UI/auth/public-UX follow-up driven by `docs/Dart Club SRE 120426.md`
+- Main changes:
+  - added a persistent EN/TR language toggle in the shared shell and wired key public/auth/tournament/community pages to shared locale helpers
+  - improved auth/signup UX by expanding the login card by default on small/touch layouts, enforcing a stronger password rule, and adding a best-effort welcome email after signup
+  - fixed several public polish issues including footer-safe scroll-up placement, brighter button hover treatment, a gallery lightbox close button, smoother page transitions, and a small homepage/about image-alignment tweak
+  - split fixture counts from the collapse toggle, synced public/admin bracket focus-mode button labels between open/close states, and tightened the latest mobile bracket fallback again
+  - added `pages/developers.html` plus homepage/about links to it, while leaving placeholders for real photos, LinkedIn URLs, and any final personal/team logos
+- Verification in this pass:
+  - targeted PHP lint for `services/signup.php`, `pages/main.php`, `pages/tournament_details.php`, and `pages/admin/show_tournament_details.php`
+  - live built-in-server HTTP `200` checks for `pages/main.php`, `pages/about.html`, `pages/developers.html`, `pages/login.html`, and `pages/sign_up.html`
+  - live page/source marker checks for the developers CTA, gallery lightbox close control, bracket focus button, membership shell, and tournament registration modal wiring
+- Still pending:
+  - real browser/mobile QA for the EN/TR toggle, transition overlay, gallery close affordance, scroll-up spacing, and latest bracket mobile/focus-mode behavior
+  - real SMTP verification for the signup welcome email path
+  - replacement of placeholder build-team photos/LinkedIn targets and any final personal logos
+
+## Hostinger Entrypoint Fix
+- Date: 2026-04-10
+- Status: shared-host deployment follow-up for `public_html` compatibility
+- Main changes:
+  - added a root `index.php` redirect so Apache/PHP shared hosts can land on `pages/main.php` without moving the public page files out of `pages/`
+  - allowed the two public membership-registration DOCX downloads through root `.htaccess` while keeping the broader `other/` directory block in place
+- Verification in this pass:
+  - targeted PHP lint for `index.php`
+  - static inspection of `.htaccess`, `pages/register.html`, and public-page relative-link behavior
+- Still pending:
+  - real Apache/Hostinger runtime verification after uploading the updated archive
+  - confirmation that the public registration-form downloads open correctly on the deployed host
+
 ## Finalization And Option-C Polish Pass
 - Date: 2026-04-09
 - Status: release-facing finalization pass focused on dead-end UX removal, admin dashboard polish, richer public player presentation, and repo-truth alignment

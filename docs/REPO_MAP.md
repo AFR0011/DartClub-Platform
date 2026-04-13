@@ -39,6 +39,9 @@
   - calls:
     - `services/get_session_context.php`
     - `services/submit_membership_application.php`
+- `pages/developers.html`
+  - public build-team/about-the-makers page
+  - currently ships placeholder team cards until real profile images and LinkedIn URLs are supplied
 - `pages/blog.html`
   - public blog plus approved-member draft workspace
   - calls:
@@ -238,6 +241,10 @@
   - `js/admin_tournament_details.js`
 - Shared site/admin JS:
   - `js/behaviour.js`
+    - shared nav/footer shell hydration
+    - EN/TR locale persistence and text hydration for public pages
+    - page-transition overlay hooks
+    - footer-aware scroll-up behavior
   - `js/admin_nav.js`
   - `js/ui_feedback.js`
     - shared toast, confirm, and prompt helpers used by blog, gallery, and admin workflows
