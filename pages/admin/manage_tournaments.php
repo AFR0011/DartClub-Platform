@@ -202,6 +202,10 @@ $playerStmt->close();
             margin-bottom: 12px;
         }
 
+        .filter-bar > .form-group:last-child {
+            min-width: 0;
+        }
+
         .compact-chip {
             display: inline-flex;
             align-items: center;
@@ -231,12 +235,24 @@ $playerStmt->close();
             .stats-grid {
                 grid-template-columns: repeat(2, minmax(0, 1fr));
             }
+
+            .filter-bar {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .filter-bar > .form-group:last-child {
+                grid-column: 1 / -1;
+            }
         }
 
         @media (max-width: 640px) {
             .stats-grid,
             .filter-bar {
                 grid-template-columns: 1fr;
+            }
+
+            .filter-bar > .form-group:last-child {
+                grid-column: auto;
             }
         }
     </style>

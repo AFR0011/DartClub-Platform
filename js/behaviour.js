@@ -183,47 +183,54 @@ function applyLocaleAttributes(root = document) {
 }
 
 function updateLanguageDock() {
-  const dock = document.querySelector(".language-dock");
+  const dock = document.querySelector(".nav__locale");
   if (!dock) {
     return;
   }
 
-  const label = dock.querySelector(".language-dock__label");
+  const label = dock.querySelector(".nav__locale-label");
   if (label) {
     label.textContent = appLocaleText({ en: "Language", tr: "Dil" });
   }
 
-  dock.querySelectorAll("[data-locale]").forEach((button) => {
-    button.classList.toggle("is-active", button.dataset.locale === appLocale);
-    button.setAttribute("aria-pressed", button.dataset.locale === appLocale ? "true" : "false");
-  });
+  dock.setAttribute("aria-label", appLocaleText({ en: "Language", tr: "Dil" }));
+
+  const select = dock.querySelector(".nav__locale-select");
+  if (select && select.value !== appLocale) {
+    select.value = appLocale;
+  }
 }
 
 function ensureLanguageDock() {
-  if (!document.body) {
+  const nav = document.querySelector(".nav");
+  if (!nav) {
     return;
   }
 
-  let dock = document.querySelector(".language-dock");
+  let dock = nav.querySelector(".nav__utility");
   if (!dock) {
     dock = document.createElement("div");
-    dock.className = "language-dock";
+    dock.className = "nav__utility";
     dock.innerHTML = `
-      <span class="language-dock__label"></span>
-      <div class="language-dock__buttons">
-        <button type="button" class="language-dock__button" data-locale="en">EN</button>
-        <button type="button" class="language-dock__button" data-locale="tr">TR</button>
-      </div>
+      <label class="nav__locale">
+        <span class="nav__locale-label"></span>
+        <select class="nav__locale-select" aria-label="${appLocaleText({ en: "Language", tr: "Dil" })}">
+          <option value="en">EN</option>
+          <option value="tr">TR</option>
+        </select>
+      </label>
     `;
-    dock.addEventListener("click", (event) => {
-      const nextButton = event.target.closest("[data-locale]");
-      if (!nextButton) {
-        return;
-      }
 
-      setAppLocale(nextButton.dataset.locale || "en");
+    const toggle = nav.querySelector(".nav__toggle");
+    if (toggle && toggle.parentElement === nav) {
+      nav.insertBefore(dock, toggle);
+    } else {
+      nav.appendChild(dock);
+    }
+
+    dock.querySelector(".nav__locale-select")?.addEventListener("change", (event) => {
+      setAppLocale(event.target.value || "en");
     });
-    document.body.appendChild(dock);
   }
 
   updateLanguageDock();
@@ -382,7 +389,7 @@ const sr = ScrollReveal({
   delay: 400,
 });
 
-sr.reveal(`.home__data, .footer__container, .footer__group`);
+sr.reveal(`.home__data, .home_data, .footer__container, .footer__group`);
 sr.reveal(`.home__img`, { delay: 700, origin: "bottom" });
 sr.reveal(`.logos__img, .event__card`, { interval: 100 });
 sr.reveal(`.contactus__img, .about__content`, { origin: "left" });
@@ -612,6 +619,8 @@ async function hydratePublicShell() {
     if (navList) {
       navList.innerHTML = buildNavItems(context) + buildAuthActions(context);
     }
+
+    ensureLanguageDock();
 
     const footerLogo = document.querySelector(".footer__logo img");
     if (footerLogo) {

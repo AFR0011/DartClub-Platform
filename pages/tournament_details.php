@@ -109,9 +109,14 @@
             align-items: start;
         }
 
+        [data-public-bracket-group="Winners Bracket"] .read-bracket,
+        [data-public-bracket-group="Losers Bracket"] .read-bracket {
+            --bracket-track: 72px;
+        }
+
         .read-bracket-round {
             display: grid;
-            gap: 12px;
+            gap: 14px;
         }
 
         .read-bracket-round h3 {
@@ -550,7 +555,7 @@
         .bracket-group-stack--merged[data-public-active-view="merged"] [data-public-bracket-group="Losers Bracket"] .read-bracket {
             display: flex;
             flex-direction: row-reverse;
-            gap: 26px;
+            gap: 28px;
             min-width: max-content;
             align-items: start;
         }
@@ -558,7 +563,7 @@
         .bracket-group-stack--merged[data-public-active-view="Losers Bracket"] [data-public-bracket-group="Losers Bracket"] .read-bracket {
             display: flex;
             flex-direction: row-reverse;
-            gap: 26px;
+            gap: 28px;
             min-width: max-content;
             align-items: start;
         }
@@ -809,9 +814,14 @@
             }
 
             .read-bracket {
-                --bracket-track: 58px;
-                grid-auto-columns: minmax(176px, 176px);
-                gap: 16px;
+                --bracket-track: 64px;
+                grid-auto-columns: minmax(208px, 208px);
+                gap: 18px;
+            }
+
+            [data-public-bracket-group="Winners Bracket"] .read-bracket,
+            [data-public-bracket-group="Losers Bracket"] .read-bracket {
+                --bracket-track: 70px;
             }
 
             .read-bracket-matchup {
@@ -847,9 +857,14 @@
             }
 
             .read-bracket {
-                --bracket-track: 52px;
-                grid-auto-columns: minmax(154px, 154px);
-                gap: 12px;
+                --bracket-track: 60px;
+                grid-auto-columns: minmax(196px, 196px);
+                gap: 16px;
+            }
+
+            [data-public-bracket-group="Winners Bracket"] .read-bracket,
+            [data-public-bracket-group="Losers Bracket"] .read-bracket {
+                --bracket-track: 66px;
             }
 
             .read-bracket-matchup {

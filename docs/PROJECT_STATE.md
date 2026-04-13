@@ -4,7 +4,7 @@
 - Project: `Dart Club`
 - Last updated: 2026-04-13
 - Repo type: legacy PHP/MySQL website
-- Current repo status: mapped, documented, runtime-tested on XAMPP, and further debug-hardened across the shared public shell, JSON service layer, tournament engine, public/community surfaces, and the latest SRE-note follow-up polish pass
+- Current repo status: mapped, documented, runtime-tested on XAMPP, and further debug-hardened across the shared public shell, JSON service layer, tournament engine, public/community surfaces, and the latest SRE-note plus manual-verification follow-up polish passes
 
 ## Current Objective
 - Finish the migration from an ad-hoc legacy codebase to a maintainable public club platform.
@@ -67,6 +67,9 @@
 
 ## What Changed In This Pass
 - Applied the `docs/Dart Club SRE 120426.md` follow-up across the shared public shell with a persistent EN/TR language toggle, shell text hydration, and locale hooks for key public/auth/tournament/community pages.
+- Applied the `Manual Verification.txt` follow-up across the responsive admin/public shell by fixing the tournament-create player-role picker on smaller screens, making admin tables horizontally navigable on mobile, and keeping membership-review action menus visible inside the table flow.
+- Reworked the main-site navbar locale control into an in-nav language dropdown that stays outside the collapsed mobile menu, opened up logo-to-nav spacing, nudged the homepage hero image left on larger screens, and tightened the hero copy width so the lead sentence reads as a shorter two-line block.
+- Expanded the public/admin elimination and double-elimination mobile bracket fallbacks again, added extra winners/losers opening-round spacing, and capped league group-stage cards at three per row in the admin tournament detail view.
 - Smoothed the public-shell UX with a lightweight page-transition overlay, footer-aware scroll-up spacing, brighter shared button hover treatment, and a small homepage/about image-alignment pass.
 - Improved auth/signup behavior by expanding the login/signup card by default on small/touch layouts, enforcing a stronger-but-still-light password rule, and sending a best-effort welcome email after signup.
 - Added `pages/developers.html`, linked it from the homepage and about page, preserved the Neo DoubleEdged logo in the homepage logo rail, and reserved placeholder slots for pending team/personal identity assets.

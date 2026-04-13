@@ -1,6 +1,12 @@
 # MIGRATION_BACKLOG
 
 ## Completed In This Pass
+- Applied the `Manual Verification.txt` follow-up by fixing the tournament-create player-role selector layout on smaller screens.
+- Kept membership-review action controls visible on mobile by turning the compact action menu into an in-cell expanding panel instead of an absolutely positioned dropdown.
+- Made shared admin tables easier to navigate on mobile with better horizontal scrolling and tighter cell padding.
+- Expanded the latest public/admin elimination and double-elimination mobile bracket fallbacks again, including extra winners/losers opening-round spacing to reduce overlap.
+- Limited admin league group-stage cards to a maximum of three per row so standings tables stop overlapping.
+- Moved the shared EN/TR language selector into the navbar as a dropdown outside the collapsed mobile menu, added space between the logo and the `Home` link, and tightened the homepage hero image/copy alignment.
 - Applied the `docs/Dart Club SRE 120426.md` follow-up with a persistent EN/TR language toggle in the shared shell plus localized hooks for key public/auth/tournament/community pages.
 - Expanded the login/signup card by default on small/touch layouts, enforced a stronger signup password rule, and added a best-effort welcome email path after signup.
 - Smoothed public-shell UX with footer-safe scroll-up spacing, brighter shared button hover treatment, a light page-transition overlay, and a small homepage/about image-positioning pass.
@@ -108,6 +114,13 @@
 - Follow `docs/TESTING_CHECKLIST.md` in order.
 - Use `docs/FREE_DEPLOYMENT_GUIDE.md` for the first real host rollout. Prefer Oracle Cloud Always Free for full PHP/MySQL compatibility; use free shared PHP hosting only as a fallback.
 - Finish browser QA for the latest SRE-note fixes:
+  - navbar locale dropdown placement on desktop/mobile
+  - homepage hero copy line break and image alignment on wider screens
+  - admin table horizontal-scroll usability on phones/tablets
+  - tournament-create player-role selector layout on smaller screens
+  - mobile membership-review action menu visibility/interaction
+  - latest public/admin winners-bracket and losers-bracket spacing on mobile
+  - admin league group-stage card layout after the three-per-row cap
   - EN/TR language toggle persistence and copy coverage
   - mobile login/signup expansion and stronger password guidance
   - gallery lightbox close affordance

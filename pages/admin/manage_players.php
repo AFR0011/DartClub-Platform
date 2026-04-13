@@ -150,6 +150,26 @@ $players = $playersQuery ? $playersQuery->fetch_all(MYSQLI_ASSOC) : [];
 
             .action-menu {
                 display: block;
+                width: 100%;
+            }
+
+            .membership-actions {
+                justify-content: flex-start;
+                min-width: 170px;
+            }
+
+            .action-menu summary {
+                width: 100%;
+                text-align: center;
+            }
+
+            .action-menu-panel {
+                position: static;
+                right: auto;
+                top: auto;
+                min-width: 0;
+                margin-top: 8px;
+                box-shadow: none;
             }
         }
 

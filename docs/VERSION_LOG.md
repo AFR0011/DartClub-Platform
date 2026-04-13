@@ -1,5 +1,21 @@
 # VERSION_LOG
 
+## Manual Verification Layout Pass
+- Date: 2026-04-13
+- Status: manual-verification follow-up focused on responsive admin tables/forms, mobile bracket readability, and shared-shell navbar/hero polish
+- Main changes:
+  - fixed the tournament-create `Add selected players as` control so it stops dropping under the right-side picker on narrower screens
+  - kept membership-review action controls visible on mobile by letting the compact dropdown expand inside the table cell instead of clipping under the table wrapper
+  - made the shared admin table treatment easier to navigate on smaller screens with stronger horizontal-scroll behavior and tighter cell padding
+  - widened the public/admin elimination and double-elimination mobile bracket tracks, added extra winners/losers opening-round spacing, and limited league group-stage cards to three per row in the admin tournament detail view
+  - moved the EN/TR language selector into the main navbar as a dropdown that stays outside the collapsed mobile menu, added more breathing room between the logo and the `Home` link, and tightened the homepage hero image/copy alignment
+- Verification in this pass:
+  - targeted PHP lint for `pages/admin/manage_tournaments.php`, `pages/admin/manage_players.php`, `pages/admin/show_tournament_details.php`, and `pages/tournament_details.php`
+  - live built-in-server HTTP `200` checks for `pages/main.php` plus static/source marker checks for the navbar locale control, league-group grid, mobile bracket spacing hooks, and the affected admin table/form selectors
+- Still pending:
+  - real browser/mobile QA for the updated navbar locale dropdown placement, the hero-copy line break, admin membership-action dropdown behavior, and the latest public/admin bracket mobile readability pass
+  - authenticated browser click-through of the admin tournament detail views after the responsive bracket/group-layout changes
+
 ## SRE Notes Follow-Up Pass
 - Date: 2026-04-13
 - Status: UI/auth/public-UX follow-up driven by `docs/Dart Club SRE 120426.md`

@@ -386,6 +386,11 @@ foreach ($matches as $match) {
             padding-right: 12px;
         }
 
+        [data-bracket-group="Winners Bracket"] .connected-bracket,
+        [data-bracket-group="Losers Bracket"] .connected-bracket {
+            --bracket-track: 122px;
+        }
+
         .merged-bracket-grid {
             display: grid;
             gap: 18px;
@@ -565,7 +570,7 @@ foreach ($matches as $match) {
 
         .connected-bracket-round {
             display: grid;
-            gap: 12px;
+            gap: 14px;
         }
 
         .connected-bracket-lane {
@@ -773,8 +778,19 @@ foreach ($matches as $match) {
             min-width: 320px;
             display: flex;
             flex-direction: column;
-            gap: 18px;
+            gap: 20px;
             position: relative;
+        }
+
+        .league-groups-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            align-items: start;
+        }
+
+        @media (max-width: 1100px) {
+            .league-groups-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
         }
 
         .modal-overlay {
@@ -1287,13 +1303,18 @@ foreach ($matches as $match) {
             }
 
             .bracket-round {
-                min-width: 220px;
+                min-width: 248px;
             }
 
             .connected-bracket {
-                --bracket-track: 92px;
-                grid-auto-columns: minmax(188px, 188px);
-                gap: 16px;
+                --bracket-track: 104px;
+                grid-auto-columns: minmax(216px, 216px);
+                gap: 18px;
+            }
+
+            [data-bracket-group="Winners Bracket"] .connected-bracket,
+            [data-bracket-group="Losers Bracket"] .connected-bracket {
+                --bracket-track: 116px;
             }
 
             .connected-bracket-matchup {
@@ -1318,7 +1339,7 @@ foreach ($matches as $match) {
             }
 
             .bracket-grid {
-                gap: 14px;
+                gap: 18px;
                 padding-bottom: 8px;
             }
         }
@@ -1331,6 +1352,21 @@ foreach ($matches as $match) {
 
             .filter-bar {
                 grid-template-columns: 1fr;
+            }
+
+            .league-groups-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .connected-bracket {
+                --bracket-track: 98px;
+                grid-auto-columns: minmax(208px, 208px);
+                gap: 16px;
+            }
+
+            [data-bracket-group="Winners Bracket"] .connected-bracket,
+            [data-bracket-group="Losers Bracket"] .connected-bracket {
+                --bracket-track: 110px;
             }
         }
     </style>
@@ -1816,7 +1852,7 @@ foreach ($matches as $match) {
         <?php if ($tournament['tour_type'] === 'League'): ?>
             <section class="page-section" data-section="groups">
                 <h2>Group Stage</h2>
-                <div class="section-grid">
+                <div class="section-grid league-groups-grid">
                     <?php foreach ($groupStandings as $groupNumber => $rows): ?>
                         <div class="section-card">
                             <h3>Group <?php echo (int) $groupNumber; ?></h3>
