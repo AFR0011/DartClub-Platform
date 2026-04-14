@@ -22,6 +22,7 @@
             border: 1px solid rgba(255, 255, 255, 0.08);
             border-radius: 22px;
             padding: 1.5rem;
+            min-width: 0;
         }
 
         .hero-grid,
@@ -31,6 +32,8 @@
             display: grid;
             gap: 1rem;
             grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            align-items: start;
+            min-width: 0;
         }
 
         .hero-surface {
@@ -69,11 +72,20 @@
             border-collapse: collapse;
         }
 
+        .data-table-wrapper,
+        .team-player-table-shell {
+            width: 100%;
+            max-width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
         .data-table th,
         .data-table td {
             padding: 0.75rem;
             border-bottom: 1px solid rgba(255, 255, 255, 0.08);
             text-align: left;
+            overflow-wrap: anywhere;
         }
 
         .match-grid,
@@ -81,6 +93,107 @@
             display: grid;
             gap: 1rem;
             grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        }
+
+        .section-info-panel {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .section-info-switcher {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+        }
+
+        .section-info-copy {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+
+        .results-stack {
+            display: grid;
+            gap: 0.9rem;
+        }
+
+        .recent-result-row {
+            padding: 0.95rem 1rem;
+            border-radius: 18px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .recent-result-row strong {
+            display: block;
+            color: #fff;
+            margin-bottom: 0.35rem;
+        }
+
+        .team-card {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .team-card-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+
+        .team-card-head h3 {
+            margin: 0;
+        }
+
+        .team-card-note {
+            color: var(--text-color);
+            margin-top: 0.55rem;
+            font-size: 0.92rem;
+            line-height: 1.55;
+        }
+
+        .team-card-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.65rem;
+        }
+
+        .team-card-meta .pill {
+            margin-bottom: 0;
+            padding: 0.42rem 0.78rem;
+            font-size: 0.84rem;
+        }
+
+        .team-player-table {
+            width: 100%;
+            min-width: 420px;
+            border-collapse: collapse;
+        }
+
+        .team-player-table th,
+        .team-player-table td {
+            padding: 0.72rem 0.6rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            text-align: left;
+            white-space: nowrap;
+        }
+
+        .team-player-table th {
+            color: var(--text-color);
+            font-size: 0.82rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .team-player-table td {
+            color: #fff;
+        }
+
+        .team-player-table td.team-player-name {
+            white-space: normal;
+            min-width: 170px;
         }
 
         .pill {
@@ -736,13 +849,15 @@
 
         .detail-button-secondary {
             background: rgba(255, 255, 255, 0.04);
-            border-color: rgba(255, 255, 255, 0.12);
+            border-color: rgba(255, 255, 255, 0.22);
+            box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08), 0 12px 26px rgba(0, 0, 0, 0.16);
             color: #fff;
         }
 
         .detail-button-secondary.is-active {
             background: rgba(255, 107, 53, 0.16);
-            border-color: rgba(255, 107, 53, 0.32);
+            border-color: rgba(255, 107, 53, 0.38);
+            box-shadow: 0 0 0 1px rgba(255, 107, 53, 0.24), 0 0 22px rgba(255, 107, 53, 0.16);
             color: #fff;
         }
 
@@ -769,8 +884,9 @@
             width: 100%;
             padding: 0.9rem 1rem;
             border-radius: 16px;
-            border: 1px solid rgba(255, 255, 255, 0.14);
+            border: 1px solid rgba(255, 255, 255, 0.22);
             background: rgba(0, 0, 0, 0.18);
+            box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06), 0 12px 24px rgba(0, 0, 0, 0.12);
             color: #fff;
             transition: border-color 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
         }
@@ -780,14 +896,16 @@
         .detail-textarea:focus {
             outline: none;
             border-color: rgba(255, 107, 53, 0.38);
-            box-shadow: 0 0 0 4px rgba(255, 107, 53, 0.12);
+            box-shadow: 0 0 0 4px rgba(255, 107, 53, 0.12), 0 0 20px rgba(255, 107, 53, 0.14);
             background: rgba(0, 0, 0, 0.26);
         }
 
         @media (max-width: 820px) {
             .bracket-section-head,
             .bracket-toolbar,
-            .fixture-section-head {
+            .fixture-section-head,
+            .section-info-copy,
+            .team-card-head {
                 flex-direction: column;
                 align-items: stretch;
             }
@@ -808,20 +926,73 @@
                 grid-template-areas: none;
             }
 
+            .bracket-group-stack--merged[data-public-active-view="merged"] [data-public-bracket-group="Opening Round"],
             .bracket-group-stack--merged[data-public-active-view="Winners Bracket"] [data-public-bracket-group="Opening Round"],
             .bracket-group-stack--merged[data-public-active-view="Losers Bracket"] [data-public-bracket-group="Opening Round"] {
                 width: 100%;
             }
 
+            .read-bracket-shell {
+                overflow: visible;
+            }
+
             .read-bracket {
-                --bracket-track: 64px;
-                grid-auto-columns: minmax(208px, 208px);
-                gap: 18px;
+                display: flex;
+                flex-direction: column;
+                gap: 1rem;
+                min-width: 0;
+                width: 100%;
             }
 
             [data-public-bracket-group="Winners Bracket"] .read-bracket,
             [data-public-bracket-group="Losers Bracket"] .read-bracket {
-                --bracket-track: 70px;
+                --bracket-track: auto;
+            }
+
+            .bracket-group-stack--merged[data-public-active-view="merged"] [data-public-bracket-group="Losers Bracket"] .read-bracket,
+            .bracket-group-stack--merged[data-public-active-view="Losers Bracket"] [data-public-bracket-group="Losers Bracket"] .read-bracket {
+                flex-direction: column;
+                gap: 1rem;
+                min-width: 0;
+                width: 100%;
+            }
+
+            .read-bracket-round,
+            .bracket-group-stack--merged[data-public-active-view="merged"] [data-public-bracket-group="Losers Bracket"] .read-bracket-round,
+            .bracket-group-stack--merged[data-public-active-view="Losers Bracket"] [data-public-bracket-group="Losers Bracket"] .read-bracket-round {
+                display: grid;
+                gap: 0.9rem;
+                min-width: 0;
+                width: 100%;
+                flex: 0 0 auto;
+            }
+
+            .read-bracket-round h3 {
+                font-size: 0.78rem;
+                line-height: 1.3;
+                letter-spacing: 0.03em;
+                white-space: normal;
+                overflow-wrap: anywhere;
+                text-transform: none;
+                text-align: left;
+            }
+
+            .read-bracket-lane {
+                display: flex;
+                flex-direction: column;
+                gap: 0.85rem;
+                grid-template-rows: none;
+                min-height: 0;
+            }
+
+            .read-bracket-node {
+                display: block;
+            }
+
+            .read-bracket-node.has-incoming::before,
+            .read-bracket-node.has-incoming::after,
+            .read-bracket-matchup.has-outgoing::after {
+                display: none;
             }
 
             .read-bracket-matchup {
@@ -831,19 +1002,31 @@
 
             .read-bracket-player {
                 padding: 0.3rem 0.45rem;
-                align-items: flex-start;
+                align-items: center;
             }
 
             .read-bracket-player strong {
                 font-size: 0.78rem;
                 white-space: normal;
                 overflow: visible;
-                text-overflow: clip;
+                text-overflow: initial;
+                overflow-wrap: anywhere;
                 line-height: 1.2;
             }
 
             .read-bracket-summary {
                 font-size: 0.72rem;
+                flex-wrap: wrap;
+            }
+
+            .bracket-group {
+                overflow: hidden;
+            }
+
+            .section-info-switcher {
+                flex-wrap: nowrap;
+                overflow-x: auto;
+                padding-bottom: 0.35rem;
             }
         }
 
@@ -857,14 +1040,7 @@
             }
 
             .read-bracket {
-                --bracket-track: 60px;
-                grid-auto-columns: minmax(196px, 196px);
-                gap: 16px;
-            }
-
-            [data-public-bracket-group="Winners Bracket"] .read-bracket,
-            [data-public-bracket-group="Losers Bracket"] .read-bracket {
-                --bracket-track: 66px;
+                gap: 0.85rem;
             }
 
             .read-bracket-matchup {
@@ -885,9 +1061,28 @@
                 display: none;
             }
 
+            .read-bracket-round h3 {
+                font-size: 0.74rem;
+            }
+
             .read-bracket-player strong {
                 font-size: 0.72rem;
                 line-height: 1.15;
+            }
+
+            .summary-grid,
+            .team-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .section-info-switcher {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                overflow: visible;
+            }
+
+            .section-info-switcher .detail-button-secondary {
+                width: 100%;
             }
 
             .bracket-group {
@@ -935,6 +1130,7 @@
         let currentTournamentData = null;
         let selectedBracketMatchId = null;
         let selectedPublicBracketView = 'merged';
+        let selectedTournamentInfoView = 'participants';
         let isPublicMatchModalOpen = false;
         const fixtureSectionState = {
             waiting: true,
@@ -1300,21 +1496,245 @@
             `).join('');
         }
 
-        function renderTeams(teams) {
+        function buildGroupPlayerStats(teams, matches) {
+            const stats = new Map();
+            (teams || []).forEach((team) => {
+                (team.players || []).forEach((player) => {
+                    stats.set(Number(player.plr_idNum), {
+                        played: 0,
+                        won: 0,
+                        lost: 0,
+                        drawn: 0,
+                        points: 0,
+                        legsFor: 0,
+                        legsAgainst: 0
+                    });
+                });
+            });
+
+            (matches || []).forEach((match) => {
+                const player1Id = Number(match.player1_id || 0);
+                const player2Id = Number(match.player2_id || 0);
+                const score1 = Number(match.player1_score);
+                const score2 = Number(match.player2_score);
+
+                if (!stats.has(player1Id) || !stats.has(player2Id)) {
+                    return;
+                }
+
+                if ((match.match_status || '') !== 'Completed' || Number.isNaN(score1) || Number.isNaN(score2)) {
+                    return;
+                }
+
+                const player1Stats = stats.get(player1Id);
+                const player2Stats = stats.get(player2Id);
+                player1Stats.played += 1;
+                player2Stats.played += 1;
+                player1Stats.legsFor += score1;
+                player1Stats.legsAgainst += score2;
+                player2Stats.legsFor += score2;
+                player2Stats.legsAgainst += score1;
+
+                if (score1 > score2) {
+                    player1Stats.won += 1;
+                    player1Stats.points += 3;
+                    player2Stats.lost += 1;
+                } else if (score2 > score1) {
+                    player2Stats.won += 1;
+                    player2Stats.points += 3;
+                    player1Stats.lost += 1;
+                } else {
+                    player1Stats.drawn += 1;
+                    player2Stats.drawn += 1;
+                    player1Stats.points += 1;
+                    player2Stats.points += 1;
+                }
+            });
+
+            return stats;
+        }
+
+        function renderParticipantsPanel(players, hasPlayerPlacements) {
+            return `
+                <div class="data-table-wrapper">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>${pageText('Name', 'Isim')}</th>
+                                <th>${pageText('Status', 'Durum')}</th>
+                                <th>${pageText('Group', 'Grup')}</th>
+                                ${hasPlayerPlacements ? `<th>${pageText('Placement', 'Derece')}</th>` : ''}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${(players || []).map((player) => `
+                                <tr>
+                                    <td><a href="player_profile.php?id=${player.plr_idNum}" style="color:#fff; text-decoration:none;">${player.plr_name} ${player.plr_surname}</a></td>
+                                    <td>${detailEscapeHtml(player.player_status || '-')}</td>
+                                    <td>${player.group_number ?? '-'}</td>
+                                    ${hasPlayerPlacements ? `<td>${detailEscapeHtml(playerPlacementLabel(player) || '-')}</td>` : ''}
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        function renderRecentResultsPanel(results) {
+            if (!results || results.length === 0) {
+                return `<p style="color: var(--text-color);">${pageText('No results reported yet.', 'Henuz sonuc bildirilmedi.')}</p>`;
+            }
+
+            return `
+                <div class="results-stack">
+                    ${results.map((result) => {
+                        const summary = result.team1_name
+                            ? `${result.team1_name} ${result.team1_score} - ${result.team2_score} ${result.team2_name}`
+                            : `${result.player1_name || 'TBD'} ${result.player1_score} - ${result.player2_score} ${result.player2_name || 'TBD'}`;
+                        const meta = result.match_date && result.match_time
+                            ? `${result.match_date} ${String(result.match_time).slice(0, 5)}`
+                            : pageText('Latest reported scoreline', 'Son bildirilen skor');
+
+                        return `
+                            <article class="recent-result-row">
+                                <strong>${detailEscapeHtml(summary)}</strong>
+                                <span style="color: var(--text-color);">${detailEscapeHtml(meta)}</span>
+                            </article>
+                        `;
+                    }).join('')}
+                </div>
+            `;
+        }
+
+        function renderTournamentInfoSection(players, recentResults, hasPlayerPlacements) {
+            const isParticipantsView = selectedTournamentInfoView !== 'results';
+            const title = isParticipantsView ? pageText('Participants', 'Katilimcilar') : pageText('Recent Results', 'Son Sonuclar');
+            const description = isParticipantsView
+                ? `${players.length} ${pageText('registered players', 'kayitli oyuncu')}`
+                : (recentResults.length === 0
+                    ? pageText('No results reported yet.', 'Henuz sonuc bildirilmedi.')
+                    : `${recentResults.length} ${pageText('reported scorelines', 'bildirilen skor')}`);
+
+            return `
+                <section class="surface section-info-panel">
+                    <div class="section-info-switcher">
+                        <button
+                            type="button"
+                            class="detail-button-secondary ${isParticipantsView ? 'is-active' : ''}"
+                            onclick="setTournamentInfoView('participants')"
+                        >
+                            ${pageText('Participants', 'Katilimcilar')}
+                        </button>
+                        <button
+                            type="button"
+                            class="detail-button-secondary ${!isParticipantsView ? 'is-active' : ''}"
+                            onclick="setTournamentInfoView('results')"
+                        >
+                            ${pageText('Recent Results', 'Son Sonuclar')}
+                        </button>
+                    </div>
+                    <div class="section-info-copy">
+                        <div>
+                            <h2>${title}</h2>
+                            <p style="color: var(--text-color); margin-top: 0.35rem;">${description}</p>
+                        </div>
+                        ${!isParticipantsView && recentResults.length > 0 ? `<div class="pill">${recentResults.length} ${pageText('latest scorelines', 'son skor')}</div>` : ''}
+                    </div>
+                    ${isParticipantsView
+                        ? renderParticipantsPanel(players, hasPlayerPlacements)
+                        : renderRecentResultsPanel(recentResults)}
+                </section>
+            `;
+        }
+
+        function renderTeams(teams, teamStandings, matches) {
             if (!teams || teams.length === 0) {
                 return '<p style="color: var(--text-color);">Teams have not been generated yet.</p>';
             }
 
+            const playerStats = buildGroupPlayerStats(teams, matches);
+            const standingsByTeamId = new Map();
+            const standingsByTeamName = new Map();
+
+            (teamStandings || []).forEach((standing) => {
+                const teamId = Number(standing.team_id || 0);
+                if (teamId > 0) {
+                    standingsByTeamId.set(teamId, standing);
+                }
+                standingsByTeamName.set(String(standing.team_name || '').trim().toLowerCase(), standing);
+            });
+
             return `
                 <div class="team-grid">
-                    ${teams.map((team) => `
+                    ${teams.map((team, index) => {
+                        const standing = standingsByTeamId.get(Number(team.team_id))
+                            || standingsByTeamName.get(String(team.team_name || '').trim().toLowerCase())
+                            || null;
+                        const rosterNote = (matches || []).length > 0
+                            ? pageText('Player records update from completed head-to-head fixtures between the two team rosters.', 'Oyuncu kayitlari, iki takim kadrosu arasindaki tamamlanan eslesmelerden guncellenir.')
+                            : pageText('Player stats will fill in once team fixtures are split into scored player matchups.', 'Takim fiksturleri skorlu oyuncu eslesmelerine donustugunde oyuncu istatistikleri dolacak.');
+
+                        return `
                         <article class="team-card">
-                            <h3>${team.team_name}</h3>
-                            <ul style="margin-top: 0.85rem; color: var(--text-color);">
-                                ${team.players.map((player) => `<li>${player.plr_name} ${player.plr_surname}</li>`).join('')}
-                            </ul>
+                            <div class="team-card-head">
+                                <div>
+                                    <div class="pill">${pageText('Team', 'Takim')} ${index + 1}</div>
+                                    <h3>${detailEscapeHtml(team.team_name)}</h3>
+                                    <p class="team-card-note">${rosterNote}</p>
+                                </div>
+                                ${standing ? `
+                                    <div class="team-card-meta">
+                                        <span class="pill">${pageText('Played', 'Oynanan')} ${Number(standing.matches_played || 0)}</span>
+                                        <span class="pill">${pageText('W-D-L', 'G-B-M')} ${Number(standing.matches_won || 0)}-${Number(standing.matches_drawn || 0)}-${Number(standing.matches_lost || 0)}</span>
+                                        <span class="pill">${pageText('Points', 'Puan')} ${Number(standing.points || 0)}</span>
+                                    </div>
+                                ` : ''}
+                            </div>
+                            <div class="team-player-table-shell">
+                                <table class="team-player-table">
+                                    <thead>
+                                        <tr>
+                                            <th>${pageText('Player', 'Oyuncu')}</th>
+                                            <th>${pageText('P', 'O')}</th>
+                                            <th>${pageText('W', 'G')}</th>
+                                            <th>${pageText('L', 'M')}</th>
+                                            <th>${pageText('D', 'B')}</th>
+                                            <th>${pageText('Pts', 'Puan')}</th>
+                                            <th>${pageText('Leg +/-', 'Bacak +/-')}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${(team.players || []).map((player) => {
+                                            const stats = playerStats.get(Number(player.plr_idNum)) || {
+                                                played: 0,
+                                                won: 0,
+                                                lost: 0,
+                                                drawn: 0,
+                                                points: 0,
+                                                legsFor: 0,
+                                                legsAgainst: 0
+                                            };
+                                            const legDelta = stats.legsFor - stats.legsAgainst;
+
+                                            return `
+                                                <tr>
+                                                    <td class="team-player-name">${detailEscapeHtml(`${player.plr_name} ${player.plr_surname}`)}</td>
+                                                    <td>${stats.played}</td>
+                                                    <td>${stats.won}</td>
+                                                    <td>${stats.lost}</td>
+                                                    <td>${stats.drawn}</td>
+                                                    <td>${stats.points}</td>
+                                                    <td>${legDelta > 0 ? '+' : ''}${legDelta}</td>
+                                                </tr>
+                                            `;
+                                        }).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
                         </article>
-                    `).join('')}
+                    `;
+                    }).join('')}
                 </div>
             `;
         }
@@ -1621,46 +2041,7 @@
                     <article class="summary-card"><strong>${tournament.winner_label || 'TBD'}</strong><span>${pageText('Current winner', 'Guncel kazanan')}</span></article>
                 </section>
 
-                <section class="results-grid">
-                    <div class="surface">
-                        <h2>${pageText('Participants', 'Katilimcilar')}</h2>
-                        <p style="color: var(--text-color); margin-bottom: 1rem;">${data.players.length} ${pageText('registered players', 'kayitli oyuncu')}</p>
-                        <div class="data-table-wrapper">
-                            <table class="data-table">
-                                <thead>
-                                    <tr>
-                                        <th>Name</th>
-                                        <th>Status</th>
-                                        <th>Group</th>
-                                        ${hasPlayerPlacements ? '<th>Placement</th>' : ''}
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    ${data.players.map((player) => `
-                                        <tr>
-                                            <td><a href="player_profile.php?id=${player.plr_idNum}" style="color:#fff; text-decoration:none;">${player.plr_name} ${player.plr_surname}</a></td>
-                                            <td>${player.player_status}</td>
-                                            <td>${player.group_number ?? '-'}</td>
-                                            ${hasPlayerPlacements ? `<td>${detailEscapeHtml(playerPlacementLabel(player) || '-')}</td>` : ''}
-                                        </tr>
-                                    `).join('')}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                    <div class="surface">
-                        <h2>${pageText('Recent Results', 'Son Sonuclar')}</h2>
-                        ${
-                          data.recent_results.length === 0
-                            ? `<p style="color: var(--text-color);">${pageText('No results reported yet.', 'Henuz sonuc bildirilmedi.')}</p>`
-                            : data.recent_results.map((result) => `
-                                <p style="margin-bottom: 0.75rem;">
-                                    ${result.team1_name ? `${result.team1_name} ${result.team1_score} - ${result.team2_score} ${result.team2_name}` : `${result.player1_name || 'TBD'} ${result.player1_score} - ${result.player2_score} ${result.player2_name || 'TBD'}`}
-                                </p>
-                            `).join('')
-                        }
-                    </div>
-                </section>
+                ${renderTournamentInfoSection(data.players, data.recent_results, hasPlayerPlacements)}
 
                 ${
                   tournament.tour_type !== 'Group'
@@ -1699,7 +2080,7 @@
                     ? `
                         <section class="surface">
                             <h2>${pageText('Teams', 'Takimlar')}</h2>
-                            ${renderTeams(data.teams)}
+                            ${renderTeams(data.teams, data.team_standings, data.matches)}
                         </section>
                         <section class="surface">
                             <h2>${(data.matches || []).length > 0 ? pageText('Player Fixtures', 'Oyuncu Fiksturleri') : pageText('Team Fixtures', 'Takim Fiksturleri')}</h2>
@@ -1728,6 +2109,13 @@
             selectedBracketMatchId = Number(matchId);
             isPublicMatchModalOpen = true;
             renderTournamentPage(currentTournamentData);
+        }
+
+        function setTournamentInfoView(viewKey) {
+            selectedTournamentInfoView = viewKey === 'results' ? 'results' : 'participants';
+            if (currentTournamentData) {
+                renderTournamentPage(currentTournamentData);
+            }
         }
 
         function setPublicBracketView(viewKey) {
@@ -1810,9 +2198,18 @@
 
         function syncMirroredPublicBracketShells() {
             document.querySelectorAll('[data-mirrored-bracket-shell]').forEach((shell) => {
-                shell.scrollLeft = selectedPublicBracketView === 'merged' || selectedPublicBracketView === 'Losers Bracket'
-                    ? shell.scrollWidth
+                const targetLeft = selectedPublicBracketView === 'merged' || selectedPublicBracketView === 'Losers Bracket'
+                    ? Math.max(0, shell.scrollWidth - shell.clientWidth)
                     : 0;
+
+                shell.scrollLeft = targetLeft;
+                shell.scrollTo({ left: targetLeft, behavior: 'auto' });
+                window.requestAnimationFrame(() => {
+                    shell.scrollLeft = targetLeft;
+                });
+                window.setTimeout(() => {
+                    shell.scrollLeft = targetLeft;
+                }, 48);
             });
         }
 
@@ -1860,6 +2257,8 @@
         window.toggleFixtureCategory = toggleFixtureCategory;
         window.closePublicMatchModal = closePublicMatchModal;
         window.handlePublicMatchModalBackdrop = handlePublicMatchModalBackdrop;
+        window.setTournamentInfoView = setTournamentInfoView;
+        window.addEventListener('resize', syncMirroredPublicBracketShells);
     </script>
 </body>
 </html>

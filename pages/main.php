@@ -46,9 +46,14 @@
             <p class="home__desctiption" data-i18n-en="Follow club tournaments, player stories, public brackets, and membership activity from one shared home base." data-i18n-tr="Kulup turnuvalarini, oyuncu hikayelerini, acik braketleri ve uyelik sureclerini tek bir merkezden takip edin.">
               Follow club tournaments, player stories, public brackets, and membership activity from one shared home base.
             </p>
-            <a href="tournaments.html" class="button button__flex">
-              <span data-i18n-en="Explore Tournaments" data-i18n-tr="Turnuvalari Kesfet">Explore Tournaments</span> <i class="ri-arrow-right-line"></i>
-            </a>
+            <div class="home__actions">
+              <a href="javascript:history.back()" class="button button__flex button--ghost-dark" onclick="if (window.history.length <= 1) { window.location.href = '../index.php'; return false; }">
+                <span data-i18n-en="Back" data-i18n-tr="Geri">Back</span> <i class="ri-arrow-left-line"></i>
+              </a>
+              <a href="tournaments.html" class="button button__flex">
+                <span data-i18n-en="Explore Tournaments" data-i18n-tr="Turnuvalari Kesfet">Explore Tournaments</span> <i class="ri-arrow-right-line"></i>
+              </a>
+            </div>
           </div>
 
           <div class="home_images">
@@ -228,7 +233,7 @@
                 The website now handles public tournament discovery, player profiles, membership applications, club news, and media so the whole community can follow the same workflow.
                 Whether you are joining your first event or tracking a full bracket run, the goal is the same: make the club easy to follow and easy to participate in.
               </p>
-              <div style="display:flex; flex-wrap:wrap; gap:0.85rem;">
+              <div style="display:flex; flex-wrap:wrap; gap:0.85rem; justify-content:center;">
                 <a href="about.html" class="button button__flex">
                   <span data-i18n-en="About the Club & Platform" data-i18n-tr="Kulup ve Platform Hakkinda">About the Club & Platform</span> <i class="ri-information-2-line"></i>
                 </a>

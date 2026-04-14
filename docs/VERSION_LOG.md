@@ -1,5 +1,68 @@
 # VERSION_LOG
 
+## Manual Verification Tournament UX Pass
+- Date: 2026-04-14
+- Status: manual-verification follow-up focused on tournament detail usability, membership downloads, and small-shell polish
+- Main changes:
+  - replaced the public `Participants` / `Recent Results` side-by-side layout with a single toggleable info panel so the tournament detail page stops forcing two wide surfaces at once
+  - rebuilt the public and admin `Group` tournament team views into richer roster cards with standing chips plus per-player stats instead of leaving them as basic unordered lists
+  - tightened the public/admin double-elimination mobile fallbacks again, forced mirrored losers-bracket shells to open from the far-right edge more reliably, and loosened player-name wrapping so the smaller bracket cards stop collapsing
+  - exempted the public membership DOCX downloads from the page-transition overlay, added a hero `Back` CTA on `pages/main.php`, and finished the smaller-screen contact alignment tweak
+  - strengthened the dark-surface borders/glow on auth, tournament, and blog secondary controls/inputs so they read more clearly during hover/manual QA
+- Verification in this pass:
+  - targeted PHP lint for `pages/tournament_details.php`, `pages/admin/show_tournament_details.php`, and `pages/main.php`
+  - live built-in-server HTTP `200` checks for `pages/main.php`, `pages/tournament_details.php?id=8`, and `pages/tournament_details.php?id=17`
+  - authenticated admin HTTP `200` verification for `pages/admin/show_tournament_details.php?id=17`
+  - source/marker checks for the new tournament info toggle, team-roster cards, mirrored-bracket sync updates, back CTA, membership download transition skip, and mobile contact alignment hooks
+  - `mysqladmin ping` verification that the local MariaDB server remained available during the pass
+- Still pending:
+  - real browser-eye QA for the latest public/admin mobile bracket pass across merged, winners, losers, finals, connected-bracket, and bracket-board views
+  - touch/browser confirmation that the public tournament info toggle, group-team roster cards, and membership DOCX downloads feel correct in a real client
+  - visual QA for the homepage hero back CTA and the smaller-screen contact alignment
+
+## Auth Shell Layout Follow-Up Pass
+- Date: 2026-04-14
+- Status: manual-verification follow-up focused on auth-card layout and smaller-screen header clearance
+- Main changes:
+  - changed the login and signup auth shells so larger screens show only the centered `Login` or `Sign Up` title until hover, instead of leaving the email field visible in the resting state
+  - kept the full auth form expanded by default on small/touch screens and increased top spacing so the form no longer clips into the fixed header
+  - centered the auth submit actions and added a dedicated `Forgot Password` button on `pages/login.html` that routes to the existing account-help page
+- Verification in this pass:
+  - live built-in-server HTTP `200` checks for `pages/login.html`, `pages/sign_up.html`, and `pages/reset_password.html`
+  - static/source checks for the new `auth-reveal` wrappers, centered submit styling, and the login-page forgot-password CTA
+- Still pending:
+  - real browser-eye QA for the desktop hover-state reveal and the smaller-screen auth spacing across phone and tablet widths
+
+## Auth And Admin Mobile Bracket Pass
+- Date: 2026-04-14
+- Status: manual-verification follow-up focused on signup/login reliability and the admin tournament mobile bracket fallback
+- Main changes:
+  - fixed the signup page's native HTML password pattern so valid passwords with letters and numbers no longer get blocked before the request reaches `services/signup.php`
+  - normalized the seeded local account emails from `@test.local` to `@local.test` in `dart_club.sql` and aligned the current local database rows so `admin@local.test` / `adminpass` works again for verification
+  - rebuilt the admin tournament-detail mobile bracket fallback so the connected bracket and bracket-board stack vertically on smaller screens instead of collapsing into unreadable narrow columns
+- Verification in this pass:
+  - targeted PHP lint for `pages/admin/show_tournament_details.php`
+  - live HTTP verification that `services/login.php` accepts `admin@local.test` / `adminpass` and that the authenticated admin session can load `pages/admin/show_tournament_details.php?id=8`
+  - live HTTP verification that `services/signup.php` accepts a valid password (`Password1`) for a temporary probe account, followed by DB cleanup of that probe row
+- Still pending:
+  - real browser/mobile QA for the public tournament bracket note that remained in `Manual Verification.txt`
+  - browser-eye validation of the rebuilt admin mobile bracket layout and the signup form's native validation behavior
+
+## Mobile Bracket And Navbar Follow-Up Pass
+- Date: 2026-04-14
+- Status: manual-verification follow-up focused on the public tournament mobile bracket and the shared-shell locale/nav treatment
+- Main changes:
+  - replaced the public tournament-detail mobile bracket fallback with a vertical round-by-round layout so round titles wrap cleanly, matchup cards stay inside the bracket card, and winners/losers/finals views stop collapsing into unreadable narrow columns
+  - replaced the basic locale selector with a compact globe-trigger language menu that stays in the navbar on desktop and remains just left of the hamburger on smaller screens
+  - tightened desktop nav spacing and no-wrap behavior so primary nav items and auth actions stop splitting across two lines on wider layouts
+- Verification in this pass:
+  - targeted PHP lint for `pages/tournament_details.php`
+  - static/source checks for the new mobile bracket selectors and the globe-trigger locale menu wiring in `pages/tournament_details.php`, `css/style.css`, and `js/behaviour.js`
+  - rebuilt local PHP server availability check after code changes
+- Still pending:
+  - real browser/mobile QA for the new stacked public bracket presentation across winners, losers, merged, and finals views
+  - browser-eye validation that the globe-trigger locale menu feels correct on desktop and stays correctly placed beside the hamburger on smaller screens
+
 ## Manual Verification Layout Pass
 - Date: 2026-04-13
 - Status: manual-verification follow-up focused on responsive admin tables/forms, mobile bracket readability, and shared-shell navbar/hero polish

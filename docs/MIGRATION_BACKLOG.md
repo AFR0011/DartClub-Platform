@@ -1,6 +1,19 @@
 # MIGRATION_BACKLOG
 
 ## Completed In This Pass
+- Replaced the public tournament-detail `Participants` and `Recent Results` side-by-side layout with a single toggleable info panel.
+- Rebuilt the public and admin `Group` tournament team sections into richer roster cards with team standing chips plus per-player stats.
+- Tightened the latest public/admin double-elimination mobile bracket fallback again so mirrored losers lanes open from the correct edge and player/round labels wrap more safely on smaller screens.
+- Exempted the public membership DOCX downloads from the shared page-transition overlay so they no longer blank the page before download.
+- Added a hero-level `Back` CTA on `pages/main.php` and finished the smaller-screen right alignment for the `FACEBOOK` / `PHONE` contact block.
+- Strengthened the dark-surface border/glow treatment on auth, tournament, and blog secondary controls and inputs.
+- Reworked the login and signup auth shells so larger screens stay title-only until hover while smaller/touch layouts keep the full form open below the fixed header.
+- Centered the auth submit buttons and added a `Forgot Password` button on `pages/login.html` that routes to the current account-help page.
+- Fixed the signup page's native password pattern so valid passwords that meet the intended letter-plus-number rule are no longer blocked by browser-side validation.
+- Normalized the seeded local verification accounts from `@test.local` to `@local.test` in `dart_club.sql` and aligned the current local DB rows so `admin@local.test` works again for manual QA.
+- Rebuilt the admin tournament-detail mobile bracket fallback so the connected bracket and bracket-board stack vertically instead of collapsing into unreadable narrow columns on phones.
+- Rebuilt the public tournament-detail bracket fallback on smaller screens into a stacked round-by-round mobile layout so round headings stay readable and matchup cards stop overflowing the bracket card.
+- Replaced the shared navbar locale select with a compact globe-trigger language menu and tightened desktop nav no-wrap spacing so top-level nav items stop breaking across two lines.
 - Applied the `Manual Verification.txt` follow-up by fixing the tournament-create player-role selector layout on smaller screens.
 - Kept membership-review action controls visible on mobile by turning the compact action menu into an in-cell expanding panel instead of an absolutely positioned dropdown.
 - Made shared admin tables easier to navigate on mobile with better horizontal scrolling and tighter cell padding.
@@ -114,6 +127,19 @@
 - Follow `docs/TESTING_CHECKLIST.md` in order.
 - Use `docs/FREE_DEPLOYMENT_GUIDE.md` for the first real host rollout. Prefer Oracle Cloud Always Free for full PHP/MySQL compatibility; use free shared PHP hosting only as a fallback.
 - Finish browser QA for the latest SRE-note fixes:
+  - public tournament `Participants` / `Recent Results` toggle behavior on desktop/tablet/mobile
+  - public/admin `Group` team roster cards and player-stat accuracy on a real browser session
+  - membership DOCX downloads so they bypass the transition overlay cleanly
+  - homepage `Back` CTA behavior plus the smaller-screen `FACEBOOK` / `PHONE` alignment
+  - latest mirrored losers-bracket default scroll position on public/admin merged and losers-only views
+  - desktop auth hover-shell behavior on `pages/login.html` and `pages/sign_up.html`
+  - smaller-screen login/signup spacing below the fixed header
+  - login-page `Forgot Password` CTA placement and account-help routing
+  - signup page browser-native password validation with a real form submit
+  - `admin@local.test` seeded-login verification after a fresh DB import from the updated SQL dump
+  - admin connected-bracket and bracket-board readability on phones after the stacked mobile fallback
+  - stacked public tournament bracket readability on phones across merged, winners, losers, and finals views
+  - globe-trigger locale menu placement/interaction on desktop and on smaller screens beside the hamburger button
   - navbar locale dropdown placement on desktop/mobile
   - homepage hero copy line break and image alignment on wider screens
   - admin table horizontal-scroll usability on phones/tablets

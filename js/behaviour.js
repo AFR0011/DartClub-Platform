@@ -182,22 +182,45 @@ function applyLocaleAttributes(root = document) {
   });
 }
 
+function closeLanguageDock() {
+  document.querySelectorAll(".nav__locale.is-open").forEach((dock) => {
+    dock.classList.remove("is-open");
+    dock.querySelector(".nav__locale-trigger")?.setAttribute("aria-expanded", "false");
+  });
+}
+
 function updateLanguageDock() {
   const dock = document.querySelector(".nav__locale");
   if (!dock) {
     return;
   }
 
-  const label = dock.querySelector(".nav__locale-label");
-  if (label) {
-    label.textContent = appLocaleText({ en: "Language", tr: "Dil" });
+  const trigger = dock.querySelector(".nav__locale-trigger");
+  const current = dock.querySelector(".nav__locale-current");
+  if (current) {
+    current.textContent = appLocale.toUpperCase();
   }
 
-  dock.setAttribute("aria-label", appLocaleText({ en: "Language", tr: "Dil" }));
+  if (trigger) {
+    const triggerLabel = appLocaleText({ en: "Language", tr: "Dil" });
+    trigger.setAttribute("aria-label", triggerLabel);
+    trigger.setAttribute("title", triggerLabel);
+  }
 
-  const select = dock.querySelector(".nav__locale-select");
-  if (select && select.value !== appLocale) {
-    select.value = appLocale;
+  dock.querySelectorAll(".nav__locale-option").forEach((option) => {
+    const selected = option.dataset.locale === appLocale;
+    option.classList.toggle("is-active", selected);
+    option.setAttribute("aria-pressed", selected ? "true" : "false");
+  });
+
+  const englishOption = dock.querySelector('.nav__locale-option[data-locale="en"]');
+  if (englishOption) {
+    englishOption.innerHTML = `<span>${appLocaleText({ en: "English", tr: "Ingilizce" })}</span><span class="nav__locale-option-code">EN</span>`;
+  }
+
+  const turkishOption = dock.querySelector('.nav__locale-option[data-locale="tr"]');
+  if (turkishOption) {
+    turkishOption.innerHTML = `<span>${appLocaleText({ en: "Turkish", tr: "Turkce" })}</span><span class="nav__locale-option-code">TR</span>`;
   }
 }
 
@@ -212,13 +235,17 @@ function ensureLanguageDock() {
     dock = document.createElement("div");
     dock.className = "nav__utility";
     dock.innerHTML = `
-      <label class="nav__locale">
-        <span class="nav__locale-label"></span>
-        <select class="nav__locale-select" aria-label="${appLocaleText({ en: "Language", tr: "Dil" })}">
-          <option value="en">EN</option>
-          <option value="tr">TR</option>
-        </select>
-      </label>
+      <div class="nav__locale">
+        <button type="button" class="nav__locale-trigger" aria-haspopup="true" aria-expanded="false">
+          <i class="ri-earth-line nav__locale-icon" aria-hidden="true"></i>
+          <span class="nav__locale-current">${appLocale.toUpperCase()}</span>
+          <span class="nav__locale-label"></span>
+        </button>
+        <div class="nav__locale-panel" role="menu">
+          <button type="button" class="nav__locale-option" data-locale="en" role="menuitemradio"></button>
+          <button type="button" class="nav__locale-option" data-locale="tr" role="menuitemradio"></button>
+        </div>
+      </div>
     `;
 
     const toggle = nav.querySelector(".nav__toggle");
@@ -228,9 +255,39 @@ function ensureLanguageDock() {
       nav.appendChild(dock);
     }
 
-    dock.querySelector(".nav__locale-select")?.addEventListener("change", (event) => {
-      setAppLocale(event.target.value || "en");
+    const localeMenu = dock.querySelector(".nav__locale");
+    const trigger = dock.querySelector(".nav__locale-trigger");
+
+    trigger?.addEventListener("click", (event) => {
+      event.preventDefault();
+      const willOpen = !localeMenu?.classList.contains("is-open");
+      closeLanguageDock();
+      if (willOpen && localeMenu && trigger) {
+        localeMenu.classList.add("is-open");
+        trigger.setAttribute("aria-expanded", "true");
+      }
     });
+
+    dock.querySelectorAll(".nav__locale-option").forEach((option) => {
+      option.addEventListener("click", () => {
+        setAppLocale(option.dataset.locale || "en");
+        closeLanguageDock();
+      });
+    });
+
+    if (!document.body.dataset.localeDockBound) {
+      document.body.dataset.localeDockBound = "true";
+      document.addEventListener("click", (event) => {
+        if (!event.target.closest(".nav__locale")) {
+          closeLanguageDock();
+        }
+      });
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") {
+          closeLanguageDock();
+        }
+      });
+    }
   }
 
   updateLanguageDock();
@@ -338,6 +395,13 @@ function initPageTransitions() {
     }
 
     const targetUrl = new URL(anchor.href, window.location.href);
+    if (
+      anchor.dataset.skipTransition === "true" ||
+      /\.(pdf|doc|docx|xls|xlsx|zip|rar)$/i.test(targetUrl.pathname)
+    ) {
+      return;
+    }
+
     if (targetUrl.origin !== window.location.origin) {
       return;
     }

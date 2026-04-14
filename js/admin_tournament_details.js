@@ -913,9 +913,18 @@ function scrollToBracketGroup(groupId) {
 
 function syncMirroredBracketShells(activeView) {
     document.querySelectorAll('[data-mirrored-bracket-shell]').forEach((shell) => {
-        shell.scrollLeft = activeView === 'merged' || activeView === 'Losers Bracket'
-            ? shell.scrollWidth
+        const targetLeft = activeView === 'merged' || activeView === 'Losers Bracket'
+            ? Math.max(0, shell.scrollWidth - shell.clientWidth)
             : 0;
+
+        shell.scrollLeft = targetLeft;
+        shell.scrollTo({ left: targetLeft, behavior: 'auto' });
+        window.requestAnimationFrame(() => {
+            shell.scrollLeft = targetLeft;
+        });
+        window.setTimeout(() => {
+            shell.scrollLeft = targetLeft;
+        }, 48);
     });
 }
 
@@ -1210,6 +1219,10 @@ document.addEventListener('DOMContentLoaded', () => {
     initializeTournamentPage();
 });
 document.addEventListener('fullscreenchange', syncBracketFocusButton);
+window.addEventListener('resize', () => {
+    const activeView = document.querySelector('[data-bracket-groups-container]')?.dataset.activeView || 'all';
+    syncMirroredBracketShells(activeView);
+});
 
 window.showSection = showSection;
 window.generateStructure = generateStructure;

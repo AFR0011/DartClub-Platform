@@ -196,6 +196,61 @@ usort($placementPlayers, static function (array $left, array $right): int {
     return strcmp(player_name($left), player_name($right));
 });
 
+$teamStandingsById = [];
+foreach ($teamStandings as $standing) {
+    $teamStandingsById[(int) ($standing['team_id'] ?? 0)] = $standing;
+}
+
+$groupTeamPlayerStats = [];
+if ($tournament['tour_type'] === 'Group') {
+    foreach ($teams as $team) {
+        foreach ($team['players'] as $teamPlayer) {
+            $groupTeamPlayerStats[(int) $teamPlayer['plr_idNum']] = [
+                'matches_played' => 0,
+                'matches_won' => 0,
+                'matches_lost' => 0,
+                'matches_drawn' => 0,
+                'points' => 0,
+                'leg_difference' => 0,
+            ];
+        }
+    }
+
+    foreach ($matches as $match) {
+        $player1Id = (int) ($match['player1_id'] ?? 0);
+        $player2Id = (int) ($match['player2_id'] ?? 0);
+        if (!isset($groupTeamPlayerStats[$player1Id], $groupTeamPlayerStats[$player2Id])) {
+            continue;
+        }
+
+        if (($match['match_status'] ?? '') !== 'Completed' || $match['player1_score'] === null || $match['player2_score'] === null) {
+            continue;
+        }
+
+        $player1Score = (int) $match['player1_score'];
+        $player2Score = (int) $match['player2_score'];
+        $groupTeamPlayerStats[$player1Id]['matches_played']++;
+        $groupTeamPlayerStats[$player2Id]['matches_played']++;
+        $groupTeamPlayerStats[$player1Id]['leg_difference'] += $player1Score - $player2Score;
+        $groupTeamPlayerStats[$player2Id]['leg_difference'] += $player2Score - $player1Score;
+
+        if ($player1Score > $player2Score) {
+            $groupTeamPlayerStats[$player1Id]['matches_won']++;
+            $groupTeamPlayerStats[$player1Id]['points'] += 3;
+            $groupTeamPlayerStats[$player2Id]['matches_lost']++;
+        } elseif ($player2Score > $player1Score) {
+            $groupTeamPlayerStats[$player2Id]['matches_won']++;
+            $groupTeamPlayerStats[$player2Id]['points'] += 3;
+            $groupTeamPlayerStats[$player1Id]['matches_lost']++;
+        } else {
+            $groupTeamPlayerStats[$player1Id]['matches_drawn']++;
+            $groupTeamPlayerStats[$player2Id]['matches_drawn']++;
+            $groupTeamPlayerStats[$player1Id]['points']++;
+            $groupTeamPlayerStats[$player2Id]['points']++;
+        }
+    }
+}
+
 function tournament_admin_round_title(string $bracketLabel, int $roundNumber, int $roundCount): string
 {
     return tournament_bracket_round_title($bracketLabel, $roundNumber, $roundCount);
@@ -827,6 +882,87 @@ foreach ($matches as $match) {
             margin-top: 8px;
         }
 
+        .team-roster-grid {
+            display: grid;
+            gap: 16px;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            margin-top: 16px;
+        }
+
+        .team-roster-card {
+            display: grid;
+            gap: 14px;
+        }
+
+        .team-roster-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 14px;
+        }
+
+        .team-roster-head h3 {
+            margin: 0;
+        }
+
+        .team-roster-note {
+            color: #5b6678;
+            margin-top: 6px;
+            line-height: 1.55;
+        }
+
+        .team-roster-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .team-roster-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 0.4rem 0.72rem;
+            border-radius: 999px;
+            background: rgba(37, 99, 235, 0.09);
+            border: 1px solid rgba(37, 99, 235, 0.14);
+            color: #1d4ed8;
+            font-size: 0.84rem;
+            font-weight: 600;
+        }
+
+        .team-roster-table-shell {
+            width: 100%;
+            max-width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .team-roster-table {
+            width: 100%;
+            min-width: 520px;
+            border-collapse: collapse;
+        }
+
+        .team-roster-table th,
+        .team-roster-table td {
+            padding: 0.72rem 0.6rem;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+            text-align: left;
+            white-space: nowrap;
+        }
+
+        .team-roster-table th {
+            color: #64748b;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .team-roster-table td.team-roster-name {
+            white-space: normal;
+            min-width: 170px;
+        }
+
         .section-summary-grid {
             display: grid;
             gap: 16px;
@@ -1284,6 +1420,11 @@ foreach ($matches as $match) {
                 align-items: stretch;
             }
 
+            .team-roster-head {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
             .bracket-jump-nav,
             .bracket-view-toggle {
                 flex-wrap: nowrap;
@@ -1297,24 +1438,86 @@ foreach ($matches as $match) {
                 grid-template-areas: none;
             }
 
+            .merged-bracket-grid[data-active-view="merged"] [data-bracket-group="Opening Round"],
             .merged-bracket-grid[data-active-view="Winners Bracket"] [data-bracket-group="Opening Round"],
             .merged-bracket-grid[data-active-view="Losers Bracket"] [data-bracket-group="Opening Round"] {
                 width: 100%;
             }
 
+            .connected-bracket-shell {
+                overflow: visible;
+            }
+
             .bracket-round {
-                min-width: 248px;
+                min-width: 0;
+                width: 100%;
+                gap: 1rem;
             }
 
             .connected-bracket {
-                --bracket-track: 104px;
-                grid-auto-columns: minmax(216px, 216px);
-                gap: 18px;
+                display: flex;
+                flex-direction: column;
+                gap: 1rem;
+                min-width: 0;
+                width: 100%;
             }
 
             [data-bracket-group="Winners Bracket"] .connected-bracket,
             [data-bracket-group="Losers Bracket"] .connected-bracket {
-                --bracket-track: 116px;
+                --bracket-track: auto;
+            }
+
+            .merged-bracket-grid[data-active-view="merged"] [data-bracket-group="Losers Bracket"] .connected-bracket,
+            .merged-bracket-grid[data-active-view="Losers Bracket"] [data-bracket-group="Losers Bracket"] .connected-bracket {
+                flex-direction: column;
+                gap: 1rem;
+                min-width: 0;
+                width: 100%;
+            }
+
+            .connected-bracket-round,
+            .merged-bracket-grid[data-active-view="merged"] [data-bracket-group="Losers Bracket"] .connected-bracket-round,
+            .merged-bracket-grid[data-active-view="Losers Bracket"] [data-bracket-group="Losers Bracket"] .connected-bracket-round {
+                display: grid;
+                gap: 0.9rem;
+                min-width: 0;
+                width: 100%;
+                flex: 0 0 auto;
+            }
+
+            .connected-bracket-round h3,
+            .bracket-round h3 {
+                font-size: 0.78rem;
+                line-height: 1.3;
+                letter-spacing: 0.03em;
+                white-space: normal;
+                overflow-wrap: anywhere;
+                text-transform: none;
+                text-align: left;
+            }
+
+            .merged-bracket-grid[data-active-view="merged"] [data-bracket-group="Losers Bracket"] .connected-bracket-round h3,
+            .merged-bracket-grid[data-active-view="Losers Bracket"] [data-bracket-group="Losers Bracket"] .connected-bracket-round h3 {
+                text-align: left;
+            }
+
+            .connected-bracket-lane {
+                display: flex;
+                flex-direction: column;
+                gap: 0.85rem;
+                grid-template-rows: none;
+                min-height: 0;
+            }
+
+            .connected-bracket-node {
+                display: block;
+                padding-block: 0;
+            }
+
+            .connected-bracket-node.has-incoming::before,
+            .connected-bracket-node.has-incoming::after,
+            .connected-bracket-matchup.has-outgoing::after {
+                display: none;
             }
 
             .connected-bracket-matchup {
@@ -1324,6 +1527,7 @@ foreach ($matches as $match) {
 
             .connected-bracket-summary {
                 font-size: 0.72rem;
+                flex-wrap: wrap;
             }
 
             .bracket-slot--compact {
@@ -1332,6 +1536,11 @@ foreach ($matches as $match) {
 
             .bracket-slot--compact .bracket-slot-name {
                 font-size: 0.82rem;
+                white-space: normal;
+                overflow: visible;
+                text-overflow: initial;
+                overflow-wrap: anywhere;
+                line-height: 1.25;
             }
 
             .bracket-slot--compact .bracket-slot-hint {
@@ -1339,8 +1548,14 @@ foreach ($matches as $match) {
             }
 
             .bracket-grid {
-                gap: 18px;
+                flex-direction: column;
+                gap: 1rem;
+                overflow: visible;
                 padding-bottom: 8px;
+            }
+
+            .bracket-grid .match-card {
+                width: 100%;
             }
         }
 
@@ -1358,15 +1573,22 @@ foreach ($matches as $match) {
                 grid-template-columns: 1fr;
             }
 
-            .connected-bracket {
-                --bracket-track: 98px;
-                grid-auto-columns: minmax(208px, 208px);
-                gap: 16px;
+            .team-roster-grid {
+                grid-template-columns: 1fr;
             }
 
-            [data-bracket-group="Winners Bracket"] .connected-bracket,
-            [data-bracket-group="Losers Bracket"] .connected-bracket {
-                --bracket-track: 110px;
+            .connected-bracket {
+                gap: 0.85rem;
+            }
+
+            .connected-bracket-round h3,
+            .bracket-round h3 {
+                font-size: 0.74rem;
+            }
+
+            .bracket-grid .match-card,
+            .connected-bracket-matchup {
+                padding: 0.8rem;
             }
         }
     </style>
@@ -1929,15 +2151,76 @@ foreach ($matches as $match) {
                             </tbody>
                         </table>
                     </div>
-                    <?php foreach ($teams as $team): ?>
-                        <div class="section-card">
-                            <h3><?php echo htmlspecialchars($team['team_name']); ?></h3>
-                            <ul>
-                                <?php foreach ($team['players'] as $teamPlayer): ?>
-                                    <li><?php echo htmlspecialchars(trim($teamPlayer['plr_name'] . ' ' . $teamPlayer['plr_surname'])); ?></li>
-                                <?php endforeach; ?>
-                            </ul>
-                        </div>
+                </div>
+                <div class="team-roster-grid">
+                    <?php foreach ($teams as $index => $team): ?>
+                        <?php
+                        $teamStanding = $teamStandingsById[(int) ($team['team_id'] ?? 0)] ?? null;
+                        $teamNote = $groupUsesIndividualMatches
+                            ? 'Each player row rolls up the completed head-to-head fixtures between the two rosters.'
+                            : 'Player stats will populate once the group fixtures are expanded into player-versus-player matches.';
+                        ?>
+                        <article class="section-card team-roster-card">
+                            <div class="team-roster-head">
+                                <div>
+                                    <span class="team-roster-chip"><?php echo 'Team ' . ($index + 1); ?></span>
+                                    <h3 style="margin-top: 10px;"><?php echo htmlspecialchars($team['team_name']); ?></h3>
+                                    <p class="team-roster-note"><?php echo htmlspecialchars($teamNote); ?></p>
+                                </div>
+                                <?php if ($teamStanding !== null): ?>
+                                    <div class="team-roster-meta">
+                                        <span class="team-roster-chip">Played <?php echo (int) $teamStanding['matches_played']; ?></span>
+                                        <span class="team-roster-chip">W-D-L <?php echo (int) $teamStanding['matches_won']; ?>-<?php echo (int) $teamStanding['matches_drawn']; ?>-<?php echo (int) $teamStanding['matches_lost']; ?></span>
+                                        <span class="team-roster-chip">Points <?php echo (int) $teamStanding['points']; ?></span>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
+                            <div class="team-roster-table-shell">
+                                <table class="team-roster-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Player</th>
+                                            <th>P</th>
+                                            <th>W</th>
+                                            <th>L</th>
+                                            <th>D</th>
+                                            <th>Pts</th>
+                                            <th>Leg Diff</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php if (!empty($team['players'])): ?>
+                                            <?php foreach ($team['players'] as $teamPlayer): ?>
+                                                <?php
+                                                $playerId = (int) $teamPlayer['plr_idNum'];
+                                                $playerStats = $groupTeamPlayerStats[$playerId] ?? [
+                                                    'matches_played' => 0,
+                                                    'matches_won' => 0,
+                                                    'matches_lost' => 0,
+                                                    'matches_drawn' => 0,
+                                                    'points' => 0,
+                                                    'leg_difference' => 0,
+                                                ];
+                                                ?>
+                                                <tr>
+                                                    <td class="team-roster-name"><?php echo htmlspecialchars(trim($teamPlayer['plr_name'] . ' ' . $teamPlayer['plr_surname'])); ?></td>
+                                                    <td><?php echo (int) $playerStats['matches_played']; ?></td>
+                                                    <td><?php echo (int) $playerStats['matches_won']; ?></td>
+                                                    <td><?php echo (int) $playerStats['matches_lost']; ?></td>
+                                                    <td><?php echo (int) $playerStats['matches_drawn']; ?></td>
+                                                    <td><?php echo (int) $playerStats['points']; ?></td>
+                                                    <td><?php echo ($playerStats['leg_difference'] > 0 ? '+' : '') . (int) $playerStats['leg_difference']; ?></td>
+                                                </tr>
+                                            <?php endforeach; ?>
+                                        <?php else: ?>
+                                            <tr>
+                                                <td colspan="7">No players assigned yet.</td>
+                                            </tr>
+                                        <?php endif; ?>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </article>
                     <?php endforeach; ?>
                 </div>
             </section>

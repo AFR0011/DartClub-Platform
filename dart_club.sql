@@ -323,10 +323,10 @@ ALTER TABLE `tournaments`
 INSERT INTO `users`
   (`user_id`, `user_name`, `email`, `password`, `user_role`, `membership_status`, `member_since`, `membership_approved_at`)
 VALUES
-  (1, 'admin', 'admin@test.local', 'adminpass', 'admin', 'approved', NOW(), NOW()),
-  (2, 'manager', 'manager@test.local', 'managerpass', 'manager', 'approved', NOW(), NOW()),
-  (3, 'member', 'member@test.local', 'memberpass', 'player', 'approved', NOW(), NOW()),
-  (4, 'player', 'player@test.local', 'playerpass', 'player', 'not_submitted', NULL, NULL);
+  (1, 'admin', 'admin@local.test', 'adminpass', 'admin', 'approved', NOW(), NOW()),
+  (2, 'manager', 'manager@local.test', 'managerpass', 'manager', 'approved', NOW(), NOW()),
+  (3, 'member', 'member@local.test', 'memberpass', 'player', 'approved', NOW(), NOW()),
+  (4, 'player', 'player@local.test', 'playerpass', 'player', 'not_submitted', NULL, NULL);
 
 INSERT INTO `players`
   (`plr_idNum`, `plr_name`, `plr_surname`, `plr_address`, `plr_dob`, `plr_phone`, `plr_username`, `user_id`)

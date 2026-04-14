@@ -2,9 +2,9 @@
 
 ## Metadata
 - Project: `Dart Club`
-- Last updated: 2026-04-13
+- Last updated: 2026-04-14
 - Repo type: legacy PHP/MySQL website
-- Current repo status: mapped, documented, runtime-tested on XAMPP, and further debug-hardened across the shared public shell, JSON service layer, tournament engine, public/community surfaces, and the latest SRE-note plus manual-verification follow-up polish passes
+- Current repo status: mapped, documented, runtime-tested on XAMPP, and further debug-hardened across the shared public shell, JSON service layer, tournament engine, public/community surfaces, and the latest SRE-note plus repeated manual-verification polish passes
 
 ## Current Objective
 - Finish the migration from an ad-hoc legacy codebase to a maintainable public club platform.
@@ -66,10 +66,23 @@
   - managers/admins can publish and moderate
 
 ## What Changed In This Pass
+- Applied the latest `Manual Verification.txt` round to the public/admin tournament surfaces by replacing the side-by-side public `Participants` and `Recent Results` blocks with a single interchangeable toggle panel.
+- Rebuilt the public and admin `Group` tournament team views into richer roster cards that surface team standing chips plus per-player stats instead of plain name lists.
+- Tightened the public/admin double-elimination mirrored losers-lane behavior so merged and losers-only views force the mirrored shell to the far-right edge more reliably on load, and widened the latest mobile bracket fallback again so round headings and player names stop collapsing.
+- Exempted the public membership DOCX downloads from the shell page-transition overlay so the registration-form links no longer fade to black before the browser starts the download.
+- Added a back CTA to the main-page hero and right-aligned the `FACEBOOK` / `PHONE` contact block on smaller screens while keeping the homepage hero actions inside one shared flex row.
+- Strengthened the dark-surface borders/glow treatment on tournament/blog/auth controls so the smaller secondary actions and inputs read more clearly on dark backgrounds.
+- Reworked the login/signup shell again so larger screens now keep the auth cards title-only until hover while small/touch layouts keep the full form expanded below the fixed header instead of letting fields clip upward into the nav.
+- Centered the signup/login submit actions inside the auth shell and added an explicit `Forgot Password` CTA on `pages/login.html` that routes to the existing account-help page.
 - Applied the `docs/Dart Club SRE 120426.md` follow-up across the shared public shell with a persistent EN/TR language toggle, shell text hydration, and locale hooks for key public/auth/tournament/community pages.
 - Applied the `Manual Verification.txt` follow-up across the responsive admin/public shell by fixing the tournament-create player-role picker on smaller screens, making admin tables horizontally navigable on mobile, and keeping membership-review action menus visible inside the table flow.
 - Reworked the main-site navbar locale control into an in-nav language dropdown that stays outside the collapsed mobile menu, opened up logo-to-nav spacing, nudged the homepage hero image left on larger screens, and tightened the hero copy width so the lead sentence reads as a shorter two-line block.
 - Expanded the public/admin elimination and double-elimination mobile bracket fallbacks again, added extra winners/losers opening-round spacing, and capped league group-stage cards at three per row in the admin tournament detail view.
+- Reworked the public tournament-detail bracket on smaller screens into a stacked round-by-round mobile presentation so round labels no longer collapse into each other and matchup cards stop overflowing the bracket card.
+- Replaced the navbar locale select with a compact globe-trigger language menu, kept it outside the mobile drawer next to the hamburger control, and tightened desktop nav spacing/no-wrap behavior so top-level links stop breaking onto two lines.
+- Fixed the signup page's native password pattern so browser-side validation matches the intended "at least 8 characters with one letter and one number" rule instead of rejecting valid passwords before submit.
+- Normalized the seeded local test-account emails in `dart_club.sql` from `@test.local` to `@local.test` and aligned the current local database rows so `admin@local.test` / `adminpass` works again for manual verification.
+- Reworked the admin tournament-detail mobile bracket fallbacks so connected-bracket and bracket-board views stack cleanly on smaller screens instead of collapsing into unreadable narrow columns.
 - Smoothed the public-shell UX with a lightweight page-transition overlay, footer-aware scroll-up spacing, brighter shared button hover treatment, and a small homepage/about image-alignment pass.
 - Improved auth/signup behavior by expanding the login/signup card by default on small/touch layouts, enforcing a stronger-but-still-light password rule, and sending a best-effort welcome email after signup.
 - Added `pages/developers.html`, linked it from the homepage and about page, preserved the Neo DoubleEdged logo in the homepage logo rail, and reserved placeholder slots for pending team/personal identity assets.
@@ -281,6 +294,7 @@
     - `pages/developers.html`
     - `pages/login.html`
     - `pages/sign_up.html`
+    - `pages/reset_password.html`
   - live page/source marker checks for:
     - homepage build-team CTA plus logo placeholder rail
     - gallery lightbox close button hooks
@@ -291,6 +305,7 @@
     - shared locale toggle and locale persistence in `js/behaviour.js`
     - footer-aware scroll-up spacing and page-transition shell hooks
     - mobile auth-card default expansion in `css/login_style.css`
+    - desktop-only title-first auth reveal behavior and centered submit/button layout in `css/login_style.css`
     - separated fixture-summary count vs toggle button behavior in `pages/tournament_details.php`
   - targeted PHP lint for the new shared mail helper, refreshed public pages, admin dashboard, legacy fallback admin pages, and regression scripts
   - live HTTP/source checks for the rebuilt home page, about page, login page, public player profile, admin panel, and reset/help page
@@ -417,6 +432,7 @@
     - soft-refresh tournament admin flow in `js/admin_tournament_details.js`
     - admin bracket focus-mode button and bracket-path jump controls
 - Not verified in this pass:
+  - real browser-eye QA for the revised desktop auth hover behavior and the new login-side forgot-password CTA
   - real browser-eye QA for the new EN/TR language toggle across the public pages that now opt into locale switching
   - real browser/mobile QA for the updated login-card expansion, page-transition overlay, gallery close button, scroll-up spacing, and latest public/admin bracket focus/mobile tweaks
   - SMTP delivery for the new signup welcome email path
