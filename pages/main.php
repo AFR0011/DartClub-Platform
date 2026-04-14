@@ -47,9 +47,6 @@
               Follow club tournaments, player stories, public brackets, and membership activity from one shared home base.
             </p>
             <div class="home__actions">
-              <a href="javascript:history.back()" class="button button__flex button--ghost-dark" onclick="if (window.history.length <= 1) { window.location.href = '../index.php'; return false; }">
-                <span data-i18n-en="Back" data-i18n-tr="Geri">Back</span> <i class="ri-arrow-left-line"></i>
-              </a>
               <a href="tournaments.html" class="button button__flex">
                 <span data-i18n-en="Explore Tournaments" data-i18n-tr="Turnuvalari Kesfet">Explore Tournaments</span> <i class="ri-arrow-right-line"></i>
               </a>

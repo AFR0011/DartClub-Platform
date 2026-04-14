@@ -2,6 +2,7 @@
 
 require_once __DIR__ . '/app_bootstrap.php';
 require_once __DIR__ . '/dbConnection.php';
+require_once __DIR__ . '/shared/player_helpers.php';
 
 app_start_session();
 header('Content-Type: application/json');
@@ -62,5 +63,11 @@ $_SESSION['user_name'] = $user['user_name'];
 $_SESSION['user_role'] = $user['user_role'];
 $_SESSION['membership_status'] = $user['membership_status'] ?? 'not_submitted';
 
-app_json_response(['success' => true]);
+$needsProfileOnboarding = ($user['user_role'] ?? '') === 'player'
+    && player_id_for_user($conn, (int) $user['user_id']) === null;
 
+app_json_response([
+    'success' => true,
+    'needs_profile_onboarding' => $needsProfileOnboarding,
+    'redirect_to' => $needsProfileOnboarding ? 'profile.html?onboarding=1' : 'main.php',
+]);

@@ -142,6 +142,7 @@ if (!empty($knockoutBracketGroups)) {
 }
 $canStartTournament = in_array((string) ($tournament['status'] ?? ''), ['draft', 'registration_open', 'registration_closed'], true);
 $isDoubleElimination = $tournament['tour_type'] === 'Double Elimination';
+$hasSingleEliminationBracketViews = !$isDoubleElimination && count($knockoutBracketGroups) > 1;
 $bracketPanels = [];
 if ($isDoubleElimination) {
     $openingBracketGroup = $knockoutBracketGroups['Opening Round'] ?? null;
@@ -407,6 +408,48 @@ foreach ($matches as $match) {
 
         .page-section > .header-actions:first-child {
             margin-top: 6px;
+        }
+
+        .subsection-toggle {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 16px 0 18px;
+            padding: 8px;
+            border-radius: 20px;
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            background: linear-gradient(180deg, #eef4ff, #f8fbff);
+            box-shadow: 0 12px 24px rgba(15, 23, 42, 0.05);
+        }
+
+        .subsection-toggle button {
+            border: 1px solid rgba(148, 163, 184, 0.22);
+            background: rgba(255, 255, 255, 0.88);
+            color: #334155;
+            border-radius: 14px;
+            padding: 10px 14px;
+            font: inherit;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease, background-color 0.18s ease;
+            box-shadow: 0 10px 18px rgba(15, 23, 42, 0.05);
+        }
+
+        .subsection-toggle button:hover {
+            transform: translateY(-1px);
+            border-color: rgba(37, 99, 235, 0.22);
+            box-shadow: 0 14px 24px rgba(15, 23, 42, 0.08);
+        }
+
+        .subsection-toggle button.active {
+            background: linear-gradient(180deg, #60a5fa 0%, #2563eb 100%);
+            color: #fff;
+            border-color: rgba(37, 99, 235, 0.4);
+        }
+
+        .section-panel-stack {
+            display: grid;
+            gap: 18px;
         }
 
         .callout {
@@ -767,6 +810,10 @@ foreach ($matches as $match) {
             display: none;
         }
 
+        [data-bracket-group].is-hidden {
+            display: none !important;
+        }
+
         .page-section[data-section="bracket"]:fullscreen {
             padding: 20px;
             overflow: auto;
@@ -952,7 +999,7 @@ foreach ($matches as $match) {
         }
 
         .team-roster-table th {
-            color: #64748b;
+            color: white;
             font-size: 0.8rem;
             text-transform: uppercase;
             letter-spacing: 0.05em;
@@ -1434,8 +1481,16 @@ foreach ($matches as $match) {
 
             .merged-bracket-grid,
             .merged-bracket-grid.is-single-view {
-                grid-template-columns: 1fr;
-                grid-template-areas: none;
+                display: flex;
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .merged-bracket-grid > [data-bracket-group] {
+                grid-area: auto;
+                width: 100%;
+                justify-self: stretch;
+                margin: 0;
             }
 
             .merged-bracket-grid[data-active-view="merged"] [data-bracket-group="Opening Round"],
@@ -1548,10 +1603,16 @@ foreach ($matches as $match) {
             }
 
             .bracket-grid {
-                flex-direction: column;
+                display: grid;
+                grid-template-columns: 1fr;
                 gap: 1rem;
                 overflow: visible;
                 padding-bottom: 8px;
+            }
+
+            .bracket-grid .bracket-round {
+                display: grid;
+                gap: 1rem;
             }
 
             .bracket-grid .match-card {
@@ -1730,8 +1791,12 @@ foreach ($matches as $match) {
                     <p class="surface-note">Manage roster state and review placement output without mixing it into fixture editing.</p>
                 </div>
             </div>
-            <div class="section-grid">
-            <div class="section-card">
+            <div class="subsection-toggle" aria-label="Player management panels">
+                <button type="button" class="active" data-players-panel-button="roster">Roster Management</button>
+                <button type="button" data-players-panel-button="snapshot">Players Snapshot</button>
+            </div>
+            <div class="section-panel-stack">
+            <div class="section-card bracket-view-panel" data-players-panel="roster">
                 <h3>Roster Management</h3>
                 <form action="../../services/update_tournament.php" method="post" id="playerRosterForm">
                     <input type="hidden" name="tour_id" value="<?php echo (int) $tourId; ?>">
@@ -1860,7 +1925,7 @@ foreach ($matches as $match) {
                 </form>
             </div>
 
-            <div class="section-card">
+            <div class="section-card bracket-view-panel is-hidden" data-players-panel="snapshot">
                 <h3>Players Snapshot</h3>
                 <table class="players-table">
                     <thead>
@@ -2255,18 +2320,25 @@ foreach ($matches as $match) {
                             <?php endif; ?>
                         </div>
                     </div>
-                <?php elseif (count($knockoutBracketGroups) > 1): ?>
+                <?php elseif ($hasSingleEliminationBracketViews): ?>
                     <div class="bracket-focus-toolbar">
-                        <p class="surface-note">Jump directly between bracket paths when the tournament gets large, then open focus mode for a wider connected view.</p>
-                        <div class="bracket-jump-nav">
+                        <p class="surface-note">Filter down to a single bracket path when the connected layout gets crowded, or switch back to the full board when you need the whole knockout picture.</p>
+                        <div class="bracket-view-toggle">
+                            <button type="button" class="action-btn" data-bracket-view-button="all" onclick="showBracketView('all')">All Paths</button>
                             <?php foreach ($knockoutBracketGroups as $jumpGroup): ?>
-                                <?php $jumpGroupDomId = 'admin-bracket-group-' . preg_replace('/[^a-z0-9]+/i', '-', strtolower((string) $jumpGroup['key'])); ?>
-                                <button type="button" class="action-btn" onclick="scrollToBracketGroup('<?php echo htmlspecialchars($jumpGroupDomId, ENT_QUOTES); ?>')"><?php echo htmlspecialchars($jumpGroup['display_label']); ?></button>
+                                <button
+                                    type="button"
+                                    class="action-btn"
+                                    data-bracket-view-button="<?php echo htmlspecialchars((string) $jumpGroup['source_label'], ENT_QUOTES); ?>"
+                                    onclick="showBracketView('<?php echo htmlspecialchars((string) $jumpGroup['source_label'], ENT_QUOTES); ?>')"
+                                >
+                                    <?php echo htmlspecialchars($jumpGroup['display_label']); ?>
+                                </button>
                             <?php endforeach; ?>
                         </div>
                     </div>
                 <?php endif; ?>
-                <div class="<?php echo $isDoubleElimination ? 'merged-bracket-grid' : 'section-grid'; ?>" id="adminBracketGroups" data-bracket-groups-container<?php echo $isDoubleElimination ? ' data-active-view="merged"' : ''; ?>>
+                <div class="<?php echo $isDoubleElimination ? 'merged-bracket-grid' : 'section-grid'; ?>" id="adminBracketGroups" data-bracket-groups-container data-active-view="<?php echo $isDoubleElimination ? 'merged' : 'all'; ?>">
                     <?php foreach ($knockoutBracketGroups as $bracketGroup): ?>
                         <?php $bracketGroupDomId = 'admin-bracket-group-' . preg_replace('/[^a-z0-9]+/i', '-', strtolower((string) $bracketGroup['key'])); ?>
                         <div class="section-card" id="<?php echo htmlspecialchars($bracketGroupDomId); ?>" data-bracket-group="<?php echo htmlspecialchars((string) $bracketGroup['source_label']); ?>">
@@ -2399,8 +2471,25 @@ foreach ($matches as $match) {
                             <?php endif; ?>
                         </div>
                     </div>
+                <?php elseif ($hasSingleEliminationBracketViews): ?>
+                    <div class="bracket-focus-toolbar">
+                        <p class="surface-note">Use the same knockout path filters here when you want the quick-scan board to stay readable on smaller screens.</p>
+                        <div class="bracket-view-toggle">
+                            <button type="button" class="action-btn" data-bracket-view-button="all" onclick="showBracketView('all')">All Paths</button>
+                            <?php foreach ($knockoutBracketGroups as $boardGroup): ?>
+                                <button
+                                    type="button"
+                                    class="action-btn"
+                                    data-bracket-view-button="<?php echo htmlspecialchars((string) $boardGroup['source_label'], ENT_QUOTES); ?>"
+                                    onclick="showBracketView('<?php echo htmlspecialchars((string) $boardGroup['source_label'], ENT_QUOTES); ?>')"
+                                >
+                                    <?php echo htmlspecialchars($boardGroup['display_label']); ?>
+                                </button>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
                 <?php endif; ?>
-                <div class="<?php echo $isDoubleElimination ? 'merged-bracket-grid' : 'section-grid'; ?>" id="adminBracketBoardGroups" data-bracket-groups-container<?php echo $isDoubleElimination ? ' data-active-view="merged"' : ''; ?>>
+                <div class="<?php echo $isDoubleElimination ? 'merged-bracket-grid' : 'section-grid'; ?>" id="adminBracketBoardGroups" data-bracket-groups-container data-active-view="<?php echo $isDoubleElimination ? 'merged' : 'all'; ?>">
                     <?php foreach ($knockoutBracketGroups as $bracketGroup): ?>
                         <div class="section-card" data-bracket-group="<?php echo htmlspecialchars((string) $bracketGroup['source_label']); ?>">
                             <h3><?php echo htmlspecialchars($bracketGroup['display_label']); ?></h3>

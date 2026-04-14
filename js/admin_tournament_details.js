@@ -187,6 +187,30 @@ function readRememberedBracketView() {
     }
 }
 
+function getPlayersPanelStorageKey() {
+    return `tournament-admin:${TournamentAdminPage.tourId || 'default'}:players-panel`;
+}
+
+function rememberPlayersPanel(panelName) {
+    if (!panelName) {
+        return;
+    }
+
+    try {
+        window.sessionStorage.setItem(getPlayersPanelStorageKey(), panelName);
+    } catch (error) {
+        console.warn('Failed to persist players panel state:', error);
+    }
+}
+
+function readRememberedPlayersPanel() {
+    try {
+        return window.sessionStorage.getItem(getPlayersPanelStorageKey());
+    } catch (error) {
+        return null;
+    }
+}
+
 async function postJson(url, payload) {
     const response = await fetch(url, {
         method: 'POST',
@@ -262,6 +286,26 @@ function showSection(sectionName) {
     });
 
     rememberActiveSection(nextSection);
+}
+
+function showPlayersPanel(panelName) {
+    const panels = Array.from(document.querySelectorAll('[data-players-panel]'));
+    if (panels.length === 0) {
+        return;
+    }
+
+    const panelExists = panels.some((panel) => panel.dataset.playersPanel === panelName);
+    const nextPanel = panelExists ? panelName : (panels[0]?.dataset.playersPanel || null);
+
+    panels.forEach((panel) => {
+        panel.classList.toggle('is-hidden', panel.dataset.playersPanel !== nextPanel);
+    });
+
+    document.querySelectorAll('[data-players-panel-button]').forEach((button) => {
+        button.classList.toggle('active', button.dataset.playersPanelButton === nextPanel);
+    });
+
+    rememberPlayersPanel(nextPanel);
 }
 
 async function refreshMatches(options = {}) {
@@ -944,20 +988,32 @@ function showBracketView(viewKey) {
     }
 
     if (!isDoubleElimination) {
+        const availableGroups = groups.map((group) => group.dataset.bracketGroup || '').filter(Boolean);
+        activeView = activeView === 'all' || availableGroups.includes(activeView) ? activeView : 'all';
+
         groups.forEach((group) => {
-            group.classList.remove('is-hidden');
+            group.classList.toggle('is-hidden', activeView !== 'all' && (group.dataset.bracketGroup || '') !== activeView);
+        });
+
+        groups.forEach((group) => {
+            if (!group.classList.contains('is-hidden')) {
+                group.hidden = false;
+            }
         });
 
         document.querySelectorAll('[data-bracket-view-button]').forEach((button) => {
-            button.classList.remove('active');
+            button.classList.toggle('active', button.dataset.bracketViewButton === activeView);
         });
 
         document.querySelectorAll('[data-bracket-groups-container]').forEach((container) => {
-            container.dataset.activeView = 'all';
-            container.classList.toggle('is-single-view', container.querySelectorAll('[data-bracket-group]').length <= 1);
+            container.dataset.activeView = activeView;
+            const visibleGroups = Array.from(container.querySelectorAll('[data-bracket-group]'))
+                .filter((group) => !group.classList.contains('is-hidden'));
+            container.classList.toggle('is-single-view', activeView !== 'all' || visibleGroups.length <= 1);
         });
 
-        window.requestAnimationFrame(() => syncMirroredBracketShells('all'));
+        window.requestAnimationFrame(() => syncMirroredBracketShells(activeView));
+        rememberBracketView(activeView);
         return;
     }
 
@@ -1192,6 +1248,10 @@ function initializeTournamentPage(preferredSection = null) {
         button.addEventListener('click', () => showSection(button.dataset.sectionButton));
     });
 
+    document.querySelectorAll('[data-players-panel-button]').forEach((button) => {
+        button.addEventListener('click', () => showPlayersPanel(button.dataset.playersPanelButton));
+    });
+
     document.getElementById('generateStructureBtn')?.addEventListener('click', generateStructure);
     document.getElementById('startTournamentBtn')?.addEventListener('click', startTournament);
     document.getElementById('refreshMatchesBtn')?.addEventListener('click', () => {
@@ -1210,6 +1270,7 @@ function initializeTournamentPage(preferredSection = null) {
     bindMatchModalInputs();
     refreshSelectionMeta();
     showSection(preferredSection || readRememberedSection() || getCurrentSectionName() || 'details');
+    showPlayersPanel(readRememberedPlayersPanel() || 'roster');
     showBracketView(readRememberedBracketView() || 'merged');
     syncBracketFocusButton();
 }

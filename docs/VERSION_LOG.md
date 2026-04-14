@@ -1,5 +1,21 @@
 # VERSION_LOG
 
+## Responsive Bracket Stacking Pass
+- Date: 2026-04-14
+- Status: responsive tournament follow-up focused on the small-screen merged-bracket and bracket-board overlap
+- Main changes:
+  - changed the public `Tournament Bracket` mobile breakpoint to stop reusing the desktop merged-grid placement below `820px`, forcing the visible bracket groups into a true single-column stack instead
+  - changed the admin `Tournament Bracket` mobile breakpoint to do the same below `900px`, so the merged winners/opening/losers layout stops piling into the same narrow flow
+  - changed the admin `Bracket Board` mobile breakpoint to flatten round columns into a one-column card stack instead of leaving the board in a compressed horizontal-round layout on smaller screens
+- Verification in this pass:
+  - targeted PHP lint for `pages/tournament_details.php` and `pages/admin/show_tournament_details.php`
+  - static/source checks for the new small-screen `display:flex` / `display:grid` stacking rules and the explicit `grid-area: auto` mobile reset in both pages
+  - live built-in-server HTTP `200` check for `pages/tournament_details.php?id=8`
+  - built-in-server unauthenticated redirect check for `pages/admin/show_tournament_details.php?id=8`
+- Still pending:
+  - real browser-eye QA for the rebuilt public stacked bracket flow across merged, winners, losers, and finals on phones/tablets
+  - authenticated browser-eye QA for the admin connected bracket and bracket-board after the new `~900px` stacking reset
+
 ## Manual Verification Tournament UX Pass
 - Date: 2026-04-14
 - Status: manual-verification follow-up focused on tournament detail usability, membership downloads, and small-shell polish

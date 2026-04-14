@@ -922,8 +922,17 @@
 
             .bracket-group-stack--merged,
             .bracket-group-stack--finals {
-                grid-template-columns: 1fr;
-                grid-template-areas: none;
+                display: flex;
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .bracket-group-stack--merged > .bracket-group,
+            .bracket-group-stack--finals > .bracket-group {
+                grid-area: auto;
+                width: 100%;
+                justify-self: stretch;
+                margin: 0;
             }
 
             .bracket-group-stack--merged[data-public-active-view="merged"] [data-public-bracket-group="Opening Round"],
@@ -1233,7 +1242,17 @@
             return roundTitle(roundNumber, totalRounds);
         }
 
-        function allowedPublicBracketGroups(viewKey) {
+        function allowedPublicBracketGroups(viewKey, tournamentType = 'Double Elimination', groupEntries = []) {
+            const availableGroups = Array.isArray(groupEntries)
+                ? groupEntries
+                    .map((group) => typeof group === 'string' ? group : group?.rawLabel)
+                    .filter(Boolean)
+                : [];
+
+            if (tournamentType !== 'Double Elimination') {
+                return viewKey && viewKey !== 'all' ? [viewKey] : availableGroups;
+            }
+
             if (viewKey === 'Winners Bracket') {
                 return ['Opening Round', 'Winners Bracket'];
             }
@@ -1247,6 +1266,22 @@
             }
 
             return ['Losers Bracket', 'Opening Round', 'Winners Bracket'];
+        }
+
+        function normalizePublicBracketView(viewKey, tournamentType, groupEntries) {
+            const availableGroups = Array.isArray(groupEntries)
+                ? groupEntries
+                    .map((group) => typeof group === 'string' ? group : group?.rawLabel)
+                    .filter(Boolean)
+                : [];
+
+            if (tournamentType !== 'Double Elimination') {
+                return viewKey && availableGroups.includes(viewKey) ? viewKey : 'all';
+            }
+
+            return ['merged', 'Winners Bracket', 'Losers Bracket', 'Grand Final'].includes(viewKey)
+                ? viewKey
+                : 'merged';
         }
 
         function bracketDomKey(value) {
@@ -1799,26 +1834,34 @@
         }
 
         function renderBracketViewToggle(groupEntries, tournamentType) {
-            if (tournamentType !== 'Double Elimination' || !Array.isArray(groupEntries) || groupEntries.length < 2) {
+            if (!Array.isArray(groupEntries) || groupEntries.length < 2) {
                 return '';
             }
 
-            const views = [
-                { key: 'merged', label: 'Merged Bracket' },
-                { key: 'Winners Bracket', label: 'Winners Bracket' },
-                { key: 'Losers Bracket', label: 'Losers Bracket' }
-            ];
-
-            if (groupEntries.some((group) => group.rawLabel === 'Grand Final')) {
-                views.push({ key: 'Grand Final', label: 'Finals' });
-            }
+            const activeView = normalizePublicBracketView(selectedPublicBracketView, tournamentType, groupEntries);
+            const views = tournamentType === 'Double Elimination'
+                ? [
+                    { key: 'merged', label: 'Merged Bracket' },
+                    { key: 'Winners Bracket', label: 'Winners Bracket' },
+                    { key: 'Losers Bracket', label: 'Losers Bracket' },
+                    ...(groupEntries.some((group) => group.rawLabel === 'Grand Final')
+                        ? [{ key: 'Grand Final', label: 'Finals' }]
+                        : [])
+                ]
+                : [
+                    { key: 'all', label: 'All Paths' },
+                    ...groupEntries.map((group) => ({
+                        key: group.rawLabel,
+                        label: group.label
+                    }))
+                ];
 
             return `
                 <div class="public-bracket-view-toggle">
                     ${views.map((view) => `
                         <button
                             type="button"
-                            class="detail-button-secondary bracket-path-button ${selectedPublicBracketView === view.key ? 'is-active' : ''}"
+                            class="detail-button-secondary bracket-path-button ${activeView === view.key ? 'is-active' : ''}"
                             onclick="setPublicBracketView('${detailEscapeHtml(view.key)}')"
                         >
                             ${detailEscapeHtml(view.label)}
@@ -1877,12 +1920,22 @@
                     return left.label.localeCompare(right.label, undefined, { sensitivity: 'base' });
                 });
 
+            const activeBracketView = normalizePublicBracketView(selectedPublicBracketView, tournamentType, groupEntries);
+            if (activeBracketView !== selectedPublicBracketView) {
+                selectedPublicBracketView = activeBracketView;
+            }
+
             const renderedGroups = (() => {
                 if (tournamentType !== 'Double Elimination') {
-                    return groupEntries;
+                    if (activeBracketView === 'all') {
+                        return groupEntries;
+                    }
+
+                    const filteredGroups = groupEntries.filter((group) => group.rawLabel === activeBracketView);
+                    return filteredGroups.length > 0 ? filteredGroups : groupEntries;
                 }
 
-                if (selectedPublicBracketView === 'Grand Final') {
+                if (activeBracketView === 'Grand Final') {
                     const finalsGroups = groupEntries.filter((group) => ['Grand Final', 'Third Place Playoff'].includes(group.rawLabel));
                     return finalsGroups.length > 0 ? finalsGroups : groupEntries;
                 }
@@ -1893,7 +1946,7 @@
             const visibleMatches = renderedGroups.flatMap((group) => group.matches);
             const selectedMatch = visibleMatches.find((match) => Number(match.match_id) === Number(selectedBracketMatchId)) || visibleMatches[0] || knockoutMatches[0];
             const groupStackClass = tournamentType === 'Double Elimination'
-                ? `bracket-group-stack ${selectedPublicBracketView === 'Grand Final' ? 'bracket-group-stack--finals' : 'bracket-group-stack--merged'}`
+                ? `bracket-group-stack ${activeBracketView === 'Grand Final' ? 'bracket-group-stack--finals' : 'bracket-group-stack--merged'}`
                 : 'bracket-group-stack';
 
             return `
@@ -1902,13 +1955,14 @@
                     <p class="bracket-toolbar-copy">
                         ${tournamentType === 'Double Elimination'
                             ? 'The opening round anchors the center lane. From there the field splits into the losers bracket on the left and the winners bracket on the right, with a dedicated finals view for the deciding matches.'
-                            : 'Open focus mode for a larger, scrollable bracket view when the elimination paths get crowded.'}
+                            : (groupEntries.length > 1
+                                ? 'Use the bracket filters to collapse to one knockout path at a time when the layout gets crowded, then open focus mode for a larger connected view.'
+                                : 'Open focus mode for a larger, scrollable bracket view when the elimination path gets crowded.')}
                     </p>
                     ${groupEntries.length > 1 ? '<span class="legend-chip">Bracket placeholders keep bye lines visible even when the entrant count is not a power of two.</span>' : ''}
                 </div>
                 ${renderBracketViewToggle(groupEntries, tournamentType)}
-                ${tournamentType !== 'Double Elimination' ? renderBracketPathNav(groupEntries) : ''}
-                <div class="${groupStackClass}" data-public-active-view="${detailEscapeHtml(selectedPublicBracketView)}">
+                <div class="${groupStackClass}" data-public-active-view="${detailEscapeHtml(activeBracketView)}">
                     ${renderedGroups.map((group) => {
                         const slotCount = Math.pow(2, group.rounds.length);
                         return `
@@ -2003,6 +2057,9 @@
                 <section class="surface hero-surface">
                     <div class="hero-grid">
                         <div>
+                            <button type="button" class="detail-button-secondary" onclick="navigateBackFromTournament()" style="margin-bottom: 1rem;">
+                                <i class="ri-arrow-left-line"></i> ${pageText('Back', 'Geri')}
+                            </button>
                             <div class="pill">${tournament.status.replaceAll('_', ' ')}</div>
                             <h1>${tournament.tour_title}</h1>
                             <p style="color: var(--text-color); margin-top: 1rem;">Format: ${tournament.tour_type}</p>
@@ -2050,7 +2107,7 @@
                             <div class="bracket-section-head">
                                 <div>
                                     <h2>${pageText('Tournament Bracket', 'Turnuva Braketi')}</h2>
-                                    <p style="color: var(--text-color); margin-top: 0.6rem;">${tournament.tour_type === 'Double Elimination' ? pageText('Click any matchup to open a larger match-details view. The double-elimination layout starts from the center opening round, then splits into the losers path on the left and winners path on the right.', 'Daha buyuk bir mac detayi gormek icin herhangi bir eslesmeye tiklayin. Double-elimination duzeni merkezdeki acilis turundan baslar, sonra solda kaybedenler yoluna ve sagda kazananlar yoluna ayrilir.') : pageText('Click any matchup to open a larger match-details view when elimination fixtures are available.', 'Eliminasyon fiksturleri olustugunda daha buyuk bir mac detayi gormek icin herhangi bir eslesmeye tiklayin.')}</p>
+                                    <p style="color: var(--text-color); margin-top: 0.6rem;">${tournament.tour_type === 'Double Elimination' ? pageText('Click any matchup to open a larger match-details view. The double-elimination layout starts from the center opening round, then splits into the losers path on the left and winners path on the right.', 'Daha buyuk bir mac detayi gormek icin herhangi bir eslesmeye tiklayin. Double-elimination duzeni merkezdeki acilis turundan baslar, sonra solda kaybedenler yoluna ve sagda kazananlar yoluna ayrilir.') : pageText('Use the bracket filters when separate knockout paths appear, then click any matchup to open a larger match-details view.', 'Ayrik eleme yollari gorundugunde braket filtrelerini kullanin; ardindan daha buyuk mac detayi icin herhangi bir eslesmeye tiklayin.')}</p>
                                 </div>
                                 <button type="button" class="detail-button-secondary" id="publicBracketFocusButton" onclick="togglePublicBracketFocus()">
                                     <i class="ri-fullscreen-line"></i> ${pageText('Open focus mode', 'Odak modunu ac')}
@@ -2119,12 +2176,20 @@
         }
 
         function setPublicBracketView(viewKey) {
-            selectedPublicBracketView = viewKey || 'merged';
             if (!currentTournamentData) {
+                selectedPublicBracketView = viewKey || 'merged';
                 return;
             }
 
-            const allowedGroups = allowedPublicBracketGroups(selectedPublicBracketView);
+            const tournamentType = currentTournamentData.tournament?.tour_type || '';
+            const availableGroups = Array.from(new Set(
+                (currentTournamentData.matches || [])
+                    .filter((match) => match.group_number === null)
+                    .map((match) => String(match.bracket || '').trim() || 'Elimination')
+            ));
+            selectedPublicBracketView = normalizePublicBracketView(viewKey || selectedPublicBracketView, tournamentType, availableGroups);
+
+            const allowedGroups = allowedPublicBracketGroups(selectedPublicBracketView, tournamentType, availableGroups);
             const visibleMatches = (currentTournamentData.matches || []).filter((match) => {
                 const matchGroup = String(match.bracket || '').trim() || 'Elimination';
                 return match.group_number === null && allowedGroups.includes(matchGroup);
@@ -2139,6 +2204,22 @@
             }
 
             renderTournamentPage(currentTournamentData);
+        }
+
+        function navigateBackFromTournament() {
+            try {
+                if (document.referrer) {
+                    const referrer = new URL(document.referrer);
+                    if (referrer.origin === window.location.origin) {
+                        window.history.back();
+                        return;
+                    }
+                }
+            } catch (error) {
+                console.warn('Failed to resolve tournament referrer:', error);
+            }
+
+            window.location.href = 'tournaments.html';
         }
 
         function closePublicMatchModal() {
@@ -2257,6 +2338,7 @@
         window.toggleFixtureCategory = toggleFixtureCategory;
         window.closePublicMatchModal = closePublicMatchModal;
         window.handlePublicMatchModalBackdrop = handlePublicMatchModalBackdrop;
+        window.navigateBackFromTournament = navigateBackFromTournament;
         window.setTournamentInfoView = setTournamentInfoView;
         window.addEventListener('resize', syncMirroredPublicBracketShells);
     </script>

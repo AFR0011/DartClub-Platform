@@ -1,6 +1,7 @@
 # MIGRATION_BACKLOG
 
 ## Completed In This Pass
+- Reworked the public/admin small-screen double-elimination bracket layout again so `Tournament Bracket` and `Bracket Board` no longer reuse the desktop merged-grid placement below their mobile breakpoints and instead stack into full-width bracket groups/round cards.
 - Replaced the public tournament-detail `Participants` and `Recent Results` side-by-side layout with a single toggleable info panel.
 - Rebuilt the public and admin `Group` tournament team sections into richer roster cards with team standing chips plus per-player stats.
 - Tightened the latest public/admin double-elimination mobile bracket fallback again so mirrored losers lanes open from the correct edge and player/round labels wrap more safely on smaller screens.
@@ -137,6 +138,7 @@
   - login-page `Forgot Password` CTA placement and account-help routing
   - signup page browser-native password validation with a real form submit
   - `admin@local.test` seeded-login verification after a fresh DB import from the updated SQL dump
+  - latest true stacked public/admin bracket layout below the `~820px` / `~900px` breakpoints so the visible merged/winners/losers/finals groups no longer overlap in either `Tournament Bracket` or `Bracket Board`
   - admin connected-bracket and bracket-board readability on phones after the stacked mobile fallback
   - stacked public tournament bracket readability on phones across merged, winners, losers, and finals views
   - globe-trigger locale menu placement/interaction on desktop and on smaller screens beside the hamburger button

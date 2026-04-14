@@ -66,6 +66,7 @@
   - managers/admins can publish and moderate
 
 ## What Changed In This Pass
+- Reworked the public/admin small-screen bracket presentation again so the public `Tournament Bracket` and admin `Tournament Bracket` / `Bracket Board` stop reusing the desktop merged-grid placement below their mobile breakpoints and instead collapse into a true vertical stack of full-width bracket groups/round cards.
 - Applied the latest `Manual Verification.txt` round to the public/admin tournament surfaces by replacing the side-by-side public `Participants` and `Recent Results` blocks with a single interchangeable toggle panel.
 - Rebuilt the public and admin `Group` tournament team views into richer roster cards that surface team standing chips plus per-player stats instead of plain name lists.
 - Tightened the public/admin double-elimination mirrored losers-lane behavior so merged and losers-only views force the mirrored shell to the far-right edge more reliably on load, and widened the latest mobile bracket fallback again so round headings and player names stop collapsing.
@@ -283,6 +284,16 @@
 
 ## Verification State
 - Verified in this pass:
+  - targeted PHP lint for:
+    - `pages/tournament_details.php`
+    - `pages/admin/show_tournament_details.php`
+  - static source inspection confirming the new mobile bracket containers now switch from desktop grid placement to stacked full-width flows at:
+    - `@media (max-width: 820px)` in `pages/tournament_details.php`
+    - `@media (max-width: 900px)` in `pages/admin/show_tournament_details.php`
+  - live built-in-server HTTP `200` check for:
+    - `pages/tournament_details.php?id=8`
+  - live built-in-server unauthenticated redirect check confirming:
+    - `pages/admin/show_tournament_details.php?id=8` still routes to auth instead of fatalling after the responsive CSS changes
   - targeted PHP lint for:
     - `services/signup.php`
     - `pages/main.php`
