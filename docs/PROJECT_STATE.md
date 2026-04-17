@@ -4,7 +4,7 @@
 - Project: `Dart Club`
 - Last updated: 2026-04-14
 - Repo type: legacy PHP/MySQL website
-- Current repo status: mapped, documented, runtime-tested on XAMPP, and further debug-hardened across the shared public shell, JSON service layer, tournament engine, public/community surfaces, and the latest SRE-note plus repeated manual-verification polish passes
+- Current repo status: mapped, documented, runtime-tested on XAMPP, and further debug-hardened across the shared public shell, JSON service layer, tournament engine, public/community surfaces, and the latest manual-verification passes covering bracket readability, first-login onboarding, and public-shell form polish
 
 ## Current Objective
 - Finish the migration from an ad-hoc legacy codebase to a maintainable public club platform.
@@ -66,6 +66,10 @@
   - managers/admins can publish and moderate
 
 ## What Changed In This Pass
+- Applied the remaining `Manual Verification.txt` notes by turning the admin tournament `Players` section into a remembered two-panel toggle (`Roster Management` vs `Players Snapshot`) instead of keeping both cards side by side.
+- Added public `tournament_details` back navigation and extended both public/admin single-elimination bracket surfaces with path filters so separate knockout groups can collapse to one visible path at a time instead of crowding the same viewport.
+- Fixed the blog page search field focus regression by restoring focus/caret position after the shell rerender, so typing no longer drops after a single character.
+- Added first-login profile onboarding for player accounts by returning a `profile.html?onboarding=1` redirect from `services/login.php`, then rebuilt the dashboard profile form into stronger dark-surface field cards with clearer input affordances and onboarding copy.
 - Reworked the public/admin small-screen bracket presentation again so the public `Tournament Bracket` and admin `Tournament Bracket` / `Bracket Board` stop reusing the desktop merged-grid placement below their mobile breakpoints and instead collapse into a true vertical stack of full-width bracket groups/round cards.
 - Applied the latest `Manual Verification.txt` round to the public/admin tournament surfaces by replacing the side-by-side public `Participants` and `Recent Results` blocks with a single interchangeable toggle panel.
 - Rebuilt the public and admin `Group` tournament team views into richer roster cards that surface team standing chips plus per-player stats instead of plain name lists.

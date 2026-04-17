@@ -1,6 +1,10 @@
 # MIGRATION_BACKLOG
 
 ## Completed In This Pass
+- Turned the admin tournament `Players` section into a remembered toggle between `Roster Management` and `Players Snapshot` instead of keeping both panels open side by side.
+- Added a public `tournament_details` back button and extended both public/admin single-elimination bracket views with per-path filters so separate knockout groups can collapse to one visible branch at a time.
+- Fixed the blog-page search focus loss caused by full-shell rerenders on every keystroke.
+- Added first-login player onboarding by redirecting profile-less player accounts from login into `profile.html?onboarding=1` and restyling the profile form so the input surfaces read clearly.
 - Reworked the public/admin small-screen double-elimination bracket layout again so `Tournament Bracket` and `Bracket Board` no longer reuse the desktop merged-grid placement below their mobile breakpoints and instead stack into full-width bracket groups/round cards.
 - Replaced the public tournament-detail `Participants` and `Recent Results` side-by-side layout with a single toggleable info panel.
 - Rebuilt the public and admin `Group` tournament team sections into richer roster cards with team standing chips plus per-player stats.

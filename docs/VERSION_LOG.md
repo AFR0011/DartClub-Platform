@@ -1,5 +1,22 @@
 # VERSION_LOG
 
+## Manual Verification Follow-Up Pass
+- Date: 2026-04-14
+- Status: manual-verification follow-up focused on single-elimination bracket filtering, first-login onboarding, and public-shell form polish
+- Main changes:
+  - turned the admin `show_tournament_details` players area into a remembered in-page toggle between `Roster Management` and `Players Snapshot` instead of leaving both wide cards open together
+  - added a public `tournament_details` back button and extended both public/admin single-elimination bracket surfaces with `All Paths` / per-path filters so separate knockout groups can collapse to one visible branch at a time
+  - fixed the blog-page search box rerender focus loss so typing no longer drops after one character
+  - changed `services/login.php` and `pages/login.html` so first-login player accounts redirect into `profile.html?onboarding=1`, then restyled the profile form into clearer dark-surface input cards with onboarding copy and completion handling
+- Verification in this pass:
+  - targeted PHP lint for `pages/tournament_details.php`, `pages/admin/show_tournament_details.php`, and `services/login.php`
+  - live built-in-server HTTP `200` checks for `pages/blog.html`, `pages/login.html`, `pages/profile.html`, and `pages/tournament_details.php?id=8`
+  - built-in-server unauthenticated redirect check for `pages/admin/show_tournament_details.php?id=8`
+  - source inspection of `js/admin_tournament_details.js`, `pages/blog.html`, and `pages/profile.html` after `node`-based JS syntax checks were skipped because `node` is not installed in this environment
+- Still pending:
+  - real browser-eye QA for the new single-elimination bracket filters on both public and authenticated admin tournament views
+  - end-to-end first-login onboarding validation with a fresh player account in a browser session
+
 ## Responsive Bracket Stacking Pass
 - Date: 2026-04-14
 - Status: responsive tournament follow-up focused on the small-screen merged-bracket and bracket-board overlap
