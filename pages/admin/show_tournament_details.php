@@ -3,6 +3,7 @@
 require_once '../../services/app_bootstrap.php';
 require_once '../../services/dbConnection.php';
 require_once '../../services/auth.php';
+require_once '../../services/shared/admin_locale_helpers.php';
 require_once '../../services/shared/player_helpers.php';
 require_once '../../services/shared/tournament_helpers.php';
 require_once '../../services/shared/tournament_view_helpers.php';
@@ -18,7 +19,7 @@ if ($tourId <= 0) {
 try {
     $pageData = tournament_fetch_page_data($conn, $tourId);
 } catch (Throwable $exception) {
-    echo 'Tournament not found';
+    echo admin_text('Tournament not found', 'Turnuva bulunamadı');
     exit;
 }
 
@@ -69,11 +70,11 @@ foreach ($matches as $match) {
         ? $rawBracketLabel
         : ($rawBracketLabel === 'Third Place Playoff' ? 'Third Place Playoff' : 'primary');
     $displayLabel = $tournament['tour_type'] === 'Double Elimination'
-        ? $rawBracketLabel
+        ? admin_translate_value($rawBracketLabel)
         : (
             $rawBracketLabel === 'Third Place Playoff'
-                ? 'Third Place Playoff'
-                : ($rawBracketLabel === 'Knockout' ? 'Knockout Bracket' : 'Tournament Bracket')
+                ? admin_translate_value('Third Place Playoff')
+                : admin_translate_value($rawBracketLabel === 'Knockout' ? 'Knockout Bracket' : 'Tournament Bracket')
         );
 
     if (!isset($knockoutBracketGroups[$bracketKey])) {
@@ -254,7 +255,17 @@ if ($tournament['tour_type'] === 'Group') {
 
 function tournament_admin_round_title(string $bracketLabel, int $roundNumber, int $roundCount): string
 {
-    return tournament_bracket_round_title($bracketLabel, $roundNumber, $roundCount);
+    return admin_round_title_label(tournament_bracket_round_title($bracketLabel, $roundNumber, $roundCount));
+}
+
+function tournament_admin_match_label(array $match, string $slot, array $matchNumbersById): string
+{
+    return admin_translate_value(tournament_match_label($match, $slot, $matchNumbersById));
+}
+
+function tournament_admin_match_flow(array $match, array $matchNumbersById): string
+{
+    return admin_match_flow_label(tournament_match_advancement_label($match, $matchNumbersById));
 }
 
 function tournament_match_visual_state(array $match): array
@@ -317,29 +328,29 @@ foreach ($matches as $match) {
     $matchesForJs[$matchId] = [
         'id' => $matchId,
         'number' => (int) ($matchNumbersById[$matchId] ?? 0),
-        'status' => (string) ($match['match_status'] ?? 'Scheduled'),
+        'status' => admin_match_status_label((string) ($match['match_status'] ?? 'Scheduled')),
         'bracket' => $bracketLabel,
         'round_title' => tournament_admin_round_title(
             $bracketLabel,
             (int) ($match['round_number'] ?? 1),
             (int) ($bracketRoundCountByLabel[$bracketLabel] ?? 1)
         ),
-        'player1_label' => tournament_match_label($match, 'player1', $matchNumbersById),
-        'player2_label' => tournament_match_label($match, 'player2', $matchNumbersById),
+        'player1_label' => tournament_admin_match_label($match, 'player1', $matchNumbersById),
+        'player2_label' => tournament_admin_match_label($match, 'player2', $matchNumbersById),
         'player1_profile_url' => !empty($match['player1_id']) ? '../player_profile.php?id=' . (int) $match['player1_id'] : '',
         'player2_profile_url' => !empty($match['player2_id']) ? '../player_profile.php?id=' . (int) $match['player2_id'] : '',
         'next_match_number' => $nextMatchNumber,
         'loser_next_match_number' => $loserNextMatchNumber,
-        'flow_label' => tournament_match_advancement_label($match, $matchNumbersById),
+        'flow_label' => tournament_admin_match_flow($match, $matchNumbersById),
     ];
 }
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="<?php echo admin_html_lang(); ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tournament Details</title>
+    <title><?php echo htmlspecialchars(admin_text('Tournament Details', 'Turnuva Ayrıntıları')); ?></title>
     <link href="../../css/admin_style.css" rel="stylesheet">
     <script src="../../js/admin_nav.js"></script>
     <style>
@@ -1667,7 +1678,7 @@ foreach ($matches as $match) {
         <div class="header-actions">
             <span style="font-size:30px;cursor:pointer" onclick="openNav()">&#9776;</span>
             <h1><?php echo htmlspecialchars($tournament['tour_title']); ?></h1>
-            <a href="manage_tournaments.php" class="back-btn">Back to Tournaments</a>
+            <a href="manage_tournaments.php" class="back-btn"><?php echo htmlspecialchars(admin_text('Back to Tournaments', 'Turnuvalara Dön')); ?></a>
         </div>
 
         <?php if (isset($_SESSION['success'])): ?>
@@ -1689,96 +1700,97 @@ foreach ($matches as $match) {
         <?php endif; ?>
 
         <div class="section-toggle">
-            <button type="button" class="active" data-section-button="details">Tournament Details</button>
-            <button type="button" data-section-button="players">Players</button>
-            <button type="button" data-section-button="matches">Matches</button>
+            <button type="button" class="active" data-section-button="details"><?php echo htmlspecialchars(admin_text('Tournament Details', 'Turnuva Ayrıntıları')); ?></button>
+            <button type="button" data-section-button="players"><?php echo htmlspecialchars(admin_text('Players', 'Oyuncular')); ?></button>
+            <button type="button" data-section-button="matches"><?php echo htmlspecialchars(admin_text('Matches', 'Maçlar')); ?></button>
             <?php if ($tournament['tour_type'] === 'Round Robin'): ?>
-                <button type="button" data-section-button="standings">Standings</button>
+                <button type="button" data-section-button="standings"><?php echo htmlspecialchars(admin_text('Standings', 'Puan Durumu')); ?></button>
             <?php endif; ?>
             <?php if ($tournament['tour_type'] === 'League'): ?>
-                <button type="button" data-section-button="groups">Groups</button>
+                <button type="button" data-section-button="groups"><?php echo htmlspecialchars(admin_text('Groups', 'Gruplar')); ?></button>
             <?php endif; ?>
             <?php if ($tournament['tour_type'] === 'Group'): ?>
-                <button type="button" data-section-button="teams">Teams</button>
+                <button type="button" data-section-button="teams"><?php echo htmlspecialchars(admin_text('Teams', 'Takımlar')); ?></button>
             <?php endif; ?>
             <?php if (!empty($knockoutBracketGroups)): ?>
-                <button type="button" data-section-button="bracket">Tournament Bracket</button>
-                <button type="button" data-section-button="bracket_board">Bracket Board</button>
+                <button type="button" data-section-button="bracket"><?php echo htmlspecialchars(admin_text('Tournament Bracket', 'Turnuva Braketi')); ?></button>
+                <button type="button" data-section-button="bracket_board"><?php echo htmlspecialchars(admin_text('Bracket Board', 'Braket Panosu')); ?></button>
             <?php endif; ?>
         </div>
 
         <section class="page-section active" data-section="details">
         <div class="callout">
-            Registration can stay open while you collect entrants. Save roster/status changes here, then use <strong><?php echo $structureGenerated ? 'Rebuild Structure' : 'Generate Structure'; ?></strong> after registration closes to create fixtures from the current non-withdrawn entrants.
-            Once scores have been recorded, automatic structure rebuilds are blocked, but managers and admins can still adjust individual matches manually from the tables below.
+            <?php echo htmlspecialchars(admin_text('Registration can stay open while you collect entrants. Save roster/status changes here, then use', 'Katılımcıları toplarken kayıt açık kalabilir. Kadro/durum değişikliklerini burada kaydedin, ardından')); ?>
+            <strong><?php echo htmlspecialchars($structureGenerated ? admin_text('Rebuild Structure', 'Yapıyı Yeniden Oluştur') : admin_text('Generate Structure', 'Yapıyı Oluştur')); ?></strong>
+            <?php echo htmlspecialchars(admin_text('after registration closes to create fixtures from the current non-withdrawn entrants. Once scores have been recorded, automatic structure rebuilds are blocked, but managers and admins can still adjust individual matches manually from the tables below.', 'kayıt kapandıktan sonra mevcut, çekilmemiş katılımcılardan fikstür oluşturmak için kullanın. Skorlar girildikten sonra otomatik yapı yeniden oluşturma engellenir, ancak yönetici ve menajerler aşağıdaki tablolardan tekil maçları yine de manuel olarak düzenleyebilir.')); ?>
         </div>
 
         <div class="info-grid">
-            <div class="info-card"><strong>Type</strong><br><?php echo htmlspecialchars($tournament['tour_type']); ?></div>
-            <div class="info-card"><strong>Start Date</strong><br><?php echo htmlspecialchars(date('Y-m-d', strtotime($tournament['tour_creationDate']))); ?></div>
-            <div class="info-card"><strong>End Date</strong><br><?php echo htmlspecialchars(date('Y-m-d', strtotime($tournament['tour_endDate']))); ?></div>
-            <div class="info-card"><strong>Registration Closes</strong><br><?php echo htmlspecialchars(date('Y-m-d', strtotime($tournament['registration_close_at'] ?: $tournament['tour_creationDate']))); ?></div>
-            <div class="info-card"><strong>Status</strong><br><span class="<?php echo $status['class']; ?>"><?php echo $status['label']; ?></span></div>
-            <div class="info-card"><strong>Players</strong><br><?php echo (int) $tournament['player_count']; ?></div>
-            <div class="info-card"><strong><?php echo $tournament['tour_type'] === 'Group' ? 'Fixtures' : 'Matches'; ?></strong><br><?php echo $displayMatchCount; ?></div>
+            <div class="info-card"><strong><?php echo htmlspecialchars(admin_text('Type', 'Tür')); ?></strong><br><?php echo htmlspecialchars(admin_tournament_type_label((string) $tournament['tour_type'])); ?></div>
+            <div class="info-card"><strong><?php echo htmlspecialchars(admin_text('Start Date', 'Başlangıç Tarihi')); ?></strong><br><?php echo htmlspecialchars(date('Y-m-d', strtotime($tournament['tour_creationDate']))); ?></div>
+            <div class="info-card"><strong><?php echo htmlspecialchars(admin_text('End Date', 'Bitiş Tarihi')); ?></strong><br><?php echo htmlspecialchars(date('Y-m-d', strtotime($tournament['tour_endDate']))); ?></div>
+            <div class="info-card"><strong><?php echo htmlspecialchars(admin_text('Registration Closes', 'Kayıt Bitişi')); ?></strong><br><?php echo htmlspecialchars(date('Y-m-d', strtotime($tournament['registration_close_at'] ?: $tournament['tour_creationDate']))); ?></div>
+            <div class="info-card"><strong><?php echo htmlspecialchars(admin_text('Status', 'Durum')); ?></strong><br><span class="<?php echo $status['class']; ?>"><?php echo htmlspecialchars(admin_tournament_status_label((string) ($tournament['status'] ?? ''))); ?></span></div>
+            <div class="info-card"><strong><?php echo htmlspecialchars(admin_text('Players', 'Oyuncular')); ?></strong><br><?php echo (int) $tournament['player_count']; ?></div>
+            <div class="info-card"><strong><?php echo htmlspecialchars($tournament['tour_type'] === 'Group' ? admin_text('Fixtures', 'Fikstür') : admin_text('Matches', 'Maçlar')); ?></strong><br><?php echo $displayMatchCount; ?></div>
         </div>
 
         <div class="section-grid" style="margin-top:24px;">
             <div class="section-card">
-                <h3>Edit Tournament</h3>
+                <h3><?php echo htmlspecialchars(admin_text('Edit Tournament', 'Turnuvayı Düzenle')); ?></h3>
                 <form action="../../services/update_tournament.php" method="post" id="editTournamentForm">
                     <input type="hidden" name="tour_id" value="<?php echo (int) $tourId; ?>">
                     <div class="inline-grid">
                         <div>
-                            <label for="tour_title">Tournament Title</label>
+                            <label for="tour_title"><?php echo htmlspecialchars(admin_text('Tournament Title', 'Turnuva Başlığı')); ?></label>
                             <input type="text" name="tour_title" id="tour_title" value="<?php echo htmlspecialchars($tournament['tour_title']); ?>" required>
                         </div>
                         <div>
-                            <label for="tour_startDate">Start Date</label>
+                            <label for="tour_startDate"><?php echo htmlspecialchars(admin_text('Start Date', 'Başlangıç Tarihi')); ?></label>
                             <input type="date" name="tour_startDate" id="tour_startDate" value="<?php echo htmlspecialchars(date('Y-m-d', strtotime($tournament['tour_creationDate']))); ?>" required>
                         </div>
                         <div>
-                            <label for="tour_endDate">End Date</label>
+                            <label for="tour_endDate"><?php echo htmlspecialchars(admin_text('End Date', 'Bitiş Tarihi')); ?></label>
                             <input type="date" name="tour_endDate" id="tour_endDate" value="<?php echo htmlspecialchars(date('Y-m-d', strtotime($tournament['tour_endDate']))); ?>" required>
                         </div>
                         <div>
-                            <label for="registration_open_at">Registration Opens</label>
+                            <label for="registration_open_at"><?php echo htmlspecialchars(admin_text('Registration Opens', 'Kayıt Başlangıcı')); ?></label>
                             <input type="date" name="registration_open_at" id="registration_open_at" value="<?php echo htmlspecialchars(date('Y-m-d', strtotime($tournament['registration_open_at'] ?: $tournament['tour_creationDate']))); ?>" required>
                         </div>
                         <div>
-                            <label for="registration_close_at">Registration Closes</label>
+                            <label for="registration_close_at"><?php echo htmlspecialchars(admin_text('Registration Closes', 'Kayıt Bitişi')); ?></label>
                             <input type="date" name="registration_close_at" id="registration_close_at" value="<?php echo htmlspecialchars(date('Y-m-d', strtotime($tournament['registration_close_at'] ?: $tournament['tour_creationDate']))); ?>" required>
                         </div>
                         <?php if ($tournament['tour_type'] === 'League'): ?>
                             <div>
-                                <label for="group_count">Group Count</label>
+                                <label for="group_count"><?php echo htmlspecialchars(admin_text('Group Count', 'Grup Sayısı')); ?></label>
                                 <input type="number" name="group_count" id="group_count" min="2" value="<?php echo (int) $tournament['group_count']; ?>">
                             </div>
                             <div>
-                                <label for="advancers_per_group">Advancers per Group</label>
+                                <label for="advancers_per_group"><?php echo htmlspecialchars(admin_text('Advancers per Group', 'Grup Başına Yükselen')); ?></label>
                                 <input type="number" name="advancers_per_group" id="advancers_per_group" min="1" value="<?php echo (int) $tournament['advancers_per_group']; ?>">
                             </div>
                         <?php elseif ($tournament['tour_type'] === 'Group'): ?>
                             <div>
-                                <label for="team_count">Team Count</label>
+                                <label for="team_count"><?php echo htmlspecialchars(admin_text('Team Count', 'Takım Sayısı')); ?></label>
                                 <input type="number" name="team_count" id="team_count" min="2" max="2" value="<?php echo max(2, (int) $tournament['team_count']); ?>" readonly>
                             </div>
                         <?php endif; ?>
                     </div>
 
                     <div class="form-buttons" style="margin-top:16px;">
-                        <button type="submit" class="submit-btn">Save Tournament Details</button>
+                        <button type="submit" class="submit-btn"><?php echo htmlspecialchars(admin_text('Save Tournament Details', 'Turnuva Ayrıntılarını Kaydet')); ?></button>
                     </div>
                 </form>
             </div>
 
             <div class="section-card">
-                <h3>Operational Snapshot</h3>
+                <h3><?php echo htmlspecialchars(admin_text('Operational Snapshot', 'Operasyon Özeti')); ?></h3>
                 <div class="section-summary-grid">
-                    <div class="summary-line"><strong>Winner</strong><span><?php echo htmlspecialchars((string) ($tournament['winner_label'] ?? 'TBD')); ?></span></div>
-                    <div class="summary-line"><strong>Visibility</strong><span><?php echo (int) ($tournament['is_public'] ?? 0) === 1 ? 'Public' : 'Private'; ?></span></div>
-                    <div class="summary-line"><strong>Structure</strong><span><?php echo $structureGenerated ? 'Generated' : 'Not generated'; ?></span></div>
-                    <div class="summary-line"><strong>Bracket Style</strong><span><?php echo $isDoubleElimination ? 'Double elimination' : (($tournament['tour_type'] === 'League' && !empty($knockoutBracketGroups)) ? 'League knockout' : htmlspecialchars($tournament['tour_type'])); ?></span></div>
+                    <div class="summary-line"><strong><?php echo htmlspecialchars(admin_text('Winner', 'Kazanan')); ?></strong><span><?php echo htmlspecialchars(admin_translate_value((string) ($tournament['winner_label'] ?? 'TBD'))); ?></span></div>
+                    <div class="summary-line"><strong><?php echo htmlspecialchars(admin_text('Visibility', 'Görünürlük')); ?></strong><span><?php echo htmlspecialchars(admin_translate_value((int) ($tournament['is_public'] ?? 0) === 1 ? 'Public' : 'Private')); ?></span></div>
+                    <div class="summary-line"><strong><?php echo htmlspecialchars(admin_text('Structure', 'Yapı')); ?></strong><span><?php echo htmlspecialchars(admin_translate_value($structureGenerated ? 'Generated' : 'Not generated')); ?></span></div>
+                    <div class="summary-line"><strong><?php echo htmlspecialchars(admin_text('Bracket Style', 'Braket Stili')); ?></strong><span><?php echo htmlspecialchars($isDoubleElimination ? admin_translate_value('Double elimination') : (($tournament['tour_type'] === 'League' && !empty($knockoutBracketGroups)) ? admin_translate_value('League knockout') : admin_tournament_type_label((string) $tournament['tour_type']))); ?></span></div>
                 </div>
             </div>
         </div>
@@ -1787,33 +1799,33 @@ foreach ($matches as $match) {
         <section class="page-section" data-section="players">
             <div class="header-actions">
                 <div>
-                    <h2>Players</h2>
-                    <p class="surface-note">Manage roster state and review placement output without mixing it into fixture editing.</p>
+                    <h2><?php echo htmlspecialchars(admin_text('Players', 'Oyuncular')); ?></h2>
+                    <p class="surface-note"><?php echo htmlspecialchars(admin_text('Manage roster state and review placement output without mixing it into fixture editing.', 'Kadro durumunu yönetin ve yerleşim çıktısını fikstür düzenlemeyle karıştırmadan inceleyin.')); ?></p>
                 </div>
             </div>
-            <div class="subsection-toggle" aria-label="Player management panels">
-                <button type="button" class="active" data-players-panel-button="roster">Roster Management</button>
-                <button type="button" data-players-panel-button="snapshot">Players Snapshot</button>
+            <div class="subsection-toggle" aria-label="<?php echo htmlspecialchars(admin_text('Player management panels', 'Oyuncu yönetim panelleri')); ?>">
+                <button type="button" class="active" data-players-panel-button="roster"><?php echo htmlspecialchars(admin_text('Roster Management', 'Kadro Yönetimi')); ?></button>
+                <button type="button" data-players-panel-button="snapshot"><?php echo htmlspecialchars(admin_text('Players Snapshot', 'Oyuncu Özeti')); ?></button>
             </div>
             <div class="section-panel-stack">
             <div class="section-card bracket-view-panel" data-players-panel="roster">
-                <h3>Roster Management</h3>
+                <h3><?php echo htmlspecialchars(admin_text('Roster Management', 'Kadro Yönetimi')); ?></h3>
                 <form action="../../services/update_tournament.php" method="post" id="playerRosterForm">
                     <input type="hidden" name="tour_id" value="<?php echo (int) $tourId; ?>">
-                    <h4 style="margin-top:16px;">Current Players</h4>
+                    <h4 style="margin-top:16px;"><?php echo htmlspecialchars(admin_text('Current Players', 'Mevcut Oyuncular')); ?></h4>
                     <div class="filter-bar filter-bar--double">
                         <div>
-                            <label for="currentPlayerFilter">Filter current players</label>
-                            <input type="text" id="currentPlayerFilter" placeholder="Search the current tournament roster">
+                            <label for="currentPlayerFilter"><?php echo htmlspecialchars(admin_text('Filter current players', 'Mevcut oyuncuları filtrele')); ?></label>
+                            <input type="text" id="currentPlayerFilter" placeholder="<?php echo htmlspecialchars(admin_text('Search the current tournament roster', 'Mevcut turnuva kadrosunda ara')); ?>">
                         </div>
                         <div>
-                            <label for="currentPlayerSort">Sort current players</label>
+                            <label for="currentPlayerSort"><?php echo htmlspecialchars(admin_text('Sort current players', 'Mevcut oyuncuları sırala')); ?></label>
                             <select id="currentPlayerSort">
-                                <option value="name_asc">Player A-Z</option>
-                                <option value="name_desc">Player Z-A</option>
-                                <option value="status">Status</option>
+                                <option value="name_asc"><?php echo htmlspecialchars(admin_text('Player A-Z', 'Oyuncu A-Z')); ?></option>
+                                <option value="name_desc"><?php echo htmlspecialchars(admin_text('Player Z-A', 'Oyuncu Z-A')); ?></option>
+                                <option value="status"><?php echo htmlspecialchars(admin_text('Status', 'Durum')); ?></option>
                                 <?php if ($tournament['tour_type'] === 'League'): ?>
-                                    <option value="group">Group</option>
+                                    <option value="group"><?php echo htmlspecialchars(admin_text('Group', 'Grup')); ?></option>
                                 <?php endif; ?>
                             </select>
                         </div>
@@ -1822,10 +1834,10 @@ foreach ($matches as $match) {
                     <table class="players-table">
                         <thead>
                             <tr>
-                                <th>Name</th>
-                                <th>Status</th>
-                                <?php if ($tournament['tour_type'] === 'League'): ?><th>Group</th><?php endif; ?>
-                                <th>Remove</th>
+                                <th><?php echo htmlspecialchars(admin_text('Name', 'Ad')); ?></th>
+                                <th><?php echo htmlspecialchars(admin_text('Status', 'Durum')); ?></th>
+                                <?php if ($tournament['tour_type'] === 'League'): ?><th><?php echo htmlspecialchars(admin_text('Group', 'Grup')); ?></th><?php endif; ?>
+                                <th><?php echo htmlspecialchars(admin_text('Remove', 'Kaldır')); ?></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -1836,14 +1848,14 @@ foreach ($matches as $match) {
                                     data-current-player-row
                                     data-player-id="<?php echo (int) $player['plr_idNum']; ?>"
                                     data-player-name="<?php echo htmlspecialchars(strtolower(player_name($player))); ?>"
-                                    data-player-status="<?php echo htmlspecialchars(strtolower((string) $player['player_status'])); ?>"
+                                    data-player-status="<?php echo htmlspecialchars(strtolower(admin_player_status_label((string) $player['player_status']))); ?>"
                                     data-player-group="<?php echo htmlspecialchars((string) ($player['group_number'] ?? '')); ?>"
                                 >
                                     <td><?php echo htmlspecialchars(player_name($player)); ?></td>
                                     <td>
                                         <select name="player_status[<?php echo (int) $player['plr_idNum']; ?>]">
                                             <?php foreach (['Active', 'Registered', 'Withdrawn'] as $playerStatus): ?>
-                                                <option value="<?php echo $playerStatus; ?>" <?php echo $player['player_status'] === $playerStatus ? 'selected' : ''; ?>><?php echo $playerStatus; ?></option>
+                                                <option value="<?php echo $playerStatus; ?>" <?php echo $player['player_status'] === $playerStatus ? 'selected' : ''; ?>><?php echo htmlspecialchars(admin_player_status_label($playerStatus)); ?></option>
                                             <?php endforeach; ?>
                                         </select>
                                     </td>
@@ -1852,7 +1864,7 @@ foreach ($matches as $match) {
                                         <label class="row-toggle" data-row-toggle>
                                             <input type="checkbox" id="remove_player_<?php echo (int) $player['plr_idNum']; ?>" name="remove_players[]" value="<?php echo (int) $player['plr_idNum']; ?>">
                                             <span class="row-toggle-indicator" aria-hidden="true"></span>
-                                            <span>Remove</span>
+                                            <span><?php echo htmlspecialchars(admin_text('Remove', 'Kaldır')); ?></span>
                                         </label>
                                     </td>
                                 </tr>
@@ -1860,29 +1872,29 @@ foreach ($matches as $match) {
                         </tbody>
                     </table>
                     </div>
-                    <div class="selection-meta" id="removePlayerSelectionCount">No players marked for removal.</div>
+                    <div class="selection-meta" id="removePlayerSelectionCount"><?php echo htmlspecialchars(admin_text('No players marked for removal.', 'Kaldırmak için işaretlenen oyuncu yok.')); ?></div>
 
                     <?php if (!empty($availablePlayers)): ?>
-                        <h4 style="margin-top:16px;">Add Players</h4>
+                        <h4 style="margin-top:16px;"><?php echo htmlspecialchars(admin_text('Add Players', 'Oyuncu Ekle')); ?></h4>
                         <div class="filter-bar">
                             <div>
-                                <label for="newPlayerFilter">Filter available players</label>
-                                <input type="text" id="newPlayerFilter" placeholder="Type a player name to narrow the add list">
+                                <label for="newPlayerFilter"><?php echo htmlspecialchars(admin_text('Filter available players', 'Uygun oyuncuları filtrele')); ?></label>
+                                <input type="text" id="newPlayerFilter" placeholder="<?php echo htmlspecialchars(admin_text('Type a player name to narrow the add list', 'Ekleme listesini daraltmak için oyuncu adı yazın')); ?>">
                             </div>
                             <div>
-                                <label for="newPlayerSort">Sort available players</label>
+                                <label for="newPlayerSort"><?php echo htmlspecialchars(admin_text('Sort available players', 'Uygun oyuncuları sırala')); ?></label>
                                 <select id="newPlayerSort">
-                                    <option value="name_asc">Player A-Z</option>
-                                    <option value="name_desc">Player Z-A</option>
-                                    <option value="id_asc">Oldest first</option>
-                                    <option value="id_desc">Newest first</option>
+                                    <option value="name_asc"><?php echo htmlspecialchars(admin_text('Player A-Z', 'Oyuncu A-Z')); ?></option>
+                                    <option value="name_desc"><?php echo htmlspecialchars(admin_text('Player Z-A', 'Oyuncu Z-A')); ?></option>
+                                    <option value="id_asc"><?php echo htmlspecialchars(admin_text('Oldest first', 'En eski önce')); ?></option>
+                                    <option value="id_desc"><?php echo htmlspecialchars(admin_text('Newest first', 'En yeni önce')); ?></option>
                                 </select>
                             </div>
                             <div>
-                                <label for="new_players_status">Add selected players as</label>
+                                <label for="new_players_status"><?php echo htmlspecialchars(admin_text('Add selected players as', 'Seçili oyuncuları şu olarak ekle')); ?></label>
                                 <select name="new_players_status" id="new_players_status">
-                                    <option value="Registered" selected>Registered entrants</option>
-                                    <option value="Active">Active competition roster</option>
+                                    <option value="Registered" selected><?php echo htmlspecialchars(admin_text('Registered entrants', 'Kayıtlı katılımcılar')); ?></option>
+                                    <option value="Active"><?php echo htmlspecialchars(admin_text('Active competition roster', 'Aktif yarışma kadrosu')); ?></option>
                                 </select>
                             </div>
                         </div>
@@ -1890,8 +1902,8 @@ foreach ($matches as $match) {
                             <table class="players-table">
                                 <thead>
                                     <tr>
-                                        <th>Add</th>
-                                        <th>Player Name</th>
+                                        <th><?php echo htmlspecialchars(admin_text('Add', 'Ekle')); ?></th>
+                                        <th><?php echo htmlspecialchars(admin_text('Player Name', 'Oyuncu Adı')); ?></th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -1907,7 +1919,7 @@ foreach ($matches as $match) {
                                                 <label class="row-toggle" data-row-toggle>
                                                     <input type="checkbox" id="new_player_<?php echo (int) $availablePlayer['plr_idNum']; ?>" name="new_players[]" value="<?php echo (int) $availablePlayer['plr_idNum']; ?>">
                                                     <span class="row-toggle-indicator" aria-hidden="true"></span>
-                                                    <span>Add</span>
+                                                    <span><?php echo htmlspecialchars(admin_text('Add', 'Ekle')); ?></span>
                                                 </label>
                                             </td>
                                             <td><?php echo htmlspecialchars(player_name($availablePlayer)); ?></td>
@@ -1916,31 +1928,31 @@ foreach ($matches as $match) {
                                 </tbody>
                             </table>
                         </div>
-                        <div class="selection-meta" id="newPlayerSelectionCount">No new players selected yet.</div>
+                        <div class="selection-meta" id="newPlayerSelectionCount"><?php echo htmlspecialchars(admin_text('No new players selected yet.', 'Henüz eklenecek yeni oyuncu seçilmedi.')); ?></div>
                     <?php endif; ?>
 
                     <div class="form-buttons" style="margin-top:16px;">
-                        <button type="submit" class="submit-btn">Save Roster Changes</button>
+                        <button type="submit" class="submit-btn"><?php echo htmlspecialchars(admin_text('Save Roster Changes', 'Kadro Değişikliklerini Kaydet')); ?></button>
                     </div>
                 </form>
             </div>
 
             <div class="section-card bracket-view-panel is-hidden" data-players-panel="snapshot">
-                <h3>Players Snapshot</h3>
+                <h3><?php echo htmlspecialchars(admin_text('Players Snapshot', 'Oyuncu Özeti')); ?></h3>
                 <table class="players-table">
                     <thead>
                         <tr>
-                            <th>Name</th>
-                            <th>Status</th>
-                            <?php if ($tournament['tour_type'] === 'League'): ?><th>Group</th><?php endif; ?>
-                            <?php if (!empty($placementPlayers)): ?><th>Placement</th><?php endif; ?>
+                            <th><?php echo htmlspecialchars(admin_text('Name', 'Ad')); ?></th>
+                            <th><?php echo htmlspecialchars(admin_text('Status', 'Durum')); ?></th>
+                            <?php if ($tournament['tour_type'] === 'League'): ?><th><?php echo htmlspecialchars(admin_text('Group', 'Grup')); ?></th><?php endif; ?>
+                            <?php if (!empty($placementPlayers)): ?><th><?php echo htmlspecialchars(admin_text('Placement', 'Derece')); ?></th><?php endif; ?>
                         </tr>
                     </thead>
                     <tbody>
                         <?php foreach ($players as $player): ?>
                             <tr>
                                 <td><?php echo htmlspecialchars(player_name($player)); ?></td>
-                                <td><?php echo htmlspecialchars($player['player_status']); ?></td>
+                                <td><?php echo htmlspecialchars(admin_player_status_label((string) $player['player_status'])); ?></td>
                                 <?php if ($tournament['tour_type'] === 'League'): ?><td><?php echo $player['group_number'] !== null ? (int) $player['group_number'] : '-'; ?></td><?php endif; ?>
                                 <?php if (!empty($placementPlayers)): ?>
                                     <td><?php echo htmlspecialchars((string) ($player['placement_label'] ?: ($player['final_rank'] !== null ? ('#' . (int) $player['final_rank']) : '-'))); ?></td>
@@ -1951,13 +1963,13 @@ foreach ($matches as $match) {
                 </table>
 
                 <?php if (!empty($placementPlayers)): ?>
-                    <h4 style="margin-top:18px;">Placement Snapshot</h4>
+                    <h4 style="margin-top:18px;"><?php echo htmlspecialchars(admin_text('Placement Snapshot', 'Derece Özeti')); ?></h4>
                     <table class="players-table">
                         <thead>
                             <tr>
-                                <th>Rank</th>
-                                <th>Player</th>
-                                <th>Placement</th>
+                                <th><?php echo htmlspecialchars(admin_text('Rank', 'Sıra')); ?></th>
+                                <th><?php echo htmlspecialchars(admin_text('Player', 'Oyuncu')); ?></th>
+                                <th><?php echo htmlspecialchars(admin_text('Placement', 'Derece')); ?></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -1978,29 +1990,29 @@ foreach ($matches as $match) {
         <section class="page-section" data-section="matches">
             <div class="header-actions">
                 <div>
-                    <h2><?php echo $tournament['tour_type'] === 'Group' ? ($groupUsesIndividualMatches ? 'Player Fixtures' : 'Team Fixtures') : 'Matches'; ?></h2>
+                    <h2><?php echo htmlspecialchars($tournament['tour_type'] === 'Group' ? ($groupUsesIndividualMatches ? admin_text('Player Fixtures', 'Oyuncu Fikstürü') : admin_text('Team Fixtures', 'Takım Fikstürü')) : admin_text('Matches', 'Maçlar')); ?></h2>
                     <p class="surface-note">
                         <?php if ($tournament['tour_type'] === 'Group' && !$groupUsesIndividualMatches && !empty($teamMatches)): ?>
-                            Team results can be recorded directly in the table below.
+                            <?php echo htmlspecialchars(admin_text('Team results can be recorded directly in the table below.', 'Takım sonuçları doğrudan aşağıdaki tabloda kaydedilebilir.')); ?>
                         <?php elseif ($tournament['tour_type'] === 'Group'): ?>
-                            Group tournaments now score player-versus-player matches across the two team rosters, while the team standings section rolls those results back up to the team view.
+                            <?php echo htmlspecialchars(admin_text('Group tournaments now score player-versus-player matches across the two team rosters, while the team standings section rolls those results back up to the team view.', 'Grup turnuvaları artık iki takım kadrosu arasında oyuncu-oyuncuya maçları puanlıyor; takım puan durumu bölümü de bu sonuçları yeniden takım görünümüne topluyor.')); ?>
                         <?php else: ?>
-                            Record scores directly in the table when you want speed, or open the detail modal for deeper edits.
+                            <?php echo htmlspecialchars(admin_text('Record scores directly in the table when you want speed, or open the detail modal for deeper edits.', 'Hız gerektiğinde skorları doğrudan tabloda kaydedin veya daha ayrıntılı düzenlemeler için ayrıntı penceresini açın.')); ?>
                         <?php endif; ?>
                     </p>
                 </div>
                 <div class="dense-actions">
                     <?php if ($canStartTournament): ?>
-                        <button type="button" class="submit-btn" id="startTournamentBtn">Start Tournament</button>
+                        <button type="button" class="submit-btn" id="startTournamentBtn"><?php echo htmlspecialchars(admin_text('Start Tournament', 'Turnuvayı Başlat')); ?></button>
                     <?php endif; ?>
-                    <button type="button" class="action-btn" id="generateStructureBtn"><?php echo $structureGenerated ? 'Rebuild Structure' : 'Generate Structure'; ?></button>
+                    <button type="button" class="action-btn" id="generateStructureBtn"><?php echo htmlspecialchars($structureGenerated ? admin_text('Rebuild Structure', 'Yapıyı Yeniden Oluştur') : admin_text('Generate Structure', 'Yapıyı Oluştur')); ?></button>
                     <?php if (in_array($tournament['tour_type'], ['Round Robin', 'League'], true)): ?>
-                        <button type="button" class="action-btn" id="openLeagueToolsBtn">Reschedule Structure</button>
+                        <button type="button" class="action-btn" id="openLeagueToolsBtn"><?php echo htmlspecialchars(admin_text('Reschedule Structure', 'Yapıyı Yeniden Planla')); ?></button>
                     <?php endif; ?>
                     <?php if ($tournament['tour_type'] !== 'Group'): ?>
-                        <button type="button" class="action-btn" id="addMatchBtn">Add Match</button>
+                        <button type="button" class="action-btn" id="addMatchBtn"><?php echo htmlspecialchars(admin_text('Add Match', 'Maç Ekle')); ?></button>
                     <?php endif; ?>
-                    <button type="button" class="action-btn" id="refreshMatchesBtn">Refresh</button>
+                    <button type="button" class="action-btn" id="refreshMatchesBtn"><?php echo htmlspecialchars(admin_text('Refresh', 'Yenile')); ?></button>
                 </div>
             </div>
 
@@ -2009,14 +2021,14 @@ foreach ($matches as $match) {
                 <table class="matches-table">
                     <thead>
                         <tr>
-                            <th>Round</th>
-                            <th>Date</th>
-                            <th>Time</th>
-                            <th>Team 1</th>
-                            <th>Score</th>
-                            <th>Team 2</th>
-                            <th>Status</th>
-                            <th>Record Result</th>
+                            <th><?php echo htmlspecialchars(admin_text('Round', 'Tur')); ?></th>
+                            <th><?php echo htmlspecialchars(admin_text('Date', 'Tarih')); ?></th>
+                            <th><?php echo htmlspecialchars(admin_text('Time', 'Saat')); ?></th>
+                            <th><?php echo htmlspecialchars(admin_text('Team 1', 'Takım 1')); ?></th>
+                            <th><?php echo htmlspecialchars(admin_text('Score', 'Skor')); ?></th>
+                            <th><?php echo htmlspecialchars(admin_text('Team 2', 'Takım 2')); ?></th>
+                            <th><?php echo htmlspecialchars(admin_text('Status', 'Durum')); ?></th>
+                            <th><?php echo htmlspecialchars(admin_text('Record Result', 'Sonucu Kaydet')); ?></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -2025,7 +2037,7 @@ foreach ($matches as $match) {
                                 <td><?php echo (int) $teamMatch['round_number']; ?></td>
                                 <td><?php echo htmlspecialchars($teamMatch['match_date']); ?></td>
                                 <td><?php echo htmlspecialchars($teamMatch['match_time']); ?></td>
-                                <td><?php echo htmlspecialchars((string) ($teamMatch['team1_name'] ?? 'TBD')); ?></td>
+                                <td><?php echo htmlspecialchars((string) ($teamMatch['team1_name'] ?? admin_translate_value('TBD'))); ?></td>
                                 <td>
                                     <?php if ($teamMatch['match_status'] === 'Completed'): ?>
                                         <?php echo htmlspecialchars((string) $teamMatch['team1_score']); ?> - <?php echo htmlspecialchars((string) $teamMatch['team2_score']); ?>
@@ -2033,13 +2045,13 @@ foreach ($matches as $match) {
                                         vs
                                     <?php endif; ?>
                                 </td>
-                                <td><?php echo htmlspecialchars((string) ($teamMatch['team2_name'] ?? 'TBD')); ?></td>
-                                <td><?php echo htmlspecialchars($teamMatch['match_status']); ?></td>
+                                <td><?php echo htmlspecialchars((string) ($teamMatch['team2_name'] ?? admin_translate_value('TBD'))); ?></td>
+                                <td><?php echo htmlspecialchars(admin_match_status_label((string) $teamMatch['match_status'])); ?></td>
                                 <td>
                                     <form onsubmit="return saveTeamMatchResult(event, <?php echo (int) $teamMatch['team_match_id']; ?>)" style="display:flex;gap:6px;align-items:center;">
                                         <input type="number" min="0" name="team1_score" style="width:72px;">
                                         <input type="number" min="0" name="team2_score" style="width:72px;">
-                                        <button type="submit" class="action-btn">Save</button>
+                                        <button type="submit" class="action-btn"><?php echo htmlspecialchars(admin_text('Save', 'Kaydet')); ?></button>
                                     </form>
                                 </td>
                             </tr>
@@ -2052,19 +2064,19 @@ foreach ($matches as $match) {
                 <table class="matches-table">
                     <thead>
                         <tr>
-                            <th>Match #</th>
-                            <th>Round</th>
-                            <th>Date</th>
-                            <th>Time</th>
-                            <th>Bracket</th>
-                            <th>Group</th>
-                            <?php if ($tournament['tour_type'] === 'Group'): ?><th>Team 1</th><?php endif; ?>
-                            <th>Player 1</th>
-                            <?php if ($tournament['tour_type'] === 'Group'): ?><th>Team 2</th><?php endif; ?>
-                            <th>Player 2</th>
-                            <th>Status</th>
-                            <th>Quick Score</th>
-                            <th>Action</th>
+                            <th><?php echo htmlspecialchars(admin_text('Match #', 'Maç #')); ?></th>
+                            <th><?php echo htmlspecialchars(admin_text('Round', 'Tur')); ?></th>
+                            <th><?php echo htmlspecialchars(admin_text('Date', 'Tarih')); ?></th>
+                            <th><?php echo htmlspecialchars(admin_text('Time', 'Saat')); ?></th>
+                            <th><?php echo htmlspecialchars(admin_text('Bracket', 'Braket')); ?></th>
+                            <th><?php echo htmlspecialchars(admin_text('Group', 'Grup')); ?></th>
+                            <?php if ($tournament['tour_type'] === 'Group'): ?><th><?php echo htmlspecialchars(admin_text('Team 1', 'Takım 1')); ?></th><?php endif; ?>
+                            <th><?php echo htmlspecialchars(admin_text('Player 1', 'Oyuncu 1')); ?></th>
+                            <?php if ($tournament['tour_type'] === 'Group'): ?><th><?php echo htmlspecialchars(admin_text('Team 2', 'Takım 2')); ?></th><?php endif; ?>
+                            <th><?php echo htmlspecialchars(admin_text('Player 2', 'Oyuncu 2')); ?></th>
+                            <th><?php echo htmlspecialchars(admin_text('Status', 'Durum')); ?></th>
+                            <th><?php echo htmlspecialchars(admin_text('Quick Score', 'Hızlı Skor')); ?></th>
+                            <th><?php echo htmlspecialchars(admin_text('Action', 'İşlem')); ?></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -2074,25 +2086,25 @@ foreach ($matches as $match) {
                                 <td><?php echo (int) $match['round_number']; ?></td>
                                 <td><?php echo htmlspecialchars($match['match_date']); ?></td>
                                 <td><?php echo htmlspecialchars($match['match_time']); ?></td>
-                                <td><?php echo htmlspecialchars((string) ($match['bracket'] ?? '-')); ?></td>
+                                <td><?php echo htmlspecialchars($match['bracket'] ? admin_translate_value((string) $match['bracket']) : '-'); ?></td>
                                 <td><?php echo $match['group_number'] !== null ? (int) $match['group_number'] : '-'; ?></td>
                                 <?php if ($tournament['tour_type'] === 'Group'): ?><td><?php echo htmlspecialchars((string) ($match['player1_team_name'] ?? '-')); ?></td><?php endif; ?>
-                                <td><?php echo htmlspecialchars(tournament_match_label($match, 'player1', $matchNumbersById)); ?></td>
+                                <td><?php echo htmlspecialchars(tournament_admin_match_label($match, 'player1', $matchNumbersById)); ?></td>
                                 <?php if ($tournament['tour_type'] === 'Group'): ?><td><?php echo htmlspecialchars((string) ($match['player2_team_name'] ?? '-')); ?></td><?php endif; ?>
-                                <td><?php echo htmlspecialchars(tournament_match_label($match, 'player2', $matchNumbersById)); ?></td>
-                                <td><?php echo htmlspecialchars($match['match_status']); ?></td>
+                                <td><?php echo htmlspecialchars(tournament_admin_match_label($match, 'player2', $matchNumbersById)); ?></td>
+                                <td><?php echo htmlspecialchars(admin_match_status_label((string) $match['match_status'])); ?></td>
                                 <td>
                                     <?php $canQuickScore = !empty($match['player1_id']) && !empty($match['player2_id']); ?>
                                     <form class="quick-score-form <?php echo $canQuickScore ? '' : 'is-disabled'; ?>" onsubmit="return saveQuickMatchResult(event, <?php echo (int) $match['match_id']; ?>)">
                                         <input type="number" min="0" name="player1_score" value="<?php echo $match['player1_score'] !== null ? (int) $match['player1_score'] : ''; ?>" <?php echo $canQuickScore ? '' : 'disabled'; ?>>
                                         <span>-</span>
                                         <input type="number" min="0" name="player2_score" value="<?php echo $match['player2_score'] !== null ? (int) $match['player2_score'] : ''; ?>" <?php echo $canQuickScore ? '' : 'disabled'; ?>>
-                                        <button type="submit" class="submit-btn" <?php echo $canQuickScore ? '' : 'disabled'; ?>>Save</button>
+                                        <button type="submit" class="submit-btn" <?php echo $canQuickScore ? '' : 'disabled'; ?>><?php echo htmlspecialchars(admin_text('Save', 'Kaydet')); ?></button>
                                     </form>
                                 </td>
                                 <td>
-                                    <button type="button" class="action-btn" onclick="openMatchModal(<?php echo (int) $match['match_id']; ?>)">Details</button>
-                                    <button type="button" class="cancel-btn" onclick="deleteMatch(<?php echo (int) $match['match_id']; ?>)">Delete</button>
+                                    <button type="button" class="action-btn" onclick="openMatchModal(<?php echo (int) $match['match_id']; ?>)"><?php echo htmlspecialchars(admin_text('Details', 'Ayrıntılar')); ?></button>
+                                    <button type="button" class="cancel-btn" onclick="deleteMatch(<?php echo (int) $match['match_id']; ?>)"><?php echo htmlspecialchars(admin_text('Delete', 'Sil')); ?></button>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
@@ -2104,18 +2116,18 @@ foreach ($matches as $match) {
 
         <?php if ($tournament['tour_type'] === 'Round Robin'): ?>
             <section class="page-section" data-section="standings">
-                <h2>Round Robin Standings</h2>
+                <h2><?php echo htmlspecialchars(admin_text('Round Robin Standings', 'Round Robin Puan Durumu')); ?></h2>
                 <table class="standings-table">
                     <thead>
                         <tr>
-                            <th>Position</th>
-                            <th>Player</th>
-                            <th>Played</th>
-                            <th>Won</th>
-                            <th>Lost</th>
-                            <th>Drawn</th>
-                            <th>Points</th>
-                            <th>Leg Diff</th>
+                            <th><?php echo htmlspecialchars(admin_text('Position', 'Sıra')); ?></th>
+                            <th><?php echo htmlspecialchars(admin_text('Player', 'Oyuncu')); ?></th>
+                            <th><?php echo htmlspecialchars(admin_text('Played', 'Oynanan')); ?></th>
+                            <th><?php echo htmlspecialchars(admin_text('Won', 'Galibiyet')); ?></th>
+                            <th><?php echo htmlspecialchars(admin_text('Lost', 'Mağlubiyet')); ?></th>
+                            <th><?php echo htmlspecialchars(admin_text('Drawn', 'Beraberlik')); ?></th>
+                            <th><?php echo htmlspecialchars(admin_text('Points', 'Puan')); ?></th>
+                            <th><?php echo htmlspecialchars(admin_text('Leg Diff', 'Leg Farkı')); ?></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -2138,18 +2150,18 @@ foreach ($matches as $match) {
 
         <?php if ($tournament['tour_type'] === 'League'): ?>
             <section class="page-section" data-section="groups">
-                <h2>Group Stage</h2>
+                <h2><?php echo htmlspecialchars(admin_text('Group Stage', 'Grup Aşaması')); ?></h2>
                 <div class="section-grid league-groups-grid">
                     <?php foreach ($groupStandings as $groupNumber => $rows): ?>
                         <div class="section-card">
-                            <h3>Group <?php echo (int) $groupNumber; ?></h3>
+                            <h3><?php echo htmlspecialchars(admin_translate_value('Group ' . (int) $groupNumber)); ?></h3>
                             <table class="standings-table">
                                 <thead>
                                     <tr>
                                         <th>#</th>
-                                        <th>Player</th>
-                                        <th>Pts</th>
-                                        <th>Leg Diff</th>
+                                        <th><?php echo htmlspecialchars(admin_text('Player', 'Oyuncu')); ?></th>
+                                        <th><?php echo htmlspecialchars(admin_text('Pts', 'P')); ?></th>
+                                        <th><?php echo htmlspecialchars(admin_text('Leg Diff', 'Leg Farkı')); ?></th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -2165,14 +2177,14 @@ foreach ($matches as $match) {
                             </table>
 
                             <?php if (!empty($groupMatches[$groupNumber])): ?>
-                                <h4 style="margin-top:12px;">Matches</h4>
+                                <h4 style="margin-top:12px;"><?php echo htmlspecialchars(admin_text('Matches', 'Maçlar')); ?></h4>
                                 <?php foreach ($groupMatches[$groupNumber] as $groupMatch): ?>
                                     <div class="match-card">
-                                        <strong><?php echo htmlspecialchars(tournament_match_label($groupMatch, 'player1', $matchNumbersById)); ?></strong>
+                                        <strong><?php echo htmlspecialchars(tournament_admin_match_label($groupMatch, 'player1', $matchNumbersById)); ?></strong>
                                         vs
-                                        <strong><?php echo htmlspecialchars(tournament_match_label($groupMatch, 'player2', $matchNumbersById)); ?></strong>
+                                        <strong><?php echo htmlspecialchars(tournament_admin_match_label($groupMatch, 'player2', $matchNumbersById)); ?></strong>
                                         <div class="tag" style="margin-top:8px;">
-                                            <?php echo htmlspecialchars($groupMatch['match_status']); ?>
+                                            <?php echo htmlspecialchars(admin_match_status_label((string) $groupMatch['match_status'])); ?>
                                         </div>
                                     </div>
                                 <?php endforeach; ?>
@@ -2185,20 +2197,20 @@ foreach ($matches as $match) {
 
         <?php if ($tournament['tour_type'] === 'Group'): ?>
             <section class="page-section" data-section="teams">
-                <h2>Teams & Standings</h2>
+                <h2><?php echo htmlspecialchars(admin_text('Teams & Standings', 'Takımlar ve Puan Durumu')); ?></h2>
                 <div class="section-grid">
                     <div class="section-card">
-                        <h3>Team Standings</h3>
+                        <h3><?php echo htmlspecialchars(admin_text('Team Standings', 'Takım Puan Durumu')); ?></h3>
                         <table class="standings-table">
                             <thead>
                                 <tr>
                                     <th>#</th>
-                                    <th>Team</th>
-                                    <th>Played</th>
-                                    <th>Won</th>
-                                    <th>Lost</th>
-                                    <th>Drawn</th>
-                                    <th>Points</th>
+                                    <th><?php echo htmlspecialchars(admin_text('Team', 'Takım')); ?></th>
+                                    <th><?php echo htmlspecialchars(admin_text('Played', 'Oynanan')); ?></th>
+                                    <th><?php echo htmlspecialchars(admin_text('Won', 'Galibiyet')); ?></th>
+                                    <th><?php echo htmlspecialchars(admin_text('Lost', 'Mağlubiyet')); ?></th>
+                                    <th><?php echo htmlspecialchars(admin_text('Drawn', 'Beraberlik')); ?></th>
+                                    <th><?php echo htmlspecialchars(admin_text('Points', 'Puan')); ?></th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -2222,21 +2234,21 @@ foreach ($matches as $match) {
                         <?php
                         $teamStanding = $teamStandingsById[(int) ($team['team_id'] ?? 0)] ?? null;
                         $teamNote = $groupUsesIndividualMatches
-                            ? 'Each player row rolls up the completed head-to-head fixtures between the two rosters.'
-                            : 'Player stats will populate once the group fixtures are expanded into player-versus-player matches.';
+                            ? admin_text('Each player row rolls up the completed head-to-head fixtures between the two rosters.', 'Her oyuncu satırı, iki kadro arasındaki tamamlanan birebir fikstürü toplar.')
+                            : admin_text('Player stats will populate once the group fixtures are expanded into player-versus-player matches.', 'Grup fikstürü oyuncu-oyuncuya maçlara genişletildiğinde oyuncu istatistikleri dolacaktır.');
                         ?>
                         <article class="section-card team-roster-card">
                             <div class="team-roster-head">
                                 <div>
-                                    <span class="team-roster-chip"><?php echo 'Team ' . ($index + 1); ?></span>
+                                    <span class="team-roster-chip"><?php echo htmlspecialchars(admin_translate_value('Team ' . ($index + 1))); ?></span>
                                     <h3 style="margin-top: 10px;"><?php echo htmlspecialchars($team['team_name']); ?></h3>
                                     <p class="team-roster-note"><?php echo htmlspecialchars($teamNote); ?></p>
                                 </div>
                                 <?php if ($teamStanding !== null): ?>
                                     <div class="team-roster-meta">
-                                        <span class="team-roster-chip">Played <?php echo (int) $teamStanding['matches_played']; ?></span>
-                                        <span class="team-roster-chip">W-D-L <?php echo (int) $teamStanding['matches_won']; ?>-<?php echo (int) $teamStanding['matches_drawn']; ?>-<?php echo (int) $teamStanding['matches_lost']; ?></span>
-                                        <span class="team-roster-chip">Points <?php echo (int) $teamStanding['points']; ?></span>
+                                        <span class="team-roster-chip"><?php echo htmlspecialchars(admin_text('Played', 'Oynanan')); ?> <?php echo (int) $teamStanding['matches_played']; ?></span>
+                                        <span class="team-roster-chip"><?php echo htmlspecialchars(admin_text('W-D-L', 'G-B-M')); ?> <?php echo (int) $teamStanding['matches_won']; ?>-<?php echo (int) $teamStanding['matches_drawn']; ?>-<?php echo (int) $teamStanding['matches_lost']; ?></span>
+                                        <span class="team-roster-chip"><?php echo htmlspecialchars(admin_text('Points', 'Puan')); ?> <?php echo (int) $teamStanding['points']; ?></span>
                                     </div>
                                 <?php endif; ?>
                             </div>
@@ -2244,13 +2256,13 @@ foreach ($matches as $match) {
                                 <table class="team-roster-table">
                                     <thead>
                                         <tr>
-                                            <th>Player</th>
-                                            <th>P</th>
-                                            <th>W</th>
-                                            <th>L</th>
-                                            <th>D</th>
-                                            <th>Pts</th>
-                                            <th>Leg Diff</th>
+                                            <th><?php echo htmlspecialchars(admin_text('Player', 'Oyuncu')); ?></th>
+                                            <th><?php echo htmlspecialchars(admin_text('P', 'O')); ?></th>
+                                            <th><?php echo htmlspecialchars(admin_text('W', 'G')); ?></th>
+                                            <th><?php echo htmlspecialchars(admin_text('L', 'M')); ?></th>
+                                            <th><?php echo htmlspecialchars(admin_text('D', 'B')); ?></th>
+                                            <th><?php echo htmlspecialchars(admin_text('Pts', 'P')); ?></th>
+                                            <th><?php echo htmlspecialchars(admin_text('Leg Diff', 'Leg Farkı')); ?></th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -2279,7 +2291,7 @@ foreach ($matches as $match) {
                                             <?php endforeach; ?>
                                         <?php else: ?>
                                             <tr>
-                                                <td colspan="7">No players assigned yet.</td>
+                                                <td colspan="7"><?php echo htmlspecialchars(admin_text('No players assigned yet.', 'Henüz oyuncu atanmadı.')); ?></td>
                                             </tr>
                                         <?php endif; ?>
                                     </tbody>
@@ -2295,36 +2307,36 @@ foreach ($matches as $match) {
             <section class="page-section" data-section="bracket" id="adminBracketSection">
                 <div class="header-actions">
                     <div>
-                        <h2>Tournament Bracket</h2>
+                        <h2><?php echo htmlspecialchars(admin_text('Tournament Bracket', 'Turnuva Braketi')); ?></h2>
                         <p class="surface-note">
                             <?php if ($tournament['tour_type'] === 'Double Elimination'): ?>
-                                Use the merged view for the full winners-versus-losers picture, or switch to a single path so the double-elimination layout never dumps every path on top of itself.
+                                <?php echo htmlspecialchars(admin_text('Use the merged view for the full winners-versus-losers picture, or switch to a single path so the double-elimination layout never dumps every path on top of itself.', 'Kazanan-kaybeden görünümünün tamamı için birleşik görünümü kullanın veya çift eliminasyon düzeni tüm yolları üst üste bindirmesin diye tek bir yola geçin.')); ?>
                             <?php else: ?>
-                                Use the connected knockout bracket for drag-and-drop reseeding, quick scoring, and visual round flow. Once a match is completed, its slots stay locked.
+                                <?php echo htmlspecialchars(admin_text('Use the connected knockout bracket for drag-and-drop reseeding, quick scoring, and visual round flow. Once a match is completed, its slots stay locked.', 'Sürükle-bırak yeniden yerleştirme, hızlı skor girişi ve görsel tur akışı için bağlantılı eleme braketini kullanın. Bir maç tamamlandığında sıraları kilitli kalır.')); ?>
                             <?php endif; ?>
                         </p>
                     </div>
                     <div class="dense-actions">
-                        <button type="button" class="action-btn" id="adminBracketFocusButton" onclick="toggleBracketSectionFocus()">Open focus mode</button>
+                        <button type="button" class="action-btn" id="adminBracketFocusButton" onclick="toggleBracketSectionFocus()"><?php echo htmlspecialchars(admin_text('Open focus mode', 'Odak modunu aç')); ?></button>
                     </div>
                 </div>
                 <?php if ($isDoubleElimination): ?>
                     <div class="bracket-focus-toolbar">
-                        <p class="surface-note">Start in the merged grid, then narrow the view to a single path when you need to inspect winners, losers, or the final in isolation.</p>
+                        <p class="surface-note"><?php echo htmlspecialchars(admin_text('Start in the merged grid, then narrow the view to a single path when you need to inspect winners, losers, or the final in isolation.', 'Birleşik ızgarada başlayın, ardından kazananları, kaybedenleri veya finali tek başına incelemek gerektiğinde görünümü tek bir yola daraltın.')); ?></p>
                         <div class="bracket-view-toggle">
-                            <button type="button" class="action-btn" data-bracket-view-button="merged" onclick="showBracketView('merged')">Merged Bracket</button>
-                            <button type="button" class="action-btn" data-bracket-view-button="Winners Bracket" onclick="showBracketView('Winners Bracket')">Winners Bracket</button>
-                            <button type="button" class="action-btn" data-bracket-view-button="Losers Bracket" onclick="showBracketView('Losers Bracket')">Losers Bracket</button>
+                            <button type="button" class="action-btn" data-bracket-view-button="merged" onclick="showBracketView('merged')"><?php echo htmlspecialchars(admin_translate_value('Merged Bracket')); ?></button>
+                            <button type="button" class="action-btn" data-bracket-view-button="Winners Bracket" onclick="showBracketView('Winners Bracket')"><?php echo htmlspecialchars(admin_translate_value('Winners Bracket')); ?></button>
+                            <button type="button" class="action-btn" data-bracket-view-button="Losers Bracket" onclick="showBracketView('Losers Bracket')"><?php echo htmlspecialchars(admin_translate_value('Losers Bracket')); ?></button>
                             <?php if (isset($knockoutBracketGroups['Grand Final'])): ?>
-                                <button type="button" class="action-btn" data-bracket-view-button="Grand Final" onclick="showBracketView('Grand Final')">Finals</button>
+                                <button type="button" class="action-btn" data-bracket-view-button="Grand Final" onclick="showBracketView('Grand Final')"><?php echo htmlspecialchars(admin_text('Finals', 'Finaller')); ?></button>
                             <?php endif; ?>
                         </div>
                     </div>
                 <?php elseif ($hasSingleEliminationBracketViews): ?>
                     <div class="bracket-focus-toolbar">
-                        <p class="surface-note">Filter down to a single bracket path when the connected layout gets crowded, or switch back to the full board when you need the whole knockout picture.</p>
+                        <p class="surface-note"><?php echo htmlspecialchars(admin_text('Filter down to a single bracket path when the connected layout gets crowded, or switch back to the full board when you need the whole knockout picture.', 'Bağlantılı düzen kalabalıklaştığında tek bir braket yoluna filtreleyin veya tüm eleme görünümüne ihtiyaç duyduğunuzda tam panoya geri dönün.')); ?></p>
                         <div class="bracket-view-toggle">
-                            <button type="button" class="action-btn" data-bracket-view-button="all" onclick="showBracketView('all')">All Paths</button>
+                            <button type="button" class="action-btn" data-bracket-view-button="all" onclick="showBracketView('all')"><?php echo htmlspecialchars(admin_text('All Paths', 'Tüm Yollar')); ?></button>
                             <?php foreach ($knockoutBracketGroups as $jumpGroup): ?>
                                 <button
                                     type="button"
@@ -2346,15 +2358,15 @@ foreach ($matches as $match) {
                             <?php if ($isDoubleElimination): ?>
                                 <p class="surface-note" style="margin-top:6px; margin-bottom:14px;">
                                     <?php if ($bracketGroup['source_label'] === 'Opening Round'): ?>
-                                        Every entrant starts here before the field splits into the winners and losers branches.
+                                        <?php echo htmlspecialchars(admin_text('Every entrant starts here before the field splits into the winners and losers branches.', 'Alan kazananlar ve kaybedenler kollarına ayrılmadan önce her katılımcı burada başlar.')); ?>
                                     <?php elseif ($bracketGroup['source_label'] === 'Winners Bracket'): ?>
-                                        Winners from the opening round advance into this right-side single-elimination path.
+                                        <?php echo htmlspecialchars(admin_text('Winners from the opening round advance into this right-side single-elimination path.', 'Açılış turunun kazananları bu sağ taraftaki tekli eleme yoluna ilerler.')); ?>
                                     <?php elseif ($bracketGroup['source_label'] === 'Losers Bracket'): ?>
-                                        Opening-round losers advance into this left-side single-elimination path.
+                                        <?php echo htmlspecialchars(admin_text('Opening-round losers advance into this left-side single-elimination path.', 'Açılış turunun kaybedenleri bu sol taraftaki tekli eleme yoluna ilerler.')); ?>
                                     <?php elseif ($bracketGroup['source_label'] === 'Grand Final'): ?>
-                                        The winners-side champion meets the losers-side champion here.
+                                        <?php echo htmlspecialchars(admin_text('The winners-side champion meets the losers-side champion here.', 'Kazananlar kolunun şampiyonu burada kaybedenler kolunun şampiyonuyla karşılaşır.')); ?>
                                     <?php elseif ($bracketGroup['source_label'] === 'Third Place Playoff'): ?>
-                                        The losing finalists from each branch meet here to settle third and fourth place.
+                                        <?php echo htmlspecialchars(admin_text('The losing finalists from each branch meet here to settle third and fourth place.', 'Her koldaki kaybeden finalistler burada üçüncü ve dördüncü sırayı belirlemek için karşılaşır.')); ?>
                                     <?php endif; ?>
                                 </p>
                             <?php endif; ?>
@@ -2391,13 +2403,13 @@ foreach ($matches as $match) {
                                                         data-match-id="<?php echo (int) $roundMatch['match_id']; ?>"
                                                         tabindex="0"
                                                         role="button"
-                                                        aria-label="Open match <?php echo (int) $matchNumbersById[(int) $roundMatch['match_id']]; ?> details"
+                                                        aria-label="<?php echo htmlspecialchars(admin_text('Open match ', 'Maç ') . (int) $matchNumbersById[(int) $roundMatch['match_id']] . admin_text(' details', ' ayrıntılarını aç')); ?>"
                                                         onclick="openMatchModal(<?php echo (int) $roundMatch['match_id']; ?>)"
                                                     <?php endif; ?>
                                                 >
                                                     <div class="connected-bracket-summary">
-                                                        <span><?php echo $isPlaceholderMatch ? 'Bye Slot' : ('Match ' . (int) $matchNumbersById[(int) $roundMatch['match_id']]); ?></span>
-                                                        <span><?php echo $isPlaceholderMatch ? 'Auto-advance' : htmlspecialchars($roundMatch['match_status']); ?></span>
+                                                        <span><?php echo htmlspecialchars($isPlaceholderMatch ? admin_translate_value('Bye Slot') : admin_translate_value('Match ' . (int) $matchNumbersById[(int) $roundMatch['match_id']])); ?></span>
+                                                        <span><?php echo htmlspecialchars($isPlaceholderMatch ? admin_translate_value('Auto-advance') : admin_match_status_label((string) $roundMatch['match_status'])); ?></span>
                                                     </div>
 
                                                     <div class="connected-bracket-slot-stack">
@@ -2411,13 +2423,13 @@ foreach ($matches as $match) {
                                                                 data-match-status="<?php echo htmlspecialchars($roundMatch['match_status']); ?>"
                                                                 data-slot="player1"
                                                                 data-player-id="<?php echo !empty($roundMatch['player1_id']) ? (int) $roundMatch['player1_id'] : ''; ?>"
-                                                                data-player-name="<?php echo htmlspecialchars(tournament_match_label($roundMatch, 'player1', $matchNumbersById)); ?>"
+                                                                data-player-name="<?php echo htmlspecialchars(tournament_admin_match_label($roundMatch, 'player1', $matchNumbersById)); ?>"
                                                             <?php endif; ?>
                                                             <?php echo $isPlaceholderMatch ? 'disabled' : ''; ?>
                                                         >
-                                                            <span class="bracket-slot-label">Top</span>
-                                                            <span class="bracket-slot-name"><?php echo $isPlaceholderMatch ? 'Bye / no fixture' : htmlspecialchars(tournament_match_label($roundMatch, 'player1', $matchNumbersById)); ?></span>
-                                                            <span class="bracket-slot-hint"><?php echo $isPlaceholderMatch ? 'Bracket spacer' : (!empty($roundMatch['player1_id']) ? 'Drag' : 'Drop'); ?></span>
+                                                            <span class="bracket-slot-label"><?php echo htmlspecialchars(admin_translate_value('Top')); ?></span>
+                                                            <span class="bracket-slot-name"><?php echo $isPlaceholderMatch ? htmlspecialchars(admin_translate_value('Bye / no fixture')) : htmlspecialchars(tournament_admin_match_label($roundMatch, 'player1', $matchNumbersById)); ?></span>
+                                                            <span class="bracket-slot-hint"><?php echo htmlspecialchars($isPlaceholderMatch ? admin_translate_value('Bracket spacer') : admin_translate_value(!empty($roundMatch['player1_id']) ? 'Drag' : 'Drop')); ?></span>
                                                         </button>
 
                                                         <button
@@ -2430,13 +2442,13 @@ foreach ($matches as $match) {
                                                                 data-match-status="<?php echo htmlspecialchars($roundMatch['match_status']); ?>"
                                                                 data-slot="player2"
                                                                 data-player-id="<?php echo !empty($roundMatch['player2_id']) ? (int) $roundMatch['player2_id'] : ''; ?>"
-                                                                data-player-name="<?php echo htmlspecialchars(tournament_match_label($roundMatch, 'player2', $matchNumbersById)); ?>"
+                                                                data-player-name="<?php echo htmlspecialchars(tournament_admin_match_label($roundMatch, 'player2', $matchNumbersById)); ?>"
                                                             <?php endif; ?>
                                                             <?php echo $isPlaceholderMatch ? 'disabled' : ''; ?>
                                                         >
-                                                            <span class="bracket-slot-label">Bottom</span>
-                                                            <span class="bracket-slot-name"><?php echo $isPlaceholderMatch ? 'Auto-advanced slot' : htmlspecialchars(tournament_match_label($roundMatch, 'player2', $matchNumbersById)); ?></span>
-                                                            <span class="bracket-slot-hint"><?php echo $isPlaceholderMatch ? 'Bracket spacer' : (!empty($roundMatch['player2_id']) ? 'Drag' : 'Drop'); ?></span>
+                                                            <span class="bracket-slot-label"><?php echo htmlspecialchars(admin_translate_value('Bottom')); ?></span>
+                                                            <span class="bracket-slot-name"><?php echo $isPlaceholderMatch ? htmlspecialchars(admin_translate_value('Auto-advanced slot')) : htmlspecialchars(tournament_admin_match_label($roundMatch, 'player2', $matchNumbersById)); ?></span>
+                                                            <span class="bracket-slot-hint"><?php echo htmlspecialchars($isPlaceholderMatch ? admin_translate_value('Bracket spacer') : admin_translate_value(!empty($roundMatch['player2_id']) ? 'Drag' : 'Drop')); ?></span>
                                                         </button>
                                                     </div>
                                                 </div>
@@ -2455,27 +2467,27 @@ foreach ($matches as $match) {
             <section class="page-section" data-section="bracket_board">
                 <div class="header-actions">
                     <div>
-                        <h2>Bracket Board</h2>
-                        <p class="bracket-board-note">This keeps the compact card stack from the previous view for quick scanning by round, while the connected bracket handles live reseeding and scoring.</p>
+                        <h2><?php echo htmlspecialchars(admin_text('Bracket Board', 'Braket Panosu')); ?></h2>
+                        <p class="bracket-board-note"><?php echo htmlspecialchars(admin_text('This keeps the compact card stack from the previous view for quick scanning by round, while the connected bracket handles live reseeding and scoring.', 'Bu görünüm, turlara göre hızlı tarama için önceki görünümdeki kompakt kart yığınını korurken bağlantılı braket canlı yeniden yerleştirme ve skor girişini yönetir.')); ?></p>
                     </div>
                 </div>
                 <?php if ($isDoubleElimination): ?>
                     <div class="bracket-focus-toolbar">
-                        <p class="surface-note">Use the same view filters here when you want a denser round-by-round board without mixing the winners and losers paths together.</p>
+                        <p class="surface-note"><?php echo htmlspecialchars(admin_text('Use the same view filters here when you want a denser round-by-round board without mixing the winners and losers paths together.', 'Kazanan ve kaybeden yollarını karıştırmadan daha yoğun bir tur-tur pano istediğinizde burada aynı görünüm filtrelerini kullanın.')); ?></p>
                         <div class="bracket-view-toggle">
-                            <button type="button" class="action-btn" data-bracket-view-button="merged" onclick="showBracketView('merged')">Merged Bracket</button>
-                            <button type="button" class="action-btn" data-bracket-view-button="Winners Bracket" onclick="showBracketView('Winners Bracket')">Winners Bracket</button>
-                            <button type="button" class="action-btn" data-bracket-view-button="Losers Bracket" onclick="showBracketView('Losers Bracket')">Losers Bracket</button>
+                            <button type="button" class="action-btn" data-bracket-view-button="merged" onclick="showBracketView('merged')"><?php echo htmlspecialchars(admin_translate_value('Merged Bracket')); ?></button>
+                            <button type="button" class="action-btn" data-bracket-view-button="Winners Bracket" onclick="showBracketView('Winners Bracket')"><?php echo htmlspecialchars(admin_translate_value('Winners Bracket')); ?></button>
+                            <button type="button" class="action-btn" data-bracket-view-button="Losers Bracket" onclick="showBracketView('Losers Bracket')"><?php echo htmlspecialchars(admin_translate_value('Losers Bracket')); ?></button>
                             <?php if (isset($knockoutBracketGroups['Grand Final'])): ?>
-                                <button type="button" class="action-btn" data-bracket-view-button="Grand Final" onclick="showBracketView('Grand Final')">Finals</button>
+                                <button type="button" class="action-btn" data-bracket-view-button="Grand Final" onclick="showBracketView('Grand Final')"><?php echo htmlspecialchars(admin_text('Finals', 'Finaller')); ?></button>
                             <?php endif; ?>
                         </div>
                     </div>
                 <?php elseif ($hasSingleEliminationBracketViews): ?>
                     <div class="bracket-focus-toolbar">
-                        <p class="surface-note">Use the same knockout path filters here when you want the quick-scan board to stay readable on smaller screens.</p>
+                        <p class="surface-note"><?php echo htmlspecialchars(admin_text('Use the same knockout path filters here when you want the quick-scan board to stay readable on smaller screens.', 'Hızlı tarama panosunun küçük ekranlarda okunaklı kalmasını istediğinizde burada aynı eleme yolu filtrelerini kullanın.')); ?></p>
                         <div class="bracket-view-toggle">
-                            <button type="button" class="action-btn" data-bracket-view-button="all" onclick="showBracketView('all')">All Paths</button>
+                            <button type="button" class="action-btn" data-bracket-view-button="all" onclick="showBracketView('all')"><?php echo htmlspecialchars(admin_text('All Paths', 'Tüm Yollar')); ?></button>
                             <?php foreach ($knockoutBracketGroups as $boardGroup): ?>
                                 <button
                                     type="button"
@@ -2505,37 +2517,37 @@ foreach ($matches as $match) {
                                             ?>
                                             <div class="match-card bracket-card <?php echo htmlspecialchars($visualState['card']); ?>" data-match-card data-match-id="<?php echo (int) $roundMatch['match_id']; ?>">
                                                 <div class="bracket-card-head">
-                                                    <span class="tag">Match <?php echo (int) $matchNumbersById[(int) $roundMatch['match_id']]; ?></span>
-                                                    <span class="tag"><?php echo htmlspecialchars($roundMatch['match_status']); ?></span>
+                                                    <span class="tag"><?php echo htmlspecialchars(admin_translate_value('Match ' . (int) $matchNumbersById[(int) $roundMatch['match_id']])); ?></span>
+                                                    <span class="tag"><?php echo htmlspecialchars(admin_match_status_label((string) $roundMatch['match_status'])); ?></span>
                                                 </div>
                                                 <div class="bracket-card-meta">
-                                                    <span><?php echo htmlspecialchars($roundMatch['match_date']); ?> at <?php echo htmlspecialchars(substr((string) $roundMatch['match_time'], 0, 5)); ?></span>
-                                                    <span class="bracket-link-chip"><?php echo htmlspecialchars($pathLabel); ?></span>
+                                                    <span><?php echo htmlspecialchars($roundMatch['match_date']); ?> <?php echo htmlspecialchars(admin_text('at', 'saat')); ?> <?php echo htmlspecialchars(substr((string) $roundMatch['match_time'], 0, 5)); ?></span>
+                                                    <span class="bracket-link-chip"><?php echo htmlspecialchars(admin_match_flow_label($pathLabel)); ?></span>
                                                 </div>
 
                                                 <div class="bracket-slot <?php echo htmlspecialchars($visualState['player1']); ?>">
-                                                    <span class="bracket-slot-label">Top Slot</span>
-                                                    <span class="bracket-slot-name"><?php echo htmlspecialchars(tournament_match_label($roundMatch, 'player1', $matchNumbersById)); ?></span>
-                                                    <span class="bracket-slot-hint"><?php echo !empty($roundMatch['player1_id']) ? 'Seeded' : 'Waiting'; ?></span>
+                                                    <span class="bracket-slot-label"><?php echo htmlspecialchars(admin_translate_value('Top Slot')); ?></span>
+                                                    <span class="bracket-slot-name"><?php echo htmlspecialchars(tournament_admin_match_label($roundMatch, 'player1', $matchNumbersById)); ?></span>
+                                                    <span class="bracket-slot-hint"><?php echo htmlspecialchars(admin_translate_value(!empty($roundMatch['player1_id']) ? 'Seeded' : 'Waiting')); ?></span>
                                                 </div>
 
                                                 <div class="bracket-slot <?php echo htmlspecialchars($visualState['player2']); ?>">
-                                                    <span class="bracket-slot-label">Bottom Slot</span>
-                                                    <span class="bracket-slot-name"><?php echo htmlspecialchars(tournament_match_label($roundMatch, 'player2', $matchNumbersById)); ?></span>
-                                                    <span class="bracket-slot-hint"><?php echo !empty($roundMatch['player2_id']) ? 'Seeded' : 'Waiting'; ?></span>
+                                                    <span class="bracket-slot-label"><?php echo htmlspecialchars(admin_translate_value('Bottom Slot')); ?></span>
+                                                    <span class="bracket-slot-name"><?php echo htmlspecialchars(tournament_admin_match_label($roundMatch, 'player2', $matchNumbersById)); ?></span>
+                                                    <span class="bracket-slot-hint"><?php echo htmlspecialchars(admin_translate_value(!empty($roundMatch['player2_id']) ? 'Seeded' : 'Waiting')); ?></span>
                                                 </div>
 
                                                 <div class="bracket-card-footer">
                                                     <div class="bracket-status">
                                                         <?php if ($canQuickScore && $roundMatch['player1_score'] !== null && $roundMatch['player2_score'] !== null): ?>
-                                                            Score: <?php echo (int) $roundMatch['player1_score']; ?> - <?php echo (int) $roundMatch['player2_score']; ?>
+                                                            <?php echo htmlspecialchars(admin_text('Score', 'Skor')); ?>: <?php echo (int) $roundMatch['player1_score']; ?> - <?php echo (int) $roundMatch['player2_score']; ?>
                                                         <?php else: ?>
-                                                            Waiting for result
+                                                            <?php echo htmlspecialchars(admin_translate_value('Waiting for result')); ?>
                                                         <?php endif; ?>
                                                     </div>
                                                     <div class="dense-actions">
-                                                        <button type="button" class="action-btn" onclick="openMatchModal(<?php echo (int) $roundMatch['match_id']; ?>)">Details</button>
-                                                        <button type="button" class="cancel-btn" onclick="deleteMatch(<?php echo (int) $roundMatch['match_id']; ?>)">Delete</button>
+                                                        <button type="button" class="action-btn" onclick="openMatchModal(<?php echo (int) $roundMatch['match_id']; ?>)"><?php echo htmlspecialchars(admin_text('Details', 'Ayrıntılar')); ?></button>
+                                                        <button type="button" class="cancel-btn" onclick="deleteMatch(<?php echo (int) $roundMatch['match_id']; ?>)"><?php echo htmlspecialchars(admin_text('Delete', 'Sil')); ?></button>
                                                     </div>
                                                 </div>
                                             </div>
@@ -2554,73 +2566,73 @@ foreach ($matches as $match) {
         <div class="modal-card match-modal-card">
             <div class="header-actions">
                 <div>
-                    <h3>Match Details</h3>
-                    <p class="match-modal-subtitle">Update the scoreline and schedule for the selected matchup.</p>
+                    <h3><?php echo htmlspecialchars(admin_text('Match Details', 'Maç Ayrıntıları')); ?></h3>
+                    <p class="match-modal-subtitle"><?php echo htmlspecialchars(admin_text('Update the scoreline and schedule for the selected matchup.', 'Seçilen eşleşmenin skorunu ve takvimini güncelleyin.')); ?></p>
                 </div>
-                <button type="button" class="cancel-btn" onclick="closeMatchModal()">Close</button>
+                <button type="button" class="cancel-btn" onclick="closeMatchModal()"><?php echo htmlspecialchars(admin_text('Close', 'Kapat')); ?></button>
             </div>
             <input type="hidden" id="mf_match_id">
             <div class="match-modal-summary">
                 <div class="match-modal-meta">
                     <div class="match-chip-row">
-                        <span class="tag" id="mf_match_number">Match</span>
-                        <span class="match-chip" id="mf_round_label">Round</span>
+                        <span class="tag" id="mf_match_number"><?php echo htmlspecialchars(admin_text('Match', 'Maç')); ?></span>
+                        <span class="match-chip" id="mf_round_label"><?php echo htmlspecialchars(admin_text('Round', 'Tur')); ?></span>
                     </div>
                     <div class="match-chip-row">
-                        <span class="tag" id="mf_status_label">Scheduled</span>
-                        <span class="match-chip" id="mf_flow_label">Winner path pending</span>
+                        <span class="tag" id="mf_status_label"><?php echo htmlspecialchars(admin_match_status_label('Scheduled')); ?></span>
+                        <span class="match-chip" id="mf_flow_label"><?php echo htmlspecialchars(admin_translate_value('Winner path pending')); ?></span>
                     </div>
                 </div>
                 <div class="match-player-grid">
                     <div class="match-player-card">
-                        <span>Top slot</span>
+                        <span><?php echo htmlspecialchars(admin_text('Top slot', 'Üst sıra')); ?></span>
                         <a class="player-link" id="mf_player1_link" href="#" hidden></a>
-                        <strong id="mf_player1_label">TBD</strong>
+                        <strong id="mf_player1_label"><?php echo htmlspecialchars(admin_translate_value('TBD')); ?></strong>
                     </div>
                     <div class="match-player-card">
-                        <span>Bottom slot</span>
+                        <span><?php echo htmlspecialchars(admin_text('Bottom slot', 'Alt sıra')); ?></span>
                         <a class="player-link" id="mf_player2_link" href="#" hidden></a>
-                        <strong id="mf_player2_label">TBD</strong>
+                        <strong id="mf_player2_label"><?php echo htmlspecialchars(admin_translate_value('TBD')); ?></strong>
                     </div>
                 </div>
             </div>
             <div class="match-modal-state">
-                <span class="match-modal-state-badge" id="mf_feedback_badge" data-tone="neutral">Ready</span>
-                <span class="surface-note" id="mf_feedback_text">No unsaved changes yet.</span>
+                <span class="match-modal-state-badge" id="mf_feedback_badge" data-tone="neutral"><?php echo htmlspecialchars(admin_text('Ready', 'Hazır')); ?></span>
+                <span class="surface-note" id="mf_feedback_text"><?php echo htmlspecialchars(admin_text('No unsaved changes yet.', 'Henüz kaydedilmemiş değişiklik yok.')); ?></span>
             </div>
             <div class="match-modal-body">
                 <section class="match-modal-section">
-                    <h4>Score Entry</h4>
-                    <p>Record the latest scoreline for this matchup. Results stay disabled until both slots are seeded.</p>
+                    <h4><?php echo htmlspecialchars(admin_text('Score Entry', 'Skor Girişi')); ?></h4>
+                    <p><?php echo htmlspecialchars(admin_text('Record the latest scoreline for this matchup. Results stay disabled until both slots are seeded.', 'Bu eşleşme için en son skoru kaydedin. İki sıra da dolana kadar sonuç kaydı devre dışı kalır.')); ?></p>
                     <div class="match-score-grid">
                         <label class="match-score-field" for="mf_p1s">
-                            <span id="mf_score_label_1">Top slot score</span>
+                            <span id="mf_score_label_1"><?php echo htmlspecialchars(admin_text('Top slot score', 'Üst sıra skoru')); ?></span>
                             <input type="number" id="mf_p1s" min="0" inputmode="numeric">
                         </label>
                         <label class="match-score-field" for="mf_p2s">
-                            <span id="mf_score_label_2">Bottom slot score</span>
+                            <span id="mf_score_label_2"><?php echo htmlspecialchars(admin_text('Bottom slot score', 'Alt sıra skoru')); ?></span>
                             <input type="number" id="mf_p2s" min="0" inputmode="numeric">
                         </label>
                     </div>
                 </section>
                 <section class="match-modal-section">
-                    <h4>Schedule</h4>
-                    <p>Adjust the planned date and start time without touching the bracket wiring.</p>
+                    <h4><?php echo htmlspecialchars(admin_text('Schedule', 'Takvim')); ?></h4>
+                    <p><?php echo htmlspecialchars(admin_text('Adjust the planned date and start time without touching the bracket wiring.', 'Braket bağlantılarına dokunmadan planlanan tarih ve başlangıç saatini ayarlayın.')); ?></p>
                     <div class="inline-grid">
                         <label class="schedule-field" for="mf_date">
-                            <span>Date</span>
+                            <span><?php echo htmlspecialchars(admin_text('Date', 'Tarih')); ?></span>
                             <input type="date" id="mf_date">
                         </label>
                         <label class="schedule-field schedule-field--time" for="mf_time">
-                            <span>Time</span>
+                            <span><?php echo htmlspecialchars(admin_text('Time', 'Saat')); ?></span>
                             <input type="time" id="mf_time">
                         </label>
                     </div>
                 </section>
             </div>
             <div class="form-buttons" style="margin-top:18px;">
-                <button type="button" class="action-btn" id="mf_save_schedule" onclick="saveMatchFields()">Save Schedule</button>
-                <button type="button" class="submit-btn" id="mf_save_result" onclick="saveMatchResult()">Record Result</button>
+                <button type="button" class="action-btn" id="mf_save_schedule" onclick="saveMatchFields()"><?php echo htmlspecialchars(admin_text('Save Schedule', 'Takvimi Kaydet')); ?></button>
+                <button type="button" class="submit-btn" id="mf_save_result" onclick="saveMatchResult()"><?php echo htmlspecialchars(admin_text('Record Result', 'Sonucu Kaydet')); ?></button>
             </div>
         </div>
     </div>
@@ -2628,17 +2640,17 @@ foreach ($matches as $match) {
     <div class="modal-overlay" id="leagueToolsModal">
         <div class="modal-card">
             <div class="header-actions">
-                <h3>Structure Rescheduling</h3>
-                <button type="button" class="cancel-btn" onclick="closeLeagueToolsModal()">Close</button>
+                <h3><?php echo htmlspecialchars(admin_text('Structure Rescheduling', 'Yapı Yeniden Planlama')); ?></h3>
+                <button type="button" class="cancel-btn" onclick="closeLeagueToolsModal()"><?php echo htmlspecialchars(admin_text('Close', 'Kapat')); ?></button>
             </div>
             <div class="inline-grid">
                 <div>
-                    <label for="lt_startdate">New Start Date</label>
+                    <label for="lt_startdate"><?php echo htmlspecialchars(admin_text('New Start Date', 'Yeni Başlangıç Tarihi')); ?></label>
                     <input type="date" id="lt_startdate" value="<?php echo htmlspecialchars(date('Y-m-d', strtotime($tournament['tour_creationDate']))); ?>">
                 </div>
             </div>
             <div class="form-buttons" style="margin-top:16px;">
-                <button type="button" class="submit-btn" onclick="submitLeagueTools()">Apply</button>
+                <button type="button" class="submit-btn" onclick="submitLeagueTools()"><?php echo htmlspecialchars(admin_text('Apply', 'Uygula')); ?></button>
             </div>
         </div>
     </div>

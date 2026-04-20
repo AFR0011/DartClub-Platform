@@ -2,6 +2,7 @@
 require_once '../../services/app_bootstrap.php';
 require_once '../../services/dbConnection.php';
 require_once '../../services/auth.php';
+require_once '../../services/shared/admin_locale_helpers.php';
 
 app_start_session();
 require_any_role(['admin', 'manager']);
@@ -33,7 +34,7 @@ $stmt->execute();
 $result = $stmt->get_result();
 
 if ($result->num_rows === 0) {
-    echo "Match not found";
+    echo admin_text('Match not found', 'Maç bulunamadı');
     exit;
 }
 
@@ -53,11 +54,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     
     // Validate scores are non-negative
     if ($player1_score < 0 || $player2_score < 0) {
-        $_SESSION['error'] = "Scores cannot be negative.";
+        $_SESSION['error'] = admin_text('Scores cannot be negative.', 'Skorlar negatif olamaz.');
     } 
     // Validate at least one player has a positive score
     elseif ($player1_score == 0 && $player2_score == 0) {
-        $_SESSION['error'] = "At least one player must score.";
+        $_SESSION['error'] = admin_text('At least one player must score.', 'En az bir oyuncu skor yapmalıdır.');
     }
     // All validations passed, update the match
     else {
@@ -132,7 +133,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $db->commit();
             
             // Set success message
-            $_SESSION['success'] = "Match result recorded successfully.";
+            $_SESSION['success'] = admin_text('Match result recorded successfully.', 'Maç sonucu başarıyla kaydedildi.');
             
             // Redirect to tournament details
             header("Location: show_tournament_details.php?id=" . $match['tour_id']);
@@ -140,7 +141,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         } catch (Exception $e) {
             // Rollback transaction on error
             $db->rollback();
-            $_SESSION['error'] = "Error recording match result: " . $e->getMessage();
+            $_SESSION['error'] = admin_text('Error recording match result:', 'Maç sonucu kaydedilirken hata oluştu:') . ' ' . $e->getMessage();
         }
     }
 }
@@ -233,11 +234,11 @@ function updatePlayerStanding($db, $tour_id, $player_id, $player_score, $opponen
 ?>
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="<?php echo admin_html_lang(); ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Record Match Result</title>
+    <title><?php echo htmlspecialchars(admin_text('Record Match Result', 'Maç Sonucunu Kaydet')); ?></title>
     <link href="../../css/admin_style.css" rel="stylesheet">
     <script src="../../js/admin_nav.js"></script>
 </head>
@@ -254,12 +255,12 @@ function updatePlayerStanding($db, $tour_id, $player_id, $player_score, $opponen
         <span style="font-size:30px;cursor:pointer" onclick="openNav()">&#9776;</span>
         
         <div class="header-actions">
-            <h1>Record Match Result</h1>
-            <a href="show_tournament_details.php?id=<?php echo $match['tour_id']; ?>" class="back-btn">Back to Tournament</a>
+            <h1><?php echo htmlspecialchars(admin_text('Record Match Result', 'Maç Sonucunu Kaydet')); ?></h1>
+            <a href="show_tournament_details.php?id=<?php echo $match['tour_id']; ?>" class="back-btn"><?php echo htmlspecialchars(admin_text('Back to Tournament', 'Turnuvaya Dön')); ?></a>
         </div>
 
         <div class="success-message" style="background:#eef5ff;color:#1d4ed8;border-left-color:#1d4ed8;">
-            Legacy fallback page. Use the consolidated tournament detail workspace for the primary admin scoring flow.
+            <?php echo htmlspecialchars(admin_text('Legacy fallback page. Use the consolidated tournament detail workspace for the primary admin scoring flow.', 'Eski yedek sayfa. Ana yönetici skor akışı için birleşik turnuva ayrıntı çalışma alanını kullanın.')); ?>
         </div>
         
         <?php if (isset($_SESSION['error'])): ?>
@@ -274,11 +275,11 @@ function updatePlayerStanding($db, $tour_id, $player_id, $player_score, $opponen
         <div class="match-info">
             <h2><?php echo htmlspecialchars($match['tour_title']); ?></h2>
             <p>
-                <strong>Date:</strong> <?php echo date('Y-m-d', strtotime($match['match_date'])); ?> 
-                <strong>Time:</strong> <?php echo $match['match_time']; ?>
+                <strong><?php echo htmlspecialchars(admin_text('Date:', 'Tarih:')); ?></strong> <?php echo date('Y-m-d', strtotime($match['match_date'])); ?> 
+                <strong><?php echo htmlspecialchars(admin_text('Time:', 'Saat:')); ?></strong> <?php echo $match['match_time']; ?>
             </p>
             <p>
-                <strong>Tournament Type:</strong> <?php echo htmlspecialchars($match['tour_type']); ?>
+                <strong><?php echo htmlspecialchars(admin_text('Tournament Type:', 'Turnuva Türü:')); ?></strong> <?php echo htmlspecialchars(admin_tournament_type_label((string) $match['tour_type'])); ?>
             </p>
         </div>
         
@@ -287,53 +288,52 @@ function updatePlayerStanding($db, $tour_id, $player_id, $player_score, $opponen
                 <div class="player player1">
                     <h3><?php echo htmlspecialchars($match['player1_name'] . ' ' . $match['player1_surname']); ?></h3>
                     <div class="score-input">
-                        <label for="player1_score">Score:</label>
+                        <label for="player1_score"><?php echo htmlspecialchars(admin_text('Score:', 'Skor:')); ?></label>
                         <input type="number" name="player1_score" id="player1_score" min="0" required>
                     </div>
                 </div>
                 
-                <div class="vs">VS</div>
+                <div class="vs"><?php echo htmlspecialchars(admin_text('VS', 'VS')); ?></div>
                 
                 <div class="player player2">
                     <h3><?php echo htmlspecialchars($match['player2_name'] . ' ' . $match['player2_surname']); ?></h3>
                     <div class="score-input">
-                        <label for="player2_score">Score:</label>
+                        <label for="player2_score"><?php echo htmlspecialchars(admin_text('Score:', 'Skor:')); ?></label>
                         <input type="number" name="player2_score" id="player2_score" min="0" required>
                     </div>
                 </div>
             </div>
             
             <div class="form-group">
-                <label for="match_notes">Match Notes (Optional):</label>
-                <textarea name="match_notes" id="match_notes" rows="4" placeholder="Enter any notes about the match..."></textarea>
+                <label for="match_notes"><?php echo htmlspecialchars(admin_text('Match Notes (Optional):', 'Maç Notları (İsteğe Bağlı):')); ?></label>
+                <textarea name="match_notes" id="match_notes" rows="4" placeholder="<?php echo htmlspecialchars(admin_text('Enter any notes about the match...', 'Maç hakkında not girin...')); ?>"></textarea>
             </div>
             
             <div class="form-buttons">
-                <button type="submit" class="submit-btn">Record Result</button>
-                <a href="show_tournament_details.php?id=<?php echo $match['tour_id']; ?>" class="cancel-btn">Cancel</a>
+                <button type="submit" class="submit-btn"><?php echo htmlspecialchars(admin_text('Record Result', 'Sonucu Kaydet')); ?></button>
+                <a href="show_tournament_details.php?id=<?php echo $match['tour_id']; ?>" class="cancel-btn"><?php echo htmlspecialchars(admin_text('Cancel', 'İptal')); ?></a>
             </div>
         </form>
         
         <div class="match-help">
-            <h3>Recording Instructions</h3>
+            <h3><?php echo htmlspecialchars(admin_text('Recording Instructions', 'Kayıt Talimatları')); ?></h3>
             <ul>
-                <li>Enter the final score for each player</li>
-                <li>Scores must be non-negative numbers</li>
-                <li>At least one player must have a score greater than zero</li>
-                <li>Equal scores will be recorded as a draw (if allowed in the tournament type)</li>
-                <li>For elimination tournaments, the player with the higher score will advance to the next round</li>
+                <li><?php echo htmlspecialchars(admin_text('Enter the final score for each player', 'Her oyuncu için nihai skoru girin')); ?></li>
+                <li><?php echo htmlspecialchars(admin_text('Scores must be non-negative numbers', 'Skorlar negatif olmayan sayılar olmalıdır')); ?></li>
+                <li><?php echo htmlspecialchars(admin_text('At least one player must have a score greater than zero', 'En az bir oyuncunun skoru sıfırdan büyük olmalıdır')); ?></li>
+                <li><?php echo htmlspecialchars(admin_text('Equal scores will be recorded as a draw (if allowed in the tournament type)', 'Eşit skorlar beraberlik olarak kaydedilir (turnuva türü izin veriyorsa)')); ?></li>
+                <li><?php echo htmlspecialchars(admin_text('For elimination tournaments, the player with the higher score will advance to the next round', 'Eliminasyon turnuvalarında daha yüksek skora sahip oyuncu sonraki tura yükselir')); ?></li>
             </ul>
         </div>
     </div>
     
     <script>
-        function openNav() {
-            document.getElementById("sidenav").style.width = "250px";
-        }
-
-        function closeNav() {
-            document.getElementById("sidenav").style.width = "0";
-        }
+        const recordMatchCopy = <?php echo json_encode([
+            'invalidScores' => admin_text('Please enter valid scores for both players.', 'Lütfen her iki oyuncu için geçerli skor girin.'),
+            'negativeScores' => admin_text('Scores cannot be negative.', 'Skorlar negatif olamaz.'),
+            'atLeastOneScore' => admin_text('At least one player must score.', 'En az bir oyuncu skor yapmalıdır.'),
+            'confirmSubmit' => admin_text('Are you sure you want to record this result? This action cannot be undone.', 'Bu sonucu kaydetmek istediğinizden emin misiniz? Bu işlem geri alınamaz.'),
+        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
         
         // Validate form before submission
         document.getElementById('recordResultForm').addEventListener('submit', function(event) {
@@ -341,25 +341,25 @@ function updatePlayerStanding($db, $tour_id, $player_id, $player_score, $opponen
             const player2Score = parseInt(document.getElementById('player2_score').value);
             
             if (isNaN(player1Score) || isNaN(player2Score)) {
-                alert('Please enter valid scores for both players.');
+                alert(recordMatchCopy.invalidScores);
                 event.preventDefault();
                 return;
             }
             
             if (player1Score < 0 || player2Score < 0) {
-                alert('Scores cannot be negative.');
+                alert(recordMatchCopy.negativeScores);
                 event.preventDefault();
                 return;
             }
             
             if (player1Score === 0 && player2Score === 0) {
-                alert('At least one player must score.');
+                alert(recordMatchCopy.atLeastOneScore);
                 event.preventDefault();
                 return;
             }
             
             // Confirm submission
-            if (!confirm('Are you sure you want to record this result? This action cannot be undone.')) {
+            if (!confirm(recordMatchCopy.confirmSubmit)) {
                 event.preventDefault();
             }
         });

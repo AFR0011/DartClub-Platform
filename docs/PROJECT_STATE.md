@@ -2,14 +2,15 @@
 
 ## Metadata
 - Project: `Dart Club`
-- Last updated: 2026-04-14
+- Last updated: 2026-04-20
 - Repo type: legacy PHP/MySQL website
-- Current repo status: mapped, documented, runtime-tested on XAMPP, and further debug-hardened across the shared public shell, JSON service layer, tournament engine, public/community surfaces, and the latest manual-verification passes covering bracket readability, first-login onboarding, and public-shell form polish
+- Current repo status: mapped, documented, runtime-tested on XAMPP, and further debug-hardened across the shared public shell, JSON service layer, tournament engine, public/community surfaces, and the latest admin-console EN/TR rollout spanning the shared admin locale rail plus the core admin pages
 
 ## Current Objective
 - Finish the migration from an ad-hoc legacy codebase to a maintainable public club platform.
 - Keep the existing plain PHP/MySQL stack.
 - Complete visual/manual QA and polish after the new tournament model, membership workflow, public/community surfaces, and the new EN/TR shell/auth/public-UX fixes are in place.
+- Finish authenticated browser QA on the now-shared admin EN/TR console and close the remaining legacy admin/auth inconsistencies.
 
 ## Current Technical Status
 - The repo now has:
@@ -31,7 +32,7 @@
   - auth/signup/login now share one bootstrap/session path
   - tournament flows are consolidated behind shared helpers, including deferred fixture generation after registration
   - membership, blog, gallery, and profile dashboard flows now have working service layers
-  - visual polish and some legacy admin cleanup still remain
+  - visual polish, admin locale QA, and some legacy admin cleanup still remain
 
 ## Active Backend Baseline
 - Canonical DB/bootstrap path:
@@ -66,6 +67,9 @@
   - managers/admins can publish and moderate
 
 ## What Changed In This Pass
+- Added a shared admin EN/TR locale layer (`services/shared/admin_locale_helpers.php`) plus a console-wide floating language rail in `js/admin_nav.js` / `css/admin_style.css` so the admin locale preference now persists across the full admin surface instead of living on one page.
+- Localized the remaining admin pages, including the tournament detail workspace and the legacy match detail/result fallbacks, so the admin console now renders Turkish copy across headers, tables, modal labels, bracket controls, and shared navigation text.
+- Restyled the shared admin locale switch so it matches the existing admin glass/card treatment instead of reading like a foreign control bolted onto the page chrome.
 - Applied the remaining `Manual Verification.txt` notes by turning the admin tournament `Players` section into a remembered two-panel toggle (`Roster Management` vs `Players Snapshot`) instead of keeping both cards side by side.
 - Added public `tournament_details` back navigation and extended both public/admin single-elimination bracket surfaces with path filters so separate knockout groups can collapse to one visible path at a time instead of crowding the same viewport.
 - Fixed the blog page search field focus regression by restoring focus/caret position after the shell rerender, so typing no longer drops after a single character.
@@ -214,6 +218,8 @@
 
 ## Open Risks
 - Visual/manual QA under Apache/XAMPP still needs a real click-through pass.
+- The new shared admin locale rail and the localized tournament-detail/match-detail flows still need an authenticated browser-eye pass; PHP lint is clean, but no signed-in browser session was run in this pass.
+- Local built-in-server checks showed `pages/admin/admin_panel.php` and `pages/admin/manage_users.php` redirecting cleanly, while DB-backed legacy/tournament detail routes (`pages/admin/show_tournament_details.php`, `pages/admin/view_match_details.php`, and `pages/admin/record_match_result.php`) hit fatal HTML because local MariaDB was refusing connections before those pages reached their auth guard.
 - `create_player.php` plus SMTP/email delivery, including the new signup welcome email path, has not been exercised end to end.
 - Public registration still stores roster registration only; admins decide whether and when registrations become active competition entries.
 - Final UI polish still needs a true browser/responsive pass on the public and admin shells.

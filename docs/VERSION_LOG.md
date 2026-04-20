@@ -1,5 +1,34 @@
 # VERSION_LOG
 
+## Admin Locale Console Pass
+- Date: 2026-04-20
+- Status: shared admin-console localization follow-up focused on full admin EN/TR coverage, a console-wide locale switch, and locale-aware tournament/match admin flows
+- Main changes:
+  - added `services/shared/admin_locale_helpers.php` and rewired the admin console to use a shared `dartClubLocale` preference instead of leaving the admin locale switch stranded on a single page
+  - rebuilt `js/admin_nav.js` / `css/admin_style.css` so every admin page now gets the same EN/TR switch and outside-click sidebar close behavior, with a lighter control design that fits the existing admin glass/card language
+  - localized the remaining admin pages, including `pages/admin/show_tournament_details.php`, `pages/admin/view_match_details.php`, and the legacy match-result fallback, while also localizing the tournament-detail JS feedback/modals
+- Verification in this pass:
+  - targeted PHP lint for:
+    - `pages/admin/admin_panel.php`
+    - `pages/admin/manage_tournaments.php`
+    - `pages/admin/manage_users.php`
+    - `pages/admin/manage_players.php`
+    - `pages/admin/image_upload.php`
+    - `pages/admin/manage_blogs.php`
+    - `pages/admin/record_match_result.php`
+    - `pages/admin/show_tournament_details.php`
+    - `pages/admin/view_match_details.php`
+    - `services/shared/admin_locale_helpers.php`
+  - live built-in-server HTTP checks showing:
+    - unauthenticated `302` redirect for `pages/admin/admin_panel.php`
+    - unauthenticated `302` redirect for `pages/admin/manage_users.php`
+    - `200` fatal HTML on `pages/admin/show_tournament_details.php?id=1`, `pages/admin/view_match_details.php?id=1`, and `pages/admin/record_match_result.php?id=1` because local MariaDB refused the DB connection before those routes reached their auth guard
+  - static/source checks for the shared locale rail styling and the localized admin tournament-detail JS copy after JS syntax validation remained unavailable because no working local `node.exe` was present
+- Still pending:
+  - authenticated browser-eye QA for the new shared admin EN/TR switch across the full admin console
+  - real signed-in verification of localized tournament modal/toast flows and the outside-click sidebar behavior
+  - DB-backed local verification of the tournament-detail and legacy match fallback pages once MariaDB is available again
+
 ## Manual Verification Follow-Up Pass
 - Date: 2026-04-14
 - Status: manual-verification follow-up focused on single-elimination bracket filtering, first-login onboarding, and public-shell form polish

@@ -1,10 +1,10 @@
-<?php require_once '../../services/auth.php'; require_any_role(['admin', 'manager']); ?>
+<?php require_once '../../services/auth.php'; require_once '../../services/shared/admin_locale_helpers.php'; require_any_role(['admin', 'manager']); ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="<?php echo admin_html_lang(); ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gallery Operations</title>
+    <title><?php echo htmlspecialchars(admin_text('Gallery Operations', 'Galeri İşlemleri')); ?></title>
     <link rel="stylesheet" href="../../css/admin_style.css">
     <script src="../../js/admin_nav.js"></script>
 </head>
@@ -19,16 +19,14 @@
     <div class="container">
         <div class="header-actions">
             <span style="font-size:30px;cursor:pointer" onclick="openNav()">&#9776;</span>
-            <h1>Gallery Operations</h1>
+            <h1><?php echo htmlspecialchars(admin_text('Gallery Operations', 'Galeri İşlemleri')); ?></h1>
         </div>
 
         <div class="callout" style="margin:16px 0;padding:12px 16px;border-left:4px solid #1f6feb;background:#eef5ff;">
-            Gallery upload and delete tools now live directly on the public <strong>Gallery</strong> page for managers and admins.
-            Blog post images also flow into the gallery automatically.
+            <?php echo admin_text('Gallery upload and delete tools now live directly on the public <strong>Gallery</strong> page for managers and admins. Blog post images also flow into the gallery automatically.', 'Galeri yükleme ve silme araçları artık yöneticiler ve adminler için doğrudan genel <strong>Galeri</strong> sayfasında yer alıyor. Blog gönderisi görselleri de otomatik olarak galeriye aktarılıyor.'); ?>
         </div>
 
-        <p><a class="details-btn" href="../gallery.html">Open Gallery Workspace</a></p>
+        <p><a class="details-btn" href="../gallery.html"><?php echo htmlspecialchars(admin_text('Open Gallery Workspace', 'Galeri Çalışma Alanını Aç')); ?></a></p>
     </div>
 </body>
 </html>
-

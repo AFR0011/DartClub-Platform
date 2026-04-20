@@ -2,6 +2,7 @@
 require_once '../../services/app_bootstrap.php';
 require_once '../../services/dbConnection.php';
 require_once '../../services/auth.php';
+require_once '../../services/shared/admin_locale_helpers.php';
 
 app_start_session();
 require_any_role(['admin', 'manager']);
@@ -34,7 +35,7 @@ $stmt->execute();
 $result = $stmt->get_result();
 
 if ($result->num_rows === 0) {
-    echo "Match not found";
+    echo admin_text('Match not found', 'Maç bulunamadı');
     exit;
 }
 
@@ -111,11 +112,11 @@ $match_history = $result_history->fetch_all(MYSQLI_ASSOC);
 ?>
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="<?php echo admin_html_lang(); ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Match Details</title>
+    <title><?php echo htmlspecialchars(admin_text('Match Details', 'Maç Ayrıntıları')); ?></title>
     <link href="../../css/admin_style.css" rel="stylesheet">
     <script src="../../js/admin_nav.js"></script>
     <style>
@@ -231,24 +232,24 @@ $match_history = $result_history->fetch_all(MYSQLI_ASSOC);
 
     <div class="container">
         <span style="font-size:30px;cursor:pointer" onclick="openNav()">&#9776;</span>
-        <h1>Match Details</h1>
+        <h1><?php echo htmlspecialchars(admin_text('Match Details', 'Maç Ayrıntıları')); ?></h1>
 
         <div class="success-message" style="background:#eef5ff;color:#1d4ed8;border-left-color:#1d4ed8;">
-            Legacy fallback page. Use the consolidated tournament detail workspace for the primary admin match workflow.
+            <?php echo htmlspecialchars(admin_text('Legacy fallback page. Use the consolidated tournament detail workspace for the primary admin match workflow.', 'Eski yedek sayfa. Ana yönetici maç akışı için birleşik turnuva ayrıntı çalışma alanını kullanın.')); ?>
         </div>
         
         <div class="match-info">
             <h2><?php echo htmlspecialchars($match['tour_title']); ?></h2>
             <p>
-                <strong>Date:</strong> <?php echo date('Y-m-d', strtotime($match['match_date'])); ?> 
-                <strong>Time:</strong> <?php echo $match['match_time']; ?>
+                <strong><?php echo htmlspecialchars(admin_text('Date:', 'Tarih:')); ?></strong> <?php echo date('Y-m-d', strtotime($match['match_date'])); ?> 
+                <strong><?php echo htmlspecialchars(admin_text('Time:', 'Saat:')); ?></strong> <?php echo $match['match_time']; ?>
             </p>
             <p>
-                <strong>Tournament Type:</strong> <?php echo $match['tour_type']; ?>
-                <strong>Status:</strong> <?php echo $match['match_status']; ?>
+                <strong><?php echo htmlspecialchars(admin_text('Tournament Type:', 'Turnuva Türü:')); ?></strong> <?php echo htmlspecialchars(admin_tournament_type_label((string) $match['tour_type'])); ?>
+                <strong><?php echo htmlspecialchars(admin_text('Status:', 'Durum:')); ?></strong> <?php echo htmlspecialchars(admin_match_status_label((string) $match['match_status'])); ?>
             </p>
             <p>
-                <a href="show_tournament_details.php?id=<?php echo $match['tour_id']; ?>" class="back-btn">Back to Tournament</a>
+                <a href="show_tournament_details.php?id=<?php echo $match['tour_id']; ?>" class="back-btn"><?php echo htmlspecialchars(admin_text('Back to Tournament', 'Turnuvaya Dön')); ?></a>
             </p>
         </div>
         
@@ -258,30 +259,30 @@ $match_history = $result_history->fetch_all(MYSQLI_ASSOC);
                 <div class="score"><?php echo $match['player1_score']; ?></div>
                 
                 <?php if ($player1_stats): ?>
-                <h4>Tournament Statistics</h4>
+                <h4><?php echo htmlspecialchars(admin_text('Tournament Statistics', 'Turnuva İstatistikleri')); ?></h4>
                 <table class="stats-table">
                     <tr>
-                        <th>Matches Played</th>
+                        <th><?php echo htmlspecialchars(admin_text('Matches Played', 'Oynanan Maç')); ?></th>
                         <td><?php echo $player1_stats['matches_played']; ?></td>
                     </tr>
                     <tr>
-                        <th>Wins</th>
+                        <th><?php echo htmlspecialchars(admin_text('Wins', 'Galibiyet')); ?></th>
                         <td><?php echo $player1_stats['matches_won']; ?></td>
                     </tr>
                     <tr>
-                        <th>Losses</th>
+                        <th><?php echo htmlspecialchars(admin_text('Losses', 'Mağlubiyet')); ?></th>
                         <td><?php echo $player1_stats['matches_lost']; ?></td>
                     </tr>
                     <tr>
-                        <th>Draws</th>
+                        <th><?php echo htmlspecialchars(admin_text('Draws', 'Beraberlik')); ?></th>
                         <td><?php echo $player1_stats['matches_drawn']; ?></td>
                     </tr>
                     <tr>
-                        <th>Points</th>
+                        <th><?php echo htmlspecialchars(admin_text('Points', 'Puan')); ?></th>
                         <td><?php echo $player1_stats['points']; ?></td>
                     </tr>
                     <tr>
-                        <th>Leg Difference</th>
+                        <th><?php echo htmlspecialchars(admin_text('Leg Difference', 'Leg Farkı')); ?></th>
                         <td><?php echo $player1_stats['leg_difference']; ?></td>
                     </tr>
                 </table>
@@ -291,11 +292,11 @@ $match_history = $result_history->fetch_all(MYSQLI_ASSOC);
             <div class="vs-container">
                 <div>VS</div>
                 <?php if ($winner === 1): ?>
-                    <div>Winner</div>
+                    <div><?php echo htmlspecialchars(admin_text('Winner', 'Kazanan')); ?></div>
                 <?php elseif ($winner === 2): ?>
-                    <div>Winner</div>
+                    <div><?php echo htmlspecialchars(admin_text('Winner', 'Kazanan')); ?></div>
                 <?php else: ?>
-                    <div>Draw</div>
+                    <div><?php echo htmlspecialchars(admin_translate_value('Draw')); ?></div>
                 <?php endif; ?>
             </div>
             
@@ -304,30 +305,30 @@ $match_history = $result_history->fetch_all(MYSQLI_ASSOC);
                 <div class="score"><?php echo $match['player2_score']; ?></div>
                 
                 <?php if ($player2_stats): ?>
-                <h4>Tournament Statistics</h4>
+                <h4><?php echo htmlspecialchars(admin_text('Tournament Statistics', 'Turnuva İstatistikleri')); ?></h4>
                 <table class="stats-table">
                     <tr>
-                        <th>Matches Played</th>
+                        <th><?php echo htmlspecialchars(admin_text('Matches Played', 'Oynanan Maç')); ?></th>
                         <td><?php echo $player2_stats['matches_played']; ?></td>
                     </tr>
                     <tr>
-                        <th>Wins</th>
+                        <th><?php echo htmlspecialchars(admin_text('Wins', 'Galibiyet')); ?></th>
                         <td><?php echo $player2_stats['matches_won']; ?></td>
                     </tr>
                     <tr>
-                        <th>Losses</th>
+                        <th><?php echo htmlspecialchars(admin_text('Losses', 'Mağlubiyet')); ?></th>
                         <td><?php echo $player2_stats['matches_lost']; ?></td>
                     </tr>
                     <tr>
-                        <th>Draws</th>
+                        <th><?php echo htmlspecialchars(admin_text('Draws', 'Beraberlik')); ?></th>
                         <td><?php echo $player2_stats['matches_drawn']; ?></td>
                     </tr>
                     <tr>
-                        <th>Points</th>
+                        <th><?php echo htmlspecialchars(admin_text('Points', 'Puan')); ?></th>
                         <td><?php echo $player2_stats['points']; ?></td>
                     </tr>
                     <tr>
-                        <th>Leg Difference</th>
+                        <th><?php echo htmlspecialchars(admin_text('Leg Difference', 'Leg Farkı')); ?></th>
                         <td><?php echo $player2_stats['leg_difference']; ?></td>
                     </tr>
                 </table>
@@ -337,20 +338,20 @@ $match_history = $result_history->fetch_all(MYSQLI_ASSOC);
         
         <?php if (!empty($match['match_notes'])): ?>
         <div class="match-notes">
-            <h3>Match Notes</h3>
+            <h3><?php echo htmlspecialchars(admin_text('Match Notes', 'Maç Notları')); ?></h3>
             <p><?php echo nl2br(htmlspecialchars($match['match_notes'])); ?></p>
         </div>
         <?php endif; ?>
         
         <?php if (!empty($legs)): ?>
-        <h3>Match Legs</h3>
+        <h3><?php echo htmlspecialchars(admin_text('Match Legs', 'Maç Legleri')); ?></h3>
         <table class="legs-table">
             <tr>
-                <th>Leg</th>
+                <th><?php echo htmlspecialchars(admin_text('Leg', 'Leg')); ?></th>
                 <th><?php echo htmlspecialchars($match['player1_name']); ?></th>
                 <th><?php echo htmlspecialchars($match['player2_name']); ?></th>
-                <th>Winner</th>
-                <th>Notes</th>
+                <th><?php echo htmlspecialchars(admin_text('Winner', 'Kazanan')); ?></th>
+                <th><?php echo htmlspecialchars(admin_text('Notes', 'Notlar')); ?></th>
             </tr>
             <?php foreach ($legs as $leg): ?>
             <tr>
@@ -364,7 +365,7 @@ $match_history = $result_history->fetch_all(MYSQLI_ASSOC);
                     } elseif ($leg['winner_id'] == $match['player2_id']) {
                         echo htmlspecialchars($match['player2_name']);
                     } else {
-                        echo "Draw";
+                        echo htmlspecialchars(admin_translate_value('Draw'));
                     }
                     ?>
                 </td>
@@ -375,13 +376,13 @@ $match_history = $result_history->fetch_all(MYSQLI_ASSOC);
         <?php endif; ?>
         
         <?php if (!empty($match_history)): ?>
-        <h3>Previous Matches</h3>
+        <h3><?php echo htmlspecialchars(admin_text('Previous Matches', 'Önceki Maçlar')); ?></h3>
         <table class="history-table">
             <tr>
-                <th>Date</th>
+                <th><?php echo htmlspecialchars(admin_text('Date', 'Tarih')); ?></th>
                 <th><?php echo htmlspecialchars($match['player1_name']); ?></th>
                 <th><?php echo htmlspecialchars($match['player2_name']); ?></th>
-                <th>Result</th>
+                <th><?php echo htmlspecialchars(admin_text('Result', 'Sonuç')); ?></th>
             </tr>
             <?php foreach ($match_history as $history): ?>
             <tr>
@@ -392,11 +393,11 @@ $match_history = $result_history->fetch_all(MYSQLI_ASSOC);
                     <td>
                         <?php 
                         if ($history['player1_score'] > $history['player2_score']) {
-                            echo htmlspecialchars($match['player1_name']) . " won";
+                            echo htmlspecialchars($match['player1_name']) . htmlspecialchars(admin_text(' won', ' kazandı'));
                         } elseif ($history['player2_score'] > $history['player1_score']) {
-                            echo htmlspecialchars($match['player2_name']) . " won";
+                            echo htmlspecialchars($match['player2_name']) . htmlspecialchars(admin_text(' won', ' kazandı'));
                         } else {
-                            echo "Draw";
+                            echo htmlspecialchars(admin_translate_value('Draw'));
                         }
                         ?>
                     </td>
@@ -406,11 +407,11 @@ $match_history = $result_history->fetch_all(MYSQLI_ASSOC);
                     <td>
                         <?php 
                         if ($history['player2_score'] > $history['player1_score']) {
-                            echo htmlspecialchars($match['player1_name']) . " won";
+                            echo htmlspecialchars($match['player1_name']) . htmlspecialchars(admin_text(' won', ' kazandı'));
                         } elseif ($history['player1_score'] > $history['player2_score']) {
-                            echo htmlspecialchars($match['player2_name']) . " won";
+                            echo htmlspecialchars($match['player2_name']) . htmlspecialchars(admin_text(' won', ' kazandı'));
                         } else {
-                            echo "Draw";
+                            echo htmlspecialchars(admin_translate_value('Draw'));
                         }
                         ?>
                     </td>
@@ -421,8 +422,8 @@ $match_history = $result_history->fetch_all(MYSQLI_ASSOC);
         <?php endif; ?>
         
         <div class="actions">
-            <a href="show_tournament_details.php?id=<?php echo $match['tour_id']; ?>" class="back-btn">Back to Tournament</a>
-            <a href="record_match_result.php?id=<?php echo $match_id; ?>" class="edit-btn">Open legacy score entry</a>
+            <a href="show_tournament_details.php?id=<?php echo $match['tour_id']; ?>" class="back-btn"><?php echo htmlspecialchars(admin_text('Back to Tournament', 'Turnuvaya Dön')); ?></a>
+            <a href="record_match_result.php?id=<?php echo $match_id; ?>" class="edit-btn"><?php echo htmlspecialchars(admin_text('Open legacy score entry', 'Eski skor girişini aç')); ?></a>
         </div>
     </div>
     

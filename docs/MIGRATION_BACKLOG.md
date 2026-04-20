@@ -1,6 +1,9 @@
 # MIGRATION_BACKLOG
 
 ## Completed In This Pass
+- Added a shared admin EN/TR locale helper layer plus a console-wide floating locale rail so the admin language switch now applies across the whole admin panel instead of only `admin_panel.php`.
+- Localized the remaining admin surfaces, including the tournament-detail workspace and the legacy match detail/result fallbacks, so Turkish copy now covers the core admin console pages instead of stopping at the main site and one dashboard page.
+- Restyled the shared admin locale switch so it matches the existing admin shell/card language more closely.
 - Turned the admin tournament `Players` section into a remembered toggle between `Roster Management` and `Players Snapshot` instead of keeping both panels open side by side.
 - Added a public `tournament_details` back button and extended both public/admin single-elimination bracket views with per-path filters so separate knockout groups can collapse to one visible branch at a time.
 - Fixed the blog-page search focus loss caused by full-shell rerenders on every keystroke.
@@ -132,6 +135,10 @@
 - Follow `docs/TESTING_CHECKLIST.md` in order.
 - Use `docs/FREE_DEPLOYMENT_GUIDE.md` for the first real host rollout. Prefer Oracle Cloud Always Free for full PHP/MySQL compatibility; use free shared PHP hosting only as a fallback.
 - Finish browser QA for the latest SRE-note fixes:
+  - authenticated click-through of the new shared admin EN/TR locale rail across every admin page
+  - authenticated verification that localized admin tournament modals, toasts, tables, and bracket controls switch cleanly between English and Turkish
+  - outside-click sidebar close behavior on desktop/mobile across the now-shared admin locale rail layout
+  - DB-backed verification of `show_tournament_details.php`, `view_match_details.php`, and `record_match_result.php` after local MariaDB is available, since the built-in-server checks in this pass hit DB bootstrap fatals before those routes reached auth
   - public tournament `Participants` / `Recent Results` toggle behavior on desktop/tablet/mobile
   - public/admin `Group` team roster cards and player-stat accuracy on a real browser session
   - membership DOCX downloads so they bypass the transition overlay cleanly
@@ -211,7 +218,7 @@
 ## Product/UX Follow-Up
 - Replace placeholder logos/photos where still pending.
 - Review broken or placeholder anchor targets across public pages.
-- Expand locale coverage if Turkish support is meant to cover the full legacy/public/admin surface instead of only the most important public flows.
+- Expand locale coverage further if Turkish support should also cover service-layer error payloads and any remaining legacy/public surfaces outside the now-localized main/admin flows.
 - Decide whether the super-optional light/dark mode request is worth a full theming pass or should stay deferred.
 - Improve error/success messaging for profile, membership, tournament registration, and community flows.
 - Improve the tournament hub registration UX further if manual QA still shows confusion around guest vs signed-in registration behavior.

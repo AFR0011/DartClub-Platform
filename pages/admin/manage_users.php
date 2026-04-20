@@ -1,13 +1,14 @@
 <?php
 require_once '../../services/auth.php';
+require_once '../../services/shared/admin_locale_helpers.php';
 require_role('admin');
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="<?php echo admin_html_lang(); ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Manage Users</title>
+    <title><?php echo htmlspecialchars(admin_text('Manage Users', 'Kullanıcıları Yönet')); ?></title>
     <link href="../../css/admin_style.css" rel="stylesheet">
     <script src="../../js/admin_nav.js"></script>
     <style>
@@ -176,44 +177,44 @@ require_role('admin');
     <div class="container">
         <div class="header-actions">
             <span style="font-size:30px;cursor:pointer" onclick="openNav()">&#9776;</span>
-            <h1>Manage Users</h1>
+            <h1><?php echo htmlspecialchars(admin_text('Manage Users', 'Kullanıcıları Yönet')); ?></h1>
         </div>
 
         <div class="hero-band">
             <div class="hero-card">
-                <h2 style="margin-top:0;">User Operations</h2>
+                <h2 style="margin-top:0;"><?php echo htmlspecialchars(admin_text('User Operations', 'Kullanıcı İşlemleri')); ?></h2>
                 <p class="mini-note" style="margin-top:10px;">
-                    Adjust auth roles without changing membership state, and keep destructive account actions visible and deliberate.
+                    <?php echo htmlspecialchars(admin_text('Adjust auth roles without changing membership state, and keep destructive account actions visible and deliberate.', 'Üyelik durumunu değiştirmeden yetki rollerini düzenleyin ve yıkıcı hesap işlemlerini görünür ve bilinçli tutun.')); ?>
                 </p>
             </div>
             <div class="summary-grid">
                 <div class="summary-card">
-                    <span class="mini-note">What lives here</span>
-                    <strong>Roles + access</strong>
+                    <span class="mini-note"><?php echo htmlspecialchars(admin_text('What lives here', 'Burada ne var')); ?></span>
+                    <strong><?php echo htmlspecialchars(admin_text('Roles + access', 'Roller + erişim')); ?></strong>
                 </div>
                 <div class="summary-card">
-                    <span class="mini-note">Membership stays separate</span>
-                    <strong>Roles is not membership</strong>
+                    <span class="mini-note"><?php echo htmlspecialchars(admin_text('Membership stays separate', 'Üyelik ayrı kalır')); ?></span>
+                    <strong><?php echo htmlspecialchars(admin_text('Roles is not membership', 'Rol üyelik değildir')); ?></strong>
                 </div>
             </div>
         </div>
 
         <div class="surface-panel">
-            <p class="mini-note">Use this table to manage account roles while keeping the club membership workflow independent.</p>
+            <p class="mini-note"><?php echo htmlspecialchars(admin_text('Use this table to manage account roles while keeping the club membership workflow independent.', 'Kulüp üyelik akışını bağımsız tutarken hesap rollerini yönetmek için bu tabloyu kullanın.')); ?></p>
             <div class="toolbar-line">
                 <div>
-                    <label for="userFilter">Filter users</label>
-                    <input type="text" id="userFilter" placeholder="Search by username or email">
+                    <label for="userFilter"><?php echo htmlspecialchars(admin_text('Filter users', 'Kullanıcıları filtrele')); ?></label>
+                    <input type="text" id="userFilter" placeholder="<?php echo htmlspecialchars(admin_text('Search by username or email', 'Kullanıcı adı veya e-postaya göre ara')); ?>">
                 </div>
                 <div>
-                    <label for="userSort">Sort users</label>
+                    <label for="userSort"><?php echo htmlspecialchars(admin_text('Sort users', 'Kullanıcıları sırala')); ?></label>
                     <select id="userSort">
-                        <option value="name_asc">Username A-Z</option>
-                        <option value="name_desc">Username Z-A</option>
-                        <option value="role">Role</option>
-                        <option value="membership">Membership</option>
-                        <option value="id_desc">Newest first</option>
-                        <option value="id_asc">Oldest first</option>
+                        <option value="name_asc"><?php echo htmlspecialchars(admin_text('Username A-Z', 'Kullanıcı adı A-Z')); ?></option>
+                        <option value="name_desc"><?php echo htmlspecialchars(admin_text('Username Z-A', 'Kullanıcı adı Z-A')); ?></option>
+                        <option value="role"><?php echo htmlspecialchars(admin_text('Role', 'Rol')); ?></option>
+                        <option value="membership"><?php echo htmlspecialchars(admin_text('Membership', 'Üyelik')); ?></option>
+                        <option value="id_desc"><?php echo htmlspecialchars(admin_text('Newest first', 'En yeni önce')); ?></option>
+                        <option value="id_asc"><?php echo htmlspecialchars(admin_text('Oldest first', 'En eski önce')); ?></option>
                     </select>
                 </div>
             </div>
@@ -223,12 +224,12 @@ require_role('admin');
             <table class="users-table">
                 <thead>
                     <tr>
-                        <th>User ID</th>
-                        <th>Username</th>
-                        <th>Email</th>
-                        <th>Current Role</th>
-                        <th>Membership</th>
-                        <th>Action</th>
+                        <th><?php echo htmlspecialchars(admin_text('User ID', 'Kullanıcı ID')); ?></th>
+                        <th><?php echo htmlspecialchars(admin_text('Username', 'Kullanıcı Adı')); ?></th>
+                        <th><?php echo htmlspecialchars(admin_text('Email', 'E-posta')); ?></th>
+                        <th><?php echo htmlspecialchars(admin_text('Current Role', 'Mevcut Rol')); ?></th>
+                        <th><?php echo htmlspecialchars(admin_text('Membership', 'Üyelik')); ?></th>
+                        <th><?php echo htmlspecialchars(admin_text('Action', 'İşlem')); ?></th>
                     </tr>
                 </thead>
                 <tbody id="users-list">
@@ -239,10 +240,38 @@ require_role('admin');
     </div>
 
     <script>
+        const usersCopy = <?php echo json_encode([
+            'authRole' => admin_text('Auth role', 'Yetki rolü'),
+            'clubMembership' => admin_text('Club membership', 'Kulüp üyeliği'),
+            'deleteUser' => admin_text('Delete user', 'Kullanıcıyı sil'),
+            'noUsersMatch' => admin_text('No users match the current filter.', 'Geçerli filtreyle eşleşen kullanıcı yok.'),
+            'failedToLoadUsers' => admin_text('Failed to load users.', 'Kullanıcılar yüklenemedi.'),
+            'failedToLoadUsersPrefix' => admin_text('Failed to load users:', 'Kullanıcılar yüklenemedi:'),
+            'roleUpdated' => admin_text('User role updated successfully!', 'Kullanıcı rolü başarıyla güncellendi!'),
+            'genericErrorPrefix' => admin_text('Error:', 'Hata:'),
+            'roleUpdateFailed' => admin_text('Error updating user role. Please try again.', 'Kullanıcı rolü güncellenemedi. Lütfen tekrar deneyin.'),
+            'confirmDelete' => admin_text('Are you sure you want to delete this user?', 'Bu kullanıcıyı silmek istediğinizden emin misiniz?'),
+            'userDeleted' => admin_text('User deleted successfully!', 'Kullanıcı başarıyla silindi!'),
+            'deleteFailed' => admin_text('Error deleting user. Please try again.', 'Kullanıcı silinemedi. Lütfen tekrar deneyin.'),
+            'playerRole' => admin_role_label('player'),
+            'managerRole' => admin_role_label('manager'),
+            'adminRole' => admin_role_label('admin'),
+        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
+
         let allUsers = [];
 
         function formatMembershipStatus(value) {
-            return (value || 'not_submitted').replaceAll('_', ' ');
+            const normalized = (value || 'not_submitted').trim();
+            const lower = normalized.toLowerCase();
+            if (lower === 'not_submitted') {
+                return <?php echo json_encode(admin_membership_label('not_submitted'), JSON_UNESCAPED_UNICODE); ?>;
+            }
+
+            return {
+                approved: <?php echo json_encode(admin_membership_label('approved'), JSON_UNESCAPED_UNICODE); ?>,
+                pending: <?php echo json_encode(admin_membership_label('pending'), JSON_UNESCAPED_UNICODE); ?>,
+                rejected: <?php echo json_encode(admin_membership_label('rejected'), JSON_UNESCAPED_UNICODE); ?>,
+            }[lower] || normalized.replaceAll('_', ' ');
         }
 
         function escapeHtml(value) {
@@ -300,7 +329,7 @@ require_role('admin');
             if (sortedUsers.length === 0) {
                 usersList.innerHTML = `
                     <tr>
-                        <td colspan="6">No users match the current filter.</td>
+                        <td colspan="6">${escapeHtml(usersCopy.noUsersMatch)}</td>
                     </tr>
                 `;
                 return;
@@ -315,22 +344,22 @@ require_role('admin');
                         <td>${escapeHtml(user.email)}</td>
                         <td>
                             <div class="status-stack">
-                                <span class="status-note">Auth role</span>
+                                <span class="status-note">${escapeHtml(usersCopy.authRole)}</span>
                                 <select class="role-pill-select role-${escapeHtml(user.user_role)}" onchange="updateUserRole(${Number(user.user_id)}, this.value); syncRoleSelectAppearance(this);">
-                                    <option value="player" ${user.user_role === 'player' ? 'selected' : ''}>Player</option>
-                                    <option value="manager" ${user.user_role === 'manager' ? 'selected' : ''}>Manager</option>
-                                    <option value="admin" ${user.user_role === 'admin' ? 'selected' : ''}>Admin</option>
+                                    <option value="player" ${user.user_role === 'player' ? 'selected' : ''}>${escapeHtml(usersCopy.playerRole)}</option>
+                                    <option value="manager" ${user.user_role === 'manager' ? 'selected' : ''}>${escapeHtml(usersCopy.managerRole)}</option>
+                                    <option value="admin" ${user.user_role === 'admin' ? 'selected' : ''}>${escapeHtml(usersCopy.adminRole)}</option>
                                 </select>
                             </div>
                         </td>
                         <td>
                             <div class="status-stack">
-                                <span class="status-note">Club membership</span>
+                                <span class="status-note">${escapeHtml(usersCopy.clubMembership)}</span>
                                 <span class="status-pill membership-${escapeHtml(membershipStatus)}">${escapeHtml(formatMembershipStatus(membershipStatus))}</span>
                             </div>
                         </td>
                         <td>
-                            <button onclick="deleteUser(${Number(user.user_id)})" class="cancel-btn">Delete user</button>
+                            <button onclick="deleteUser(${Number(user.user_id)})" class="cancel-btn">${escapeHtml(usersCopy.deleteUser)}</button>
                         </td>
                     </tr>
                 `;
@@ -344,7 +373,7 @@ require_role('admin');
                 .then(response => response.json())
                 .then(data => {
                     if (!Array.isArray(data)) {
-                        const message = data.message || data.error || 'Failed to load users.';
+                        const message = data.message || data.error || usersCopy.failedToLoadUsers;
                         throw new Error(message);
                     }
 
@@ -355,7 +384,7 @@ require_role('admin');
                     console.error('Error loading users:', error);
                     document.getElementById('users-list').innerHTML = `
                         <tr>
-                            <td colspan="6">Failed to load users: ${escapeHtml(error.message)}</td>
+                            <td colspan="6">${escapeHtml(usersCopy.failedToLoadUsersPrefix)} ${escapeHtml(error.message)}</td>
                         </tr>
                     `;
                 });
@@ -375,21 +404,21 @@ require_role('admin');
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    alert('User role updated successfully!');
+                    alert(usersCopy.roleUpdated);
                 } else {
-                    alert('Error: ' + data.message);
+                    alert(`${usersCopy.genericErrorPrefix} ${data.message}`);
                     loadUsers(); // Reload to reset the select
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('Error updating user role. Please try again.');
+                alert(usersCopy.roleUpdateFailed);
                 loadUsers(); // Reload to reset the select
             });
         }
 
         function deleteUser(userId) {
-            if (confirm('Are you sure you want to delete this user?')) {
+            if (confirm(usersCopy.confirmDelete)) {
                 fetch('../../services/delete_user.php', {
                     method: 'POST',
                     headers: {
@@ -402,15 +431,15 @@ require_role('admin');
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        alert('User deleted successfully!');
+                        alert(usersCopy.userDeleted);
                         loadUsers();
                     } else {
-                        alert('Error: ' + data.message);
+                        alert(`${usersCopy.genericErrorPrefix} ${data.message}`);
                     }
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    alert('Error deleting user. Please try again.');
+                    alert(usersCopy.deleteFailed);
                 });
             }
         }

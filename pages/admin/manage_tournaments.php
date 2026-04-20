@@ -3,6 +3,7 @@
 require_once '../../services/app_bootstrap.php';
 require_once '../../services/dbConnection.php';
 require_once '../../services/auth.php';
+require_once '../../services/shared/admin_locale_helpers.php';
 require_once '../../services/shared/tournament_helpers.php';
 require_once '../../services/shared/tournament_view_helpers.php';
 
@@ -36,11 +37,11 @@ $players = $playerStmt->get_result()->fetch_all(MYSQLI_ASSOC);
 $playerStmt->close();
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="<?php echo admin_html_lang(); ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Manage Tournaments</title>
+    <title><?php echo htmlspecialchars(admin_text('Manage Tournaments', 'Turnuvaları Yönet')); ?></title>
     <link href="../../css/admin_style.css" rel="stylesheet">
     <script src="../../js/admin_nav.js"></script>
     <style>
@@ -269,7 +270,7 @@ $playerStmt->close();
     <div class="container">
         <div class="header-actions">
             <span style="font-size:30px;cursor:pointer" onclick="openNav()">&#9776;</span>
-            <h1>Manage Tournaments</h1>
+            <h1><?php echo htmlspecialchars(admin_text('Manage Tournaments', 'Turnuvaları Yönet')); ?></h1>
         </div>
 
         <?php if (isset($_SESSION['success'])): ?>
@@ -292,35 +293,32 @@ $playerStmt->close();
 
         <div class="hero-band">
             <div class="hero-card">
-                <div class="compact-chip">Tournament workspace</div>
-                <h2 style="margin-top:14px;">Create smoother event flows without overpacking the page</h2>
+                <div class="compact-chip"><?php echo htmlspecialchars(admin_text('Tournament workspace', 'Turnuva çalışma alanı')); ?></div>
+                <h2 style="margin-top:14px;"><?php echo htmlspecialchars(admin_text('Create smoother event flows without overpacking the page', 'Sayfayı kalabalıklaştırmadan daha akıcı turnuva akışları oluşturun')); ?></h2>
                 <p style="margin-top:10px;">
-                    Start with an empty tournament or a registration-first roster, then generate fixtures once the field is ready.
-                    The details view now supports same-page structure management, bracket work, and lighter-weight score handling.
+                    <?php echo htmlspecialchars(admin_text('Start with an empty tournament or a registration-first roster, then generate fixtures once the field is ready. The details view now supports same-page structure management, bracket work, and lighter-weight score handling.', 'Boş bir turnuva veya önce kayıt odaklı bir kadroyla başlayın, ardından saha hazır olduğunda fikstürü oluşturun. Ayrıntı görünümü artık aynı sayfada yapı yönetimi, braket çalışması ve daha hafif skor girişi desteği sunuyor.')); ?>
                 </p>
                 <div class="callout" style="margin-bottom:0;">
-                    Supported tournament formats are <strong>Round Robin</strong>, <strong>League</strong>, <strong>Group</strong>, <strong>Elimination</strong>, and <strong>Double Elimination</strong>.
-                    <strong>League</strong> means pool-stage plus knockout, while <strong>Group</strong> currently creates exactly two teams and schedules every player from one team against every player from the other team.
-                    Double-elimination now uses dedicated winners-bracket, losers-bracket, and grand-final paths.
+                    <?php echo admin_text('Supported tournament formats are <strong>Round Robin</strong>, <strong>League</strong>, <strong>Group</strong>, <strong>Elimination</strong>, and <strong>Double Elimination</strong>. <strong>League</strong> means pool-stage plus knockout, while <strong>Group</strong> currently creates exactly two teams and schedules every player from one team against every player from the other team. Double-elimination now uses dedicated winners-bracket, losers-bracket, and grand-final paths.', 'Desteklenen turnuva formatları <strong>Round Robin</strong>, <strong>Lig</strong>, <strong>Grup</strong>, <strong>Eliminasyon</strong> ve <strong>Çift Eliminasyon</strong> biçimleridir. <strong>Lig</strong>, grup aşaması artı eleme anlamına gelir; <strong>Grup</strong> ise şu anda tam olarak iki takım oluşturur ve bir takımdaki her oyuncuyu diğer takımdaki her oyuncuya karşı eşler. Çift eliminasyon artık ayrı kazananlar braketi, kaybedenler braketi ve büyük final yollarını kullanır.'); ?>
                 </div>
             </div>
             <div class="stats-card">
-                <h3 style="margin-top:0;">Tournament Snapshot</h3>
+                <h3 style="margin-top:0;"><?php echo htmlspecialchars(admin_text('Tournament Snapshot', 'Turnuva Özeti')); ?></h3>
                 <div class="stats-grid" style="margin-top:14px;">
                     <div class="stat-pill">
-                        <span class="mini-note">Total tournaments</span>
+                        <span class="mini-note"><?php echo htmlspecialchars(admin_text('Total tournaments', 'Toplam turnuva')); ?></span>
                         <strong><?php echo (int) $statusCounts['total']; ?></strong>
                     </div>
                     <div class="stat-pill">
-                        <span class="mini-note">Registration open</span>
+                        <span class="mini-note"><?php echo htmlspecialchars(admin_text('Registration open', 'Kaydı açık')); ?></span>
                         <strong><?php echo (int) $statusCounts['registration_open']; ?></strong>
                     </div>
                     <div class="stat-pill">
-                        <span class="mini-note">Live now</span>
+                        <span class="mini-note"><?php echo htmlspecialchars(admin_text('Live now', 'Şu an canlı')); ?></span>
                         <strong><?php echo (int) $statusCounts['in_progress']; ?></strong>
                     </div>
                     <div class="stat-pill">
-                        <span class="mini-note">Finished</span>
+                        <span class="mini-note"><?php echo htmlspecialchars(admin_text('Finished', 'Tamamlanan')); ?></span>
                         <strong><?php echo (int) $statusCounts['completed']; ?></strong>
                     </div>
                 </div>
@@ -328,28 +326,28 @@ $playerStmt->close();
         </div>
 
         <div class="section-toggle">
-            <button type="button" class="active" data-section-button="current_tournaments">Current Tournaments</button>
-            <button type="button" data-section-button="create_tournament">Create Tournament</button>
+            <button type="button" class="active" data-section-button="current_tournaments"><?php echo htmlspecialchars(admin_text('Current Tournaments', 'Mevcut Turnuvalar')); ?></button>
+            <button type="button" data-section-button="create_tournament"><?php echo htmlspecialchars(admin_text('Create Tournament', 'Turnuva Oluştur')); ?></button>
         </div>
 
         <section class="page-section active" data-section="current_tournaments">
         <div class="surface-panel">
             <div class="toolbar-line">
                 <div>
-                    <h2 style="margin:0;">Current Tournaments</h2>
-                    <p class="mini-note">Open any tournament to edit its roster, fixtures, groups, or bracket structure.</p>
+                    <h2 style="margin:0;"><?php echo htmlspecialchars(admin_text('Current Tournaments', 'Mevcut Turnuvalar')); ?></h2>
+                    <p class="mini-note"><?php echo htmlspecialchars(admin_text('Open any tournament to edit its roster, fixtures, groups, or bracket structure.', 'Kadrosunu, fikstürünü, gruplarını veya braket yapısını düzenlemek için herhangi bir turnuvayı açın.')); ?></p>
                 </div>
             </div>
             <div class="table-container">
             <table class="tournaments-table">
                 <thead>
                     <tr>
-                        <th>Tournament Name</th>
-                        <th>Type</th>
-                        <th>Start Date</th>
-                        <th>End Date</th>
-                        <th>Status</th>
-                        <th>Action</th>
+                        <th><?php echo htmlspecialchars(admin_text('Tournament Name', 'Turnuva Adı')); ?></th>
+                        <th><?php echo htmlspecialchars(admin_text('Type', 'Tür')); ?></th>
+                        <th><?php echo htmlspecialchars(admin_text('Start Date', 'Başlangıç Tarihi')); ?></th>
+                        <th><?php echo htmlspecialchars(admin_text('End Date', 'Bitiş Tarihi')); ?></th>
+                        <th><?php echo htmlspecialchars(admin_text('Status', 'Durum')); ?></th>
+                        <th><?php echo htmlspecialchars(admin_text('Action', 'İşlem')); ?></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -357,11 +355,11 @@ $playerStmt->close();
                         <?php $status = tournament_status_data($tournament); ?>
                         <tr>
                             <td><?php echo htmlspecialchars($tournament['tour_title']); ?></td>
-                            <td><?php echo htmlspecialchars($tournament['tour_type']); ?></td>
+                            <td><?php echo htmlspecialchars(admin_tournament_type_label((string) $tournament['tour_type'])); ?></td>
                             <td><?php echo htmlspecialchars(date('Y-m-d', strtotime($tournament['tour_creationDate']))); ?></td>
                             <td><?php echo htmlspecialchars(date('Y-m-d', strtotime($tournament['tour_endDate']))); ?></td>
-                            <td class="<?php echo $status['class']; ?>"><?php echo $status['label']; ?></td>
-                            <td><a class="details-btn" href="show_tournament_details.php?id=<?php echo (int) $tournament['tour_id']; ?>">Show Details</a></td>
+                            <td class="<?php echo $status['class']; ?>"><?php echo htmlspecialchars(admin_tournament_status_label((string) ($tournament['status'] ?? ''))); ?></td>
+                            <td><a class="details-btn" href="show_tournament_details.php?id=<?php echo (int) $tournament['tour_id']; ?>"><?php echo htmlspecialchars(admin_text('Show Details', 'Ayrıntıları Aç')); ?></a></td>
                         </tr>
                     <?php endforeach; ?>
                 </tbody>
@@ -373,107 +371,107 @@ $playerStmt->close();
         <section class="page-section" data-section="create_tournament">
         <div class="toolbar-line">
             <div>
-                <h1>Create Tournament</h1>
-                <p class="mini-note">Keep the setup compact now, then do structure work after registration closes.</p>
+                <h1><?php echo htmlspecialchars(admin_text('Create Tournament', 'Turnuva Oluştur')); ?></h1>
+                <p class="mini-note"><?php echo htmlspecialchars(admin_text('Keep the setup compact now, then do structure work after registration closes.', 'Kurulumu şimdi sade tutun, sonra kayıt kapandıktan sonra yapı işlemlerini yapın.')); ?></p>
             </div>
         </div>
         <form action="../../services/create_tournament.php" method="post" id="tournamentForm" class="tournament-form surface-panel" style="padding:24px;">
             <div class="inline-grid">
                 <div class="form-group">
-                    <label for="tournamentType">Tournament Type</label>
+                    <label for="tournamentType"><?php echo htmlspecialchars(admin_text('Tournament Type', 'Turnuva Türü')); ?></label>
                     <select name="tour_type" id="tournamentType" required>
-                        <option value="">Select type</option>
-                        <option value="Round Robin">Round Robin</option>
-                        <option value="League">League</option>
-                        <option value="Group">Group</option>
-                        <option value="Elimination">Elimination</option>
-                        <option value="Double Elimination">Double Elimination</option>
+                        <option value=""><?php echo htmlspecialchars(admin_text('Select type', 'Tür seçin')); ?></option>
+                        <option value="Round Robin"><?php echo htmlspecialchars(admin_tournament_type_label('Round Robin')); ?></option>
+                        <option value="League"><?php echo htmlspecialchars(admin_tournament_type_label('League')); ?></option>
+                        <option value="Group"><?php echo htmlspecialchars(admin_tournament_type_label('Group')); ?></option>
+                        <option value="Elimination"><?php echo htmlspecialchars(admin_tournament_type_label('Elimination')); ?></option>
+                        <option value="Double Elimination"><?php echo htmlspecialchars(admin_tournament_type_label('Double Elimination')); ?></option>
                     </select>
                 </div>
 
                 <div class="form-group">
-                    <label for="tour_title">Tournament Title</label>
+                    <label for="tour_title"><?php echo htmlspecialchars(admin_text('Tournament Title', 'Turnuva Başlığı')); ?></label>
                     <input type="text" name="tour_title" id="tour_title" required>
                 </div>
 
                 <div class="form-group">
-                    <label for="tour_startDate">Start Date</label>
+                    <label for="tour_startDate"><?php echo htmlspecialchars(admin_text('Start Date', 'Başlangıç Tarihi')); ?></label>
                     <input type="date" name="tour_startDate" id="tour_startDate" required>
                 </div>
 
                 <div class="form-group">
-                    <label for="tour_endDate">End Date</label>
+                    <label for="tour_endDate"><?php echo htmlspecialchars(admin_text('End Date', 'Bitiş Tarihi')); ?></label>
                     <input type="date" name="tour_endDate" id="tour_endDate" required>
                 </div>
 
                 <div class="form-group">
-                    <label for="registration_open_at">Registration Opens</label>
+                    <label for="registration_open_at"><?php echo htmlspecialchars(admin_text('Registration Opens', 'Kayıt Açılışı')); ?></label>
                     <input type="date" name="registration_open_at" id="registration_open_at">
                 </div>
 
                 <div class="form-group">
-                    <label for="registration_close_at">Registration Closes</label>
+                    <label for="registration_close_at"><?php echo htmlspecialchars(admin_text('Registration Closes', 'Kayıt Kapanışı')); ?></label>
                     <input type="date" name="registration_close_at" id="registration_close_at">
                 </div>
             </div>
 
             <div id="leagueSettings" class="inline-grid" style="display:none;">
                 <div class="form-group">
-                    <label for="group_count">Number of Groups</label>
+                    <label for="group_count"><?php echo htmlspecialchars(admin_text('Number of Groups', 'Grup Sayısı')); ?></label>
                     <input type="number" name="group_count" id="group_count" min="2" value="2">
                 </div>
 
                 <div class="form-group">
-                    <label for="advancers_per_group">Advancers per Group</label>
+                    <label for="advancers_per_group"><?php echo htmlspecialchars(admin_text('Advancers per Group', 'Grup Başına Yükselenler')); ?></label>
                     <input type="number" name="advancers_per_group" id="advancers_per_group" min="1" value="1">
                 </div>
             </div>
 
             <div id="teamSettings" class="inline-grid" style="display:none;">
                 <div class="form-group">
-                    <label for="team_count">Number of Teams</label>
+                    <label for="team_count"><?php echo htmlspecialchars(admin_text('Number of Teams', 'Takım Sayısı')); ?></label>
                     <input type="number" name="team_count" id="team_count" min="2" max="2" value="2" readonly>
                 </div>
             </div>
 
             <div class="callout" id="typeHint">
-                Select a tournament type to see mode-specific requirements.
+                <?php echo htmlspecialchars(admin_text('Select a tournament type to see mode-specific requirements.', 'Moda özel gereksinimleri görmek için bir turnuva türü seçin.')); ?>
             </div>
 
-            <h3>Select Players (Optional)</h3>
+            <h3><?php echo htmlspecialchars(admin_text('Select Players (Optional)', 'Oyuncuları Seçin (İsteğe Bağlı)')); ?></h3>
             <div class="filter-bar">
                 <div class="form-group" style="margin-bottom:0;">
-                    <label for="playerFilter">Filter player list</label>
-                    <input type="text" id="playerFilter" placeholder="Type a player name to narrow the list">
+                    <label for="playerFilter"><?php echo htmlspecialchars(admin_text('Filter player list', 'Oyuncu listesini filtrele')); ?></label>
+                    <input type="text" id="playerFilter" placeholder="<?php echo htmlspecialchars(admin_text('Type a player name to narrow the list', 'Listeyi daraltmak için bir oyuncu adı yazın')); ?>">
                 </div>
                 <div class="form-group" style="margin-bottom:0;">
-                    <label for="playerSort">Sort player list</label>
+                    <label for="playerSort"><?php echo htmlspecialchars(admin_text('Sort player list', 'Oyuncu listesini sırala')); ?></label>
                     <select id="playerSort">
-                        <option value="name_asc">Player A-Z</option>
-                        <option value="name_desc">Player Z-A</option>
-                        <option value="id_asc">Oldest first</option>
-                        <option value="id_desc">Newest first</option>
+                        <option value="name_asc"><?php echo htmlspecialchars(admin_text('Player A-Z', 'Oyuncu A-Z')); ?></option>
+                        <option value="name_desc"><?php echo htmlspecialchars(admin_text('Player Z-A', 'Oyuncu Z-A')); ?></option>
+                        <option value="id_asc"><?php echo htmlspecialchars(admin_text('Oldest first', 'En eski önce')); ?></option>
+                        <option value="id_desc"><?php echo htmlspecialchars(admin_text('Newest first', 'En yeni önce')); ?></option>
                     </select>
                 </div>
                 <div class="form-group" style="margin-bottom:0;">
-                    <label for="selectedPlayersStatus">Add selected players as</label>
+                    <label for="selectedPlayersStatus"><?php echo htmlspecialchars(admin_text('Add selected players as', 'Seçilen oyuncuları şu olarak ekle')); ?></label>
                     <select name="selectedPlayersStatus" id="selectedPlayersStatus">
-                        <option value="Registered" selected>Registered entrants</option>
-                        <option value="Active">Active competition roster</option>
+                        <option value="Registered" selected><?php echo htmlspecialchars(admin_text('Registered entrants', 'Kayıtlı katılımcılar')); ?></option>
+                        <option value="Active"><?php echo htmlspecialchars(admin_text('Active competition roster', 'Aktif yarışma kadrosu')); ?></option>
                     </select>
                 </div>
             </div>
             <div class="inline-grid" style="margin-bottom:16px;">
                 <div class="form-group">
-                    <div class="compact-chip">Select existing players only if you want to seed the roster immediately.</div>
+                    <div class="compact-chip"><?php echo htmlspecialchars(admin_text('Select existing players only if you want to seed the roster immediately.', 'Kadroyu hemen yerleştirmek istiyorsanız yalnızca mevcut oyuncuları seçin.')); ?></div>
                 </div>
             </div>
             <div class="player-picker">
                 <table class="players-table">
                     <thead>
                         <tr>
-                            <th>Select</th>
-                            <th>Player Name</th>
+                            <th><?php echo htmlspecialchars(admin_text('Select', 'Seç')); ?></th>
+                            <th><?php echo htmlspecialchars(admin_text('Player Name', 'Oyuncu Adı')); ?></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -487,7 +485,7 @@ $playerStmt->close();
                                     <label class="row-toggle" data-row-toggle>
                                         <input type="checkbox" name="selectedPlayers[]" value="<?php echo (int) $player['plr_idNum']; ?>">
                                         <span class="row-toggle-indicator" aria-hidden="true"></span>
-                                        <span>Select</span>
+                                        <span><?php echo htmlspecialchars(admin_text('Select', 'Seç')); ?></span>
                                     </label>
                                 </td>
                                 <td><?php echo htmlspecialchars(trim($player['plr_name'] . ' ' . $player['plr_surname'])); ?></td>
@@ -496,11 +494,11 @@ $playerStmt->close();
                     </tbody>
                 </table>
             </div>
-            <div class="selection-meta" id="playerSelectionCount">No players selected yet.</div>
+            <div class="selection-meta" id="playerSelectionCount"><?php echo htmlspecialchars(admin_text('No players selected yet.', 'Henüz oyuncu seçilmedi.')); ?></div>
 
             <div class="form-buttons" style="margin-top:16px;">
-                <input type="submit" value="Create Tournament" class="submit-btn">
-                <input type="reset" value="Reset Form" class="reset-btn">
+                <input type="submit" value="<?php echo htmlspecialchars(admin_text('Create Tournament', 'Turnuva Oluştur')); ?>" class="submit-btn">
+                <input type="reset" value="<?php echo htmlspecialchars(admin_text('Reset Form', 'Formu Sıfırla')); ?>" class="reset-btn">
             </div>
         </form>
         </section>
@@ -508,6 +506,20 @@ $playerStmt->close();
 
     <script src="../../js/ui_feedback.js?v=20260406-1"></script>
     <script>
+        const tournamentsCopy = <?php echo json_encode([
+            'noPlayersSelected' => admin_text('No players selected yet.', 'Henüz oyuncu seçilmedi.'),
+            'playersSelectedSingular' => admin_text('player selected for the initial roster.', 'oyuncu başlangıç kadrosu için seçildi.'),
+            'playersSelectedPlural' => admin_text('players selected for the initial roster.', 'oyuncu başlangıç kadrosu için seçildi.'),
+            'roundRobinHint' => admin_text('Round Robin tournaments place all competition entrants into one shared standings table once you generate the fixture list.', 'Round Robin turnuvaları, fikstürü oluşturduğunuzda tüm katılımcıları tek bir ortak puan tablosuna yerleştirir.'),
+            'leagueHint' => admin_text('League tournaments assign players to groups, complete group-stage round robins, and automatically build a knockout bracket from top finishers after the structure exists.', 'Lig turnuvaları oyuncuları gruplara ayırır, grup aşamasındaki round robin maçlarını tamamlar ve yapı oluştuktan sonra üst sıralardaki oyunculardan otomatik olarak eleme braketi kurar.'),
+            'groupHint' => admin_text('Group tournaments currently use exactly two teams and schedule every player from Team 1 against every player from Team 2 once the structure is generated.', 'Grup turnuvaları şu anda tam olarak iki takım kullanır ve yapı oluşturulduğunda 1. takımdaki her oyuncuyu 2. takımdaki her oyuncuya karşı eşler.'),
+            'eliminationHint' => admin_text('Elimination tournaments generate a single-elimination bracket with deterministic bye carry-forward once you are ready to seed the final entrant list.', 'Eliminasyon turnuvaları, son katılımcı listesini yerleştirmeye hazır olduğunuzda bay geçenlerin belirli şekilde ilerlediği tekli eleme braketi oluşturur.'),
+            'doubleEliminationHint' => admin_text('Double Elimination tournaments build winners-bracket and losers-bracket paths, then finish with one grand final. Use at least four entrants for a stable bracket.', 'Çift Eliminasyon turnuvaları kazananlar ve kaybedenler braketi yollarını kurar, ardından tek bir büyük final ile biter. Dengeli bir braket için en az dört katılımcı kullanın.'),
+            'selectTypeHint' => admin_text('Select a tournament type to see mode-specific requirements.', 'Moda özel gereksinimleri görmek için bir turnuva türü seçin.'),
+            'endBeforeStart' => admin_text('End date cannot be before start date.', 'Bitiş tarihi başlangıç tarihinden önce olamaz.'),
+            'registrationCloseBeforeOpen' => admin_text('Registration close date cannot be before the registration open date.', 'Kayıt kapanış tarihi kayıt açılış tarihinden önce olamaz.'),
+        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
+
         const typeSelect = document.getElementById('tournamentType');
         const leagueSettings = document.getElementById('leagueSettings');
         const teamSettings = document.getElementById('teamSettings');
@@ -537,8 +549,8 @@ $playerStmt->close();
         function refreshSelectionCount() {
             const selectedCount = document.querySelectorAll('input[name="selectedPlayers[]"]:checked').length;
             playerSelectionCount.textContent = selectedCount > 0
-                ? `${selectedCount} player${selectedCount === 1 ? '' : 's'} selected for the initial roster.`
-                : 'No players selected yet.';
+                ? `${selectedCount} ${selectedCount === 1 ? tournamentsCopy.playersSelectedSingular : tournamentsCopy.playersSelectedPlural}`
+                : tournamentsCopy.noPlayersSelected;
         }
 
         function bindSelectableRows() {
@@ -573,17 +585,17 @@ $playerStmt->close();
             teamSettings.style.display = selectedType === 'Group' ? 'grid' : 'none';
 
             if (selectedType === 'Round Robin') {
-                typeHint.textContent = 'Round Robin tournaments place all competition entrants into one shared standings table once you generate the fixture list.';
+                typeHint.textContent = tournamentsCopy.roundRobinHint;
             } else if (selectedType === 'League') {
-                typeHint.textContent = 'League tournaments assign players to groups, complete group-stage round robins, and automatically build a knockout bracket from top finishers after the structure exists.';
+                typeHint.textContent = tournamentsCopy.leagueHint;
             } else if (selectedType === 'Group') {
-                typeHint.textContent = 'Group tournaments currently use exactly two teams and schedule every player from Team 1 against every player from Team 2 once the structure is generated.';
+                typeHint.textContent = tournamentsCopy.groupHint;
             } else if (selectedType === 'Elimination') {
-                typeHint.textContent = 'Elimination tournaments generate a single-elimination bracket with deterministic bye carry-forward once you are ready to seed the final entrant list.';
+                typeHint.textContent = tournamentsCopy.eliminationHint;
             } else if (selectedType === 'Double Elimination') {
-                typeHint.textContent = 'Double Elimination tournaments build winners-bracket and losers-bracket paths, then finish with one grand final. Use at least four entrants for a stable bracket.';
+                typeHint.textContent = tournamentsCopy.doubleEliminationHint;
             } else {
-                typeHint.textContent = 'Select a tournament type to see mode-specific requirements.';
+                typeHint.textContent = tournamentsCopy.selectTypeHint;
             }
         }
 
@@ -638,7 +650,7 @@ $playerStmt->close();
             const endDate = new Date(document.getElementById('tour_endDate').value);
 
             if (endDate < startDate) {
-                AppUI?.toast('End date cannot be before start date.', 'warning');
+                AppUI?.toast(tournamentsCopy.endBeforeStart, 'warning');
                 event.preventDefault();
                 return;
             }
@@ -646,7 +658,7 @@ $playerStmt->close();
             const registrationOpen = document.getElementById('registration_open_at').value;
             const registrationClose = document.getElementById('registration_close_at').value;
             if (registrationOpen && registrationClose && new Date(registrationClose) < new Date(registrationOpen)) {
-                AppUI?.toast('Registration close date cannot be before the registration open date.', 'warning');
+                AppUI?.toast(tournamentsCopy.registrationCloseBeforeOpen, 'warning');
                 event.preventDefault();
             }
         });

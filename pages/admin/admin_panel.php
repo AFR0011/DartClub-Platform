@@ -3,6 +3,7 @@ require_once '../../services/auth.php';
 require_any_role(['admin', 'manager']);
 require_once '../../services/app_bootstrap.php';
 require_once '../../services/dbConnection.php';
+require_once '../../services/shared/admin_locale_helpers.php';
 require_once '../../services/shared/tournament_helpers.php';
 
 $tournamentIdStmt = $conn->prepare('SELECT tour_id FROM tournaments ORDER BY tour_creationDate DESC');
@@ -53,12 +54,12 @@ usort($attentionTournaments, static function (array $left, array $right): int {
 $attentionTournaments = array_slice($attentionTournaments, 0, 5);
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="<?php echo admin_html_lang(); ?>">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dart Tournament Club Management</title>
+    <title><?php echo htmlspecialchars(admin_text('Dart Tournament Club Management', 'Dart Turnuva Kulübü Yönetimi')); ?></title>
     <link rel="stylesheet" href="../../css/admin_style.css">
     <script src="../../js/admin_nav.js"></script>
     <style>
@@ -138,83 +139,87 @@ $attentionTournaments = array_slice($attentionTournaments, 0, 5);
     <div class="container">
         <div class="header-actions">
             <span style="font-size:30px;cursor:pointer" onclick="openNav()">&#9776;</span>
-            <h1>Dart Tournament Club Management</h1>
+            <h1><?php echo htmlspecialchars(admin_text('Dart Tournament Club Management', 'Dart Turnuva Kulübü Yönetimi')); ?></h1>
         </div>
         <div class="hero-card">
-            <p class="mini-note">Use the sidebar for full operations. This page is the quick triage view for membership, tournament readiness, content, and scoring backlog.</p>
+            <p class="mini-note"><?php echo htmlspecialchars(admin_text('Use the sidebar for full operations. This page is the quick triage view for membership, tournament readiness, content, and scoring backlog.', 'Tam operasyonlar için yan menüyü kullanın. Bu sayfa üyelik, turnuva hazırlığı, içerik ve skor bekleyen işler için hızlı yönetim özetidir.')); ?></p>
             <div class="nav-actions">
-                <a class="details-btn" href="manage_tournaments.php">Tournament Operations</a>
-                <a class="details-btn" href="manage_players.php">Players & Membership</a>
-                <a class="details-btn" href="manage_users.php">User Access</a>
-                <a class="details-btn" href="../blog.html">Public Blog</a>
+                <a class="details-btn" href="manage_tournaments.php"><?php echo htmlspecialchars(admin_text('Tournament Operations', 'Turnuva İşlemleri')); ?></a>
+                <a class="details-btn" href="manage_players.php"><?php echo htmlspecialchars(admin_text('Players & Membership', 'Oyuncular ve Üyelik')); ?></a>
+                <a class="details-btn" href="manage_users.php"><?php echo htmlspecialchars(admin_text('User Access', 'Kullanıcı Erişimi')); ?></a>
+                <a class="details-btn" href="../blog.html"><?php echo htmlspecialchars(admin_text('Public Blog', 'Genel Blog')); ?></a>
             </div>
         </div>
 
         <div class="summary-grid">
             <article class="summary-card">
-                <span>Pending memberships</span>
+                <span><?php echo htmlspecialchars(admin_text('Pending memberships', 'Bekleyen üyelikler')); ?></span>
                 <strong><?php echo $pendingMemberships; ?></strong>
             </article>
             <article class="summary-card">
-                <span>Pending drafts</span>
+                <span><?php echo htmlspecialchars(admin_text('Pending drafts', 'Bekleyen taslaklar')); ?></span>
                 <strong><?php echo $pendingDrafts; ?></strong>
             </article>
             <article class="summary-card">
-                <span>Open registrations</span>
+                <span><?php echo htmlspecialchars(admin_text('Open registrations', 'Açık kayıtlar')); ?></span>
                 <strong><?php echo $statusCounts['registration_open']; ?></strong>
             </article>
             <article class="summary-card">
-                <span>Waiting to start</span>
+                <span><?php echo htmlspecialchars(admin_text('Waiting to start', 'Başlamayı bekleyenler')); ?></span>
                 <strong><?php echo $statusCounts['registration_closed']; ?></strong>
             </article>
             <article class="summary-card">
-                <span>Live tournaments</span>
+                <span><?php echo htmlspecialchars(admin_text('Live tournaments', 'Canlı turnuvalar')); ?></span>
                 <strong><?php echo $statusCounts['in_progress']; ?></strong>
             </article>
             <article class="summary-card">
-                <span>Unscored live matches</span>
+                <span><?php echo htmlspecialchars(admin_text('Unscored live matches', 'Skoru girilmemiş canlı maçlar')); ?></span>
                 <strong><?php echo $scoreBacklog; ?></strong>
             </article>
         </div>
 
         <div class="attention-grid">
             <section class="panel-card">
-                <h2 style="margin-top:0;">Membership Review Queue</h2>
-                <p class="mini-note">Most recent pending applications that still need a decision.</p>
+                <h2 style="margin-top:0;"><?php echo htmlspecialchars(admin_text('Membership Review Queue', 'Üyelik İnceleme Sırası')); ?></h2>
+                <p class="mini-note"><?php echo htmlspecialchars(admin_text('Most recent pending applications that still need a decision.', 'Hâlâ karar bekleyen en güncel başvurular.')); ?></p>
                 <div style="margin-top:16px;">
                     <?php if (!$pendingMembershipRows): ?>
                         <div class="list-card">
-                            <strong>No pending applications</strong>
-                            <p>Membership review is currently clear.</p>
+                            <strong><?php echo htmlspecialchars(admin_text('No pending applications', 'Bekleyen başvuru yok')); ?></strong>
+                            <p><?php echo htmlspecialchars(admin_text('Membership review is currently clear.', 'Üyelik inceleme listesi şu anda boş.')); ?></p>
                         </div>
                     <?php else: ?>
                         <?php foreach ($pendingMembershipRows as $item): ?>
                             <div class="list-card">
                                 <strong><?php echo htmlspecialchars((string) $item['user_name']); ?></strong>
                                 <p><?php echo htmlspecialchars((string) $item['email']); ?></p>
-                                <p>Submitted: <?php echo htmlspecialchars((string) $item['submitted_at']); ?></p>
+                                <p><?php echo htmlspecialchars(admin_text('Submitted:', 'Gönderildi:')); ?> <?php echo htmlspecialchars((string) $item['submitted_at']); ?></p>
                             </div>
                         <?php endforeach; ?>
                     <?php endif; ?>
                 </div>
-                <a class="details-btn" href="manage_players.php" style="margin-top:14px; display:inline-flex;">Open membership review</a>
+                <a class="details-btn" href="manage_players.php" style="margin-top:14px; display:inline-flex;"><?php echo htmlspecialchars(admin_text('Open membership review', 'Üyelik incelemesini aç')); ?></a>
             </section>
 
             <section class="panel-card">
-                <h2 style="margin-top:0;">Tournament Attention Queue</h2>
-                <p class="mini-note">Registration, start, and live scoring work that is still active.</p>
+                <h2 style="margin-top:0;"><?php echo htmlspecialchars(admin_text('Tournament Attention Queue', 'Turnuva Öncelik Sırası')); ?></h2>
+                <p class="mini-note"><?php echo htmlspecialchars(admin_text('Registration, start, and live scoring work that is still active.', 'Kayıt, başlatma ve canlı skor girişi açısından hâlâ işlem gereken turnuvalar.')); ?></p>
                 <div style="margin-top:16px;">
                     <?php if (!$attentionTournaments): ?>
                         <div class="list-card">
-                            <strong>No active tournament queue</strong>
-                            <p>There are no registration-open, waiting, or live tournaments right now.</p>
+                            <strong><?php echo htmlspecialchars(admin_text('No active tournament queue', 'Aktif turnuva sırası yok')); ?></strong>
+                            <p><?php echo htmlspecialchars(admin_text('There are no registration-open, waiting, or live tournaments right now.', 'Şu anda kaydı açık, başlamayı bekleyen veya canlı turnuva yok.')); ?></p>
                         </div>
                     <?php else: ?>
                         <?php foreach ($attentionTournaments as $tournament): ?>
                             <div class="list-card">
                                 <strong><?php echo htmlspecialchars((string) $tournament['tour_title']); ?></strong>
-                                <p><?php echo htmlspecialchars((string) $tournament['tour_type']); ?> - <?php echo htmlspecialchars((string) $tournament['status']); ?></p>
-                                <a class="details-btn" href="show_tournament_details.php?id=<?php echo (int) $tournament['tour_id']; ?>" style="margin-top:10px; display:inline-flex;">Open workspace</a>
+                                <p>
+                                    <span><?php echo htmlspecialchars(admin_tournament_type_label((string) $tournament['tour_type'])); ?></span>
+                                    -
+                                    <span><?php echo htmlspecialchars(admin_tournament_status_label((string) $tournament['status'])); ?></span>
+                                </p>
+                                <a class="details-btn" href="show_tournament_details.php?id=<?php echo (int) $tournament['tour_id']; ?>" style="margin-top:10px; display:inline-flex;"><?php echo htmlspecialchars(admin_text('Open workspace', 'Çalışma alanını aç')); ?></a>
                             </div>
                         <?php endforeach; ?>
                     <?php endif; ?>
@@ -222,14 +227,14 @@ $attentionTournaments = array_slice($attentionTournaments, 0, 5);
             </section>
 
             <section class="panel-card">
-                <h2 style="margin-top:0;">Public Surfaces</h2>
-                <p class="mini-note">Jump directly into the public pages that members and guests actually use.</p>
+                <h2 style="margin-top:0;"><?php echo htmlspecialchars(admin_text('Public Surfaces', 'Genel Sayfalar')); ?></h2>
+                <p class="mini-note"><?php echo htmlspecialchars(admin_text('Jump directly into the public pages that members and guests actually use.', 'Üyelerin ve ziyaretçilerin kullandığı genel sayfalara doğrudan gidin.')); ?></p>
                 <div class="nav-actions">
-                    <a class="details-btn" href="../main.php">Homepage</a>
-                    <a class="details-btn" href="../tournaments.html">Tournaments</a>
-                    <a class="details-btn" href="../blog.html">Blog</a>
-                    <a class="details-btn" href="../gallery.html">Gallery</a>
-                    <a class="details-btn" href="../register.html">Membership page</a>
+                    <a class="details-btn" href="../main.php"><?php echo htmlspecialchars(admin_text('Homepage', 'Ana sayfa')); ?></a>
+                    <a class="details-btn" href="../tournaments.html"><?php echo htmlspecialchars(admin_text('Tournaments', 'Turnuvalar')); ?></a>
+                    <a class="details-btn" href="../blog.html"><?php echo htmlspecialchars(admin_text('Blog', 'Blog')); ?></a>
+                    <a class="details-btn" href="../gallery.html"><?php echo htmlspecialchars(admin_text('Gallery', 'Galeri')); ?></a>
+                    <a class="details-btn" href="../register.html"><?php echo htmlspecialchars(admin_text('Membership page', 'Üyelik sayfası')); ?></a>
                 </div>
             </section>
         </div>
