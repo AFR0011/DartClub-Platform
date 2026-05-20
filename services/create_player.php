@@ -26,6 +26,7 @@ $fields = [
     'address',
     'username',
     'email',
+    'temporaryPassword',
     'appId',
 ];
 $input = [];
@@ -42,7 +43,10 @@ if (!filter_var($input['email'], FILTER_VALIDATE_EMAIL)) {
 }
 
 $applicationId = $input['appId'] !== '' ? (int) $input['appId'] : null;
-$rawPassword = bin2hex(random_bytes(10));
+$rawPassword = $input['temporaryPassword'] !== '' ? $input['temporaryPassword'] : bin2hex(random_bytes(10));
+if ($input['temporaryPassword'] !== '' && strlen($input['temporaryPassword']) < 8) {
+    app_json_response(['success' => false, 'message' => 'Temporary password must be at least 8 characters.'], 422);
+}
 $hashedPassword = password_hash($rawPassword, PASSWORD_BCRYPT);
 $role = 'player';
 $approvedByUserId = $applicationId ? get_current_user_id() : null;

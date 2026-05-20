@@ -142,6 +142,16 @@ if (!empty($knockoutBracketGroups)) {
     }
 }
 $canStartTournament = in_array((string) ($tournament['status'] ?? ''), ['draft', 'registration_open', 'registration_closed'], true);
+$rosterUsesWithdrawals = !empty($tournament['started_at'])
+    || in_array((string) ($tournament['status'] ?? ''), ['in_progress', 'completed'], true)
+    || tournament_structure_is_locked($conn, $tourId);
+$removeActionLabel = $rosterUsesWithdrawals
+    ? admin_text('Withdraw', 'Çekildi')
+    : admin_text('Remove', 'Kaldır');
+$removeSelectionEmptyText = $rosterUsesWithdrawals
+    ? admin_text('No players marked for withdrawal.', 'Çekilmek için işaretlenen oyuncu yok.')
+    : admin_text('No players marked for removal.', 'Kaldırmak için işaretlenen oyuncu yok.');
+$newPlayersDefaultStatus = $rosterUsesWithdrawals ? 'Active' : 'Registered';
 $isDoubleElimination = $tournament['tour_type'] === 'Double Elimination';
 $hasSingleEliminationBracketViews = !$isDoubleElimination && count($knockoutBracketGroups) > 1;
 $bracketPanels = [];
@@ -675,6 +685,21 @@ foreach ($matches as $match) {
         .bracket-view-toggle .action-btn.active {
             background: linear-gradient(180deg, #2563eb 0%, #1d4ed8 100%);
             box-shadow: 0 14px 24px rgba(37, 99, 235, 0.2);
+        }
+
+        .fadeable-completed-match {
+            transition: opacity 0.2s ease, filter 0.2s ease;
+        }
+
+        body.completed-round-fade-enabled .fadeable-completed-match {
+            opacity: 0.42;
+            filter: saturate(0.72);
+        }
+
+        body.completed-round-fade-enabled .fadeable-completed-match:hover,
+        body.completed-round-fade-enabled .fadeable-completed-match:focus-within {
+            opacity: 0.8;
+            filter: saturate(1);
         }
 
         .connected-bracket-round {
@@ -1837,7 +1862,7 @@ foreach ($matches as $match) {
                                 <th><?php echo htmlspecialchars(admin_text('Name', 'Ad')); ?></th>
                                 <th><?php echo htmlspecialchars(admin_text('Status', 'Durum')); ?></th>
                                 <?php if ($tournament['tour_type'] === 'League'): ?><th><?php echo htmlspecialchars(admin_text('Group', 'Grup')); ?></th><?php endif; ?>
-                                <th><?php echo htmlspecialchars(admin_text('Remove', 'Kaldır')); ?></th>
+                                <th><?php echo htmlspecialchars($removeActionLabel); ?></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -1864,7 +1889,7 @@ foreach ($matches as $match) {
                                         <label class="row-toggle" data-row-toggle>
                                             <input type="checkbox" id="remove_player_<?php echo (int) $player['plr_idNum']; ?>" name="remove_players[]" value="<?php echo (int) $player['plr_idNum']; ?>">
                                             <span class="row-toggle-indicator" aria-hidden="true"></span>
-                                            <span><?php echo htmlspecialchars(admin_text('Remove', 'Kaldır')); ?></span>
+                                            <span><?php echo htmlspecialchars($removeActionLabel); ?></span>
                                         </label>
                                     </td>
                                 </tr>
@@ -1872,7 +1897,12 @@ foreach ($matches as $match) {
                         </tbody>
                     </table>
                     </div>
-                    <div class="selection-meta" id="removePlayerSelectionCount"><?php echo htmlspecialchars(admin_text('No players marked for removal.', 'Kaldırmak için işaretlenen oyuncu yok.')); ?></div>
+                    <div class="selection-meta" id="removePlayerSelectionCount"><?php echo htmlspecialchars($removeSelectionEmptyText); ?></div>
+                    <?php if ($rosterUsesWithdrawals): ?>
+                        <p class="surface-note" style="margin-top: 10px;">
+                            <?php echo htmlspecialchars(admin_text('This tournament has already started or recorded results. Removing a player now marks them withdrawn and clears only unfinished future slots so completed match history stays intact.', 'Bu turnuva başladı veya sonuç kaydetti. Oyuncuyu şimdi kaldırmak, tamamlanmış maç geçmişi korunurken oyuncuyu çekildi olarak işaretler ve yalnızca tamamlanmamış gelecek sıralarını temizler.')); ?>
+                        </p>
+                    <?php endif; ?>
 
                     <?php if (!empty($availablePlayers)): ?>
                         <h4 style="margin-top:16px;"><?php echo htmlspecialchars(admin_text('Add Players', 'Oyuncu Ekle')); ?></h4>
@@ -1893,8 +1923,8 @@ foreach ($matches as $match) {
                             <div>
                                 <label for="new_players_status"><?php echo htmlspecialchars(admin_text('Add selected players as', 'Seçili oyuncuları şu olarak ekle')); ?></label>
                                 <select name="new_players_status" id="new_players_status">
-                                    <option value="Registered" selected><?php echo htmlspecialchars(admin_text('Registered entrants', 'Kayıtlı katılımcılar')); ?></option>
-                                    <option value="Active"><?php echo htmlspecialchars(admin_text('Active competition roster', 'Aktif yarışma kadrosu')); ?></option>
+                                    <option value="Registered" <?php echo $newPlayersDefaultStatus === 'Registered' ? 'selected' : ''; ?>><?php echo htmlspecialchars(admin_text('Registered entrants', 'Kayıtlı katılımcılar')); ?></option>
+                                    <option value="Active" <?php echo $newPlayersDefaultStatus === 'Active' ? 'selected' : ''; ?>><?php echo htmlspecialchars(admin_text('Active competition roster', 'Aktif yarışma kadrosu')); ?></option>
                                 </select>
                             </div>
                         </div>
@@ -2350,6 +2380,12 @@ foreach ($matches as $match) {
                         </div>
                     </div>
                 <?php endif; ?>
+                <div class="bracket-focus-toolbar">
+                    <p class="surface-note"><?php echo htmlspecialchars(admin_text('Completed earlier-round matches fade after they feed the next stage, but their names stay visible for auditability.', 'Sonraki aşamaya oyuncu taşıyan tamamlanmış önceki tur maçları soluklaşır; ancak denetlenebilirlik için isimler görünür kalır.')); ?></p>
+                    <div class="bracket-view-toggle">
+                        <button type="button" class="action-btn" data-completed-fade-toggle onclick="toggleCompletedMatchFade()"><?php echo htmlspecialchars(admin_text('Show completed rounds', 'Tamamlanan turları göster')); ?></button>
+                    </div>
+                </div>
                 <div class="<?php echo $isDoubleElimination ? 'merged-bracket-grid' : 'section-grid'; ?>" id="adminBracketGroups" data-bracket-groups-container data-active-view="<?php echo $isDoubleElimination ? 'merged' : 'all'; ?>">
                     <?php foreach ($knockoutBracketGroups as $bracketGroup): ?>
                         <?php $bracketGroupDomId = 'admin-bracket-group-' . preg_replace('/[^a-z0-9]+/i', '-', strtolower((string) $bracketGroup['key'])); ?>
@@ -2397,7 +2433,7 @@ foreach ($matches as $match) {
                                                 style="grid-row: <?php echo $rowStart; ?> / <?php echo $rowEnd; ?>;"
                                             >
                                                 <div
-                                                    class="connected-bracket-matchup <?php echo $isPlaceholderMatch ? 'is-placeholder' : ''; ?> <?php echo $roundIndex < $bracketGroup['round_count'] ? 'has-outgoing' : ''; ?> <?php echo htmlspecialchars($visualState['card']); ?>"
+                                                    class="connected-bracket-matchup <?php echo $isPlaceholderMatch ? 'is-placeholder' : ''; ?> <?php echo $roundIndex < $bracketGroup['round_count'] ? 'has-outgoing' : ''; ?> <?php echo htmlspecialchars($visualState['card']); ?> <?php echo (!$isPlaceholderMatch && $roundMatch['match_status'] === 'Completed' && (!empty($roundMatch['next_match_id']) || !empty($roundMatch['loser_next_match_id']))) ? 'fadeable-completed-match' : ''; ?>"
                                                     <?php if (!$isPlaceholderMatch): ?>
                                                         data-admin-bracket-match
                                                         data-match-id="<?php echo (int) $roundMatch['match_id']; ?>"
@@ -2501,6 +2537,12 @@ foreach ($matches as $match) {
                         </div>
                     </div>
                 <?php endif; ?>
+                <div class="bracket-focus-toolbar">
+                    <p class="surface-note"><?php echo htmlspecialchars(admin_text('Use the same fade toggle here when you need to inspect a completed previous round again.', 'Tamamlanan önceki turu yeniden incelemek gerektiğinde burada da aynı soluklaştırma anahtarını kullanın.')); ?></p>
+                    <div class="bracket-view-toggle">
+                        <button type="button" class="action-btn" data-completed-fade-toggle onclick="toggleCompletedMatchFade()"><?php echo htmlspecialchars(admin_text('Show completed rounds', 'Tamamlanan turları göster')); ?></button>
+                    </div>
+                </div>
                 <div class="<?php echo $isDoubleElimination ? 'merged-bracket-grid' : 'section-grid'; ?>" id="adminBracketBoardGroups" data-bracket-groups-container data-active-view="<?php echo $isDoubleElimination ? 'merged' : 'all'; ?>">
                     <?php foreach ($knockoutBracketGroups as $bracketGroup): ?>
                         <div class="section-card" data-bracket-group="<?php echo htmlspecialchars((string) $bracketGroup['source_label']); ?>">
@@ -2515,7 +2557,7 @@ foreach ($matches as $match) {
                                             $canQuickScore = !empty($roundMatch['player1_id']) && !empty($roundMatch['player2_id']);
                                             $pathLabel = tournament_match_advancement_label($roundMatch, $matchNumbersById);
                                             ?>
-                                            <div class="match-card bracket-card <?php echo htmlspecialchars($visualState['card']); ?>" data-match-card data-match-id="<?php echo (int) $roundMatch['match_id']; ?>">
+                                            <div class="match-card bracket-card <?php echo htmlspecialchars($visualState['card']); ?> <?php echo ($roundMatch['match_status'] === 'Completed' && (!empty($roundMatch['next_match_id']) || !empty($roundMatch['loser_next_match_id']))) ? 'fadeable-completed-match' : ''; ?>" data-match-card data-match-id="<?php echo (int) $roundMatch['match_id']; ?>">
                                                 <div class="bracket-card-head">
                                                     <span class="tag"><?php echo htmlspecialchars(admin_translate_value('Match ' . (int) $matchNumbersById[(int) $roundMatch['match_id']])); ?></span>
                                                     <span class="tag"><?php echo htmlspecialchars(admin_match_status_label((string) $roundMatch['match_status'])); ?></span>
@@ -2661,6 +2703,7 @@ foreach ($matches as $match) {
             'type' => $tournament['tour_type'],
             'status' => $tournament['status'],
             'structureGenerated' => $structureGenerated,
+            'rosterUsesWithdrawals' => $rosterUsesWithdrawals,
             'players' => $playersForJs,
             'matches' => $matchesForJs,
         ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);

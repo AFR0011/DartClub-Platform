@@ -108,8 +108,12 @@ const TOURNAMENT_COPY = {
     focusModeCouldNotOpen: { en: "Could not open focus mode in this browser.", tr: "Bu tarayıcıda odak modu açılamadı." },
     noPlayersMarkedForRemoval: { en: "No players marked for removal.", tr: "Kaldırmak için işaretlenen oyuncu yok." },
     removePlayersSelected: { en: "{count} player marked for removal.|{count} players marked for removal.", tr: "{count} oyuncu kaldırılmak üzere işaretlendi." },
+    noPlayersMarkedForWithdrawal: { en: "No players marked for withdrawal.", tr: "Çekilmek için işaretlenen oyuncu yok." },
+    withdrawPlayersSelected: { en: "{count} player marked for withdrawal.|{count} players marked for withdrawal.", tr: "{count} oyuncu çekilmek üzere işaretlendi." },
     noNewPlayersSelected: { en: "No new players selected yet.", tr: "Henüz eklenecek yeni oyuncu seçilmedi." },
     newPlayersSelected: { en: "{count} new player selected to add.|{count} new players selected to add.", tr: "{count} yeni oyuncu eklenmek üzere seçildi." },
+    showCompletedRounds: { en: "Show completed rounds", tr: "Tamamlanan turları göster" },
+    fadeCompletedRounds: { en: "Fade completed rounds", tr: "Tamamlanan turları soluklaştır" },
 };
 
 function t(key, fallback = "") {
@@ -137,11 +141,12 @@ function formatT(key, replacements = {}, fallback = "") {
 
 function selectionMetaText(kind, count) {
     if (kind === "remove") {
+        const usesWithdrawals = !!TournamentAdminPage.rosterUsesWithdrawals;
         if (count <= 0) {
-            return t("noPlayersMarkedForRemoval");
+            return usesWithdrawals ? t("noPlayersMarkedForWithdrawal") : t("noPlayersMarkedForRemoval");
         }
 
-        const template = t("removePlayersSelected");
+        const template = usesWithdrawals ? t("withdrawPlayersSelected") : t("removePlayersSelected");
         const message = template.includes("|")
             ? template.split("|")[count === 1 ? 0 : 1]
             : template;
@@ -345,6 +350,10 @@ function getPlayersPanelStorageKey() {
     return `tournament-admin:${TournamentAdminPage.tourId || 'default'}:players-panel`;
 }
 
+function getCompletedFadeStorageKey() {
+    return `tournament-admin:${TournamentAdminPage.tourId || 'default'}:completed-fade`;
+}
+
 function rememberPlayersPanel(panelName) {
     if (!panelName) {
         return;
@@ -363,6 +372,37 @@ function readRememberedPlayersPanel() {
     } catch (error) {
         return null;
     }
+}
+
+function readRememberedCompletedFade() {
+    try {
+        const saved = window.sessionStorage.getItem(getCompletedFadeStorageKey());
+        return saved === null ? true : saved === 'true';
+    } catch (error) {
+        return true;
+    }
+}
+
+function rememberCompletedFade(enabled) {
+    try {
+        window.sessionStorage.setItem(getCompletedFadeStorageKey(), enabled ? 'true' : 'false');
+    } catch (error) {
+        console.warn('Failed to persist completed-round fade state:', error);
+    }
+}
+
+function syncCompletedMatchFadeState(enabled = readRememberedCompletedFade()) {
+    document.body.classList.toggle('completed-round-fade-enabled', enabled);
+    document.querySelectorAll('[data-completed-fade-toggle]').forEach((button) => {
+        button.textContent = enabled ? t('showCompletedRounds') : t('fadeCompletedRounds');
+        button.classList.toggle('active', !enabled);
+    });
+}
+
+function toggleCompletedMatchFade() {
+    const nextEnabled = !document.body.classList.contains('completed-round-fade-enabled');
+    rememberCompletedFade(nextEnabled);
+    syncCompletedMatchFadeState(nextEnabled);
 }
 
 async function postJson(url, payload) {
@@ -1421,6 +1461,7 @@ function initializeTournamentPage(preferredSection = null) {
     showSection(preferredSection || readRememberedSection() || getCurrentSectionName() || 'details');
     showPlayersPanel(readRememberedPlayersPanel() || 'roster');
     showBracketView(readRememberedBracketView() || 'merged');
+    syncCompletedMatchFadeState();
     syncBracketFocusButton();
 }
 
@@ -1451,3 +1492,4 @@ window.openLeagueToolsModal = openLeagueToolsModal;
 window.closeLeagueToolsModal = closeLeagueToolsModal;
 window.submitLeagueTools = submitLeagueTools;
 window.saveTeamMatchResult = saveTeamMatchResult;
+window.toggleCompletedMatchFade = toggleCompletedMatchFade;

@@ -1028,6 +1028,9 @@ function tournament_update(mysqli $db, int $tourId, array $payload): void
 {
     tournament_assert_mutable($db, $tourId);
     $tournament = tournament_fetch_settings($db, $tourId);
+    $startedOrLocked = !empty($tournament['started_at'])
+        || in_array((string) ($tournament['status'] ?? ''), ['in_progress', 'completed'], true)
+        || tournament_structure_is_locked($db, $tourId);
 
     $playerRowsStmt = $db->prepare('SELECT plr_id, player_status FROM tournament_players WHERE tour_id = ?');
     $playerRowsStmt->bind_param('i', $tourId);
@@ -1055,6 +1058,11 @@ function tournament_update(mysqli $db, int $tourId, array $payload): void
     }
 
     foreach ($removePlayerIds as $playerId) {
+        if ($startedOrLocked && array_key_exists($playerId, $finalStatuses)) {
+            $finalStatuses[$playerId] = 'Withdrawn';
+            continue;
+        }
+
         unset($finalStatuses[$playerId]);
     }
 
@@ -1077,7 +1085,11 @@ function tournament_update(mysqli $db, int $tourId, array $payload): void
         'team_count' => $payload['team_count'] ?? $tournament['team_count'],
         'is_public' => $payload['is_public'] ?? $tournament['is_public'],
     ];
-    $normalized = tournament_normalize_settings($settingsInput, count($finalStatuses));
+    $competitionPlayerCount = count(array_filter(
+        $finalStatuses,
+        static fn (string $status): bool => $status !== 'Withdrawn'
+    ));
+    $normalized = tournament_normalize_settings($settingsInput, $competitionPlayerCount);
 
     $updateTournament = $db->prepare(
         'UPDATE tournaments
@@ -1120,6 +1132,21 @@ function tournament_update(mysqli $db, int $tourId, array $payload): void
     $updateTournament->close();
 
     foreach ($removePlayerIds as $playerId) {
+        if ($startedOrLocked) {
+            $clearFutureSlots = $db->prepare(
+                "UPDATE matches
+                 SET player1_id = CASE WHEN player1_id = ? THEN NULL ELSE player1_id END,
+                     player2_id = CASE WHEN player2_id = ? THEN NULL ELSE player2_id END
+                 WHERE tour_id = ?
+                   AND match_status <> 'Completed'
+                   AND (player1_id = ? OR player2_id = ?)"
+            );
+            $clearFutureSlots->bind_param('iiiii', $playerId, $playerId, $tourId, $playerId, $playerId);
+            $clearFutureSlots->execute();
+            $clearFutureSlots->close();
+            continue;
+        }
+
         $deleteTp = $db->prepare('DELETE FROM tournament_players WHERE tour_id = ? AND plr_id = ?');
         $deleteTp->bind_param('ii', $tourId, $playerId);
         $deleteTp->execute();

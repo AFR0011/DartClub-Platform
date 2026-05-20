@@ -43,8 +43,8 @@
           <div class="home_data">
             <h2 class="home__subtitle" data-i18n-en="Play. Compete. Belong." data-i18n-tr="Oyna. Yaris. Ait ol.">Play. Compete. Belong.</h2>
             <h1 class="home__title" style="color: red" data-i18n-en="Famagusta Dart Club" data-i18n-tr="Gazimagusa Dart Kulubu">Famagusta Dart Club</h1>
-            <p class="home__desctiption" data-i18n-en="Follow club tournaments, player stories, public brackets, and membership activity from one shared home base." data-i18n-tr="Kulup turnuvalarini, oyuncu hikayelerini, acik braketleri ve uyelik sureclerini tek bir merkezden takip edin.">
-              Follow club tournaments, player stories, public brackets, and membership activity from one shared home base.
+            <p class="home__desctiption" data-i18n-en="Follow club tournaments, player stories, match progress, and membership activity from one shared home base." data-i18n-tr="Kulup turnuvalarini, oyuncu hikayelerini, mac ilerleyisini ve uyelik sureclerini tek bir merkezden takip edin.">
+              Follow club tournaments, player stories, match progress, and membership activity from one shared home base.
             </p>
             <div class="home__actions">
               <a href="tournaments.html" class="button button__flex">
@@ -225,10 +225,10 @@
                 </div>
               </div>
 
-              <p class="about__description" data-i18n-en="Famagusta Dart Club brings together local players, club members, and competition organizers around one shared darts calendar. The website now handles public tournament discovery, player profiles, membership applications, club news, and media so the whole community can follow the same workflow. Whether you are joining your first event or tracking a full bracket run, the goal is the same: make the club easy to follow and easy to participate in." data-i18n-tr="Gazimagusa Dart Kulubu; yerel oyunculari, kulup uyelerini ve organizatorleri tek bir ortak dart takvimi etrafinda bulusturur. Web sitesi artik acik turnuva kesfini, oyuncu profillerini, uyelik basvurularini, kulup haberlerini ve medyayi tek bir akista topluyor. Ister ilk etkinliginize katilin ister tam bir braket kosusunu takip edin, amac ayni: kulubu takip etmeyi ve katilimi kolaylastirmak.">
+              <p class="about__description" data-i18n-en="Famagusta Dart Club brings together local players, club members, and competition organizers around one shared darts calendar. The website now handles public tournament discovery, player profiles, membership applications, club news, and media so the whole community can follow the same workflow. Whether you are joining your first event or tracking a full tournament run, the goal is the same: make the club easy to follow and easy to participate in." data-i18n-tr="Gazimagusa Dart Kulubu; yerel oyunculari, kulup uyelerini ve organizatorleri tek bir ortak dart takvimi etrafinda bulusturur. Web sitesi artik acik turnuva kesfini, oyuncu profillerini, uyelik basvurularini, kulup haberlerini ve medyayi tek bir akista topluyor. Ister ilk etkinliginize katilin ister tam bir turnuva yolculugunu takip edin, amac ayni: kulubu takip etmeyi ve katilimi kolaylastirmak.">
                 Famagusta Dart Club brings together local players, club members, and competition organizers around one shared darts calendar.
                 The website now handles public tournament discovery, player profiles, membership applications, club news, and media so the whole community can follow the same workflow.
-                Whether you are joining your first event or tracking a full bracket run, the goal is the same: make the club easy to follow and easy to participate in.
+                Whether you are joining your first event or tracking a full tournament run, the goal is the same: make the club easy to follow and easy to participate in.
               </p>
               <div style="display:flex; flex-wrap:wrap; gap:0.85rem; justify-content:center;">
                 <a href="about.html" class="button button__flex">
@@ -264,7 +264,7 @@
             <img src="../files/media/images/logo.png" alt="logo img" />Famagusta Dart Club
           </a>
           <p class="footer__description">
-            Follow tournament brackets, club updates, and membership activity from the main public pages.
+            Follow tournament progress, club updates, and membership activity from the main public pages.
           </p>
           <p class="footer__description">
             Use the Join the Club page for membership paperwork, or contact the club directly through Facebook or phone.

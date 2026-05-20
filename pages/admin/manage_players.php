@@ -144,6 +144,19 @@ $players = $playersQuery ? $playersQuery->fetch_all(MYSQLI_ASSOC) : [];
             margin-top: 12px;
         }
 
+        .guest-player-grid {
+            display: grid;
+            gap: 12px;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            margin-top: 14px;
+        }
+
+        .guest-player-actions {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 14px;
+        }
+
         @media (max-width: 980px) {
             .membership-actions-inline {
                 display: none;
@@ -176,6 +189,10 @@ $players = $playersQuery ? $playersQuery->fetch_all(MYSQLI_ASSOC) : [];
 
         @media (max-width: 760px) {
             .toolbar-line {
+                grid-template-columns: 1fr;
+            }
+
+            .guest-player-grid {
                 grid-template-columns: 1fr;
             }
         }
@@ -249,6 +266,26 @@ $players = $playersQuery ? $playersQuery->fetch_all(MYSQLI_ASSOC) : [];
         <section class="page-section" data-section="player_registry">
         <div class="panel-card" style="margin-top: 24px;">
             <h2><?php echo htmlspecialchars(admin_text('Player Registry', 'Oyuncu Kaydı')); ?></h2>
+            <p><?php echo htmlspecialchars(admin_text('Players without accounts can still be added to tournament rosters. Create them here when you need a guest entrant or a walk-in participant.', 'Hesabı olmayan oyuncular da turnuva kadrolarına eklenebilir. Misafir katılımcı veya sonradan gelen oyuncu gerektiğinde onları burada oluşturun.')); ?></p>
+            <form id="createGuestPlayerForm">
+                <div class="guest-player-grid">
+                    <div>
+                        <label for="guestFirstName"><?php echo htmlspecialchars(admin_text('First name', 'Ad')); ?></label>
+                        <input type="text" id="guestFirstName" name="first_name" required>
+                    </div>
+                    <div>
+                        <label for="guestLastName"><?php echo htmlspecialchars(admin_text('Surname', 'Soyad')); ?></label>
+                        <input type="text" id="guestLastName" name="last_name" required>
+                    </div>
+                    <div>
+                        <label for="guestPhone"><?php echo htmlspecialchars(admin_text('Phone', 'Telefon')); ?></label>
+                        <input type="text" id="guestPhone" name="phone">
+                    </div>
+                </div>
+                <div class="guest-player-actions">
+                    <button type="submit" class="submit-btn"><?php echo htmlspecialchars(admin_text('Create Guest Player', 'Misafir Oyuncu Oluştur')); ?></button>
+                </div>
+            </form>
             <div class="toolbar-line">
                 <div>
                     <label for="registryFilter"><?php echo htmlspecialchars(admin_text('Filter registry', 'Kaydı filtrele')); ?></label>
@@ -290,7 +327,7 @@ $players = $playersQuery ? $playersQuery->fetch_all(MYSQLI_ASSOC) : [];
                                 <td><?php echo htmlspecialchars((string) ($player['user_name'] ?? '-')); ?></td>
                                 <td><?php echo htmlspecialchars((string) ($player['email'] ?? '-')); ?></td>
                                 <td><?php echo htmlspecialchars((string) ($player['plr_phone'] ?? '-')); ?></td>
-                                <td><?php echo htmlspecialchars(admin_role_label((string) ($player['user_role'] ?? 'player'))); ?></td>
+                                <td><?php echo htmlspecialchars($player['user_id'] !== null ? admin_role_label((string) ($player['user_role'] ?? 'player')) : admin_text('Guest only', 'Hesapsız oyuncu')); ?></td>
                                 <td><?php echo htmlspecialchars(admin_membership_label((string) ($player['membership_status'] ?? 'not_submitted'))); ?></td>
                             </tr>
                         <?php endforeach; ?>
@@ -334,6 +371,8 @@ $players = $playersQuery ? $playersQuery->fetch_all(MYSQLI_ASSOC) : [];
             'applicationApproved' => admin_text('Application approved successfully.', 'Başvuru başarıyla onaylandı.'),
             'applicationRejected' => admin_text('Application rejected successfully.', 'Başvuru başarıyla reddedildi.'),
             'submittedLabel' => admin_text('Submitted', 'Gönderildi'),
+            'guestPlayerCreated' => admin_text('Guest player created successfully.', 'Misafir oyuncu başarıyla oluşturuldu.'),
+            'guestPlayerCreateFailed' => admin_text('Failed to create guest player.', 'Misafir oyuncu oluşturulamadı.'),
         ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
 
         const previewFrame = document.getElementById('application-preview');
@@ -381,6 +420,29 @@ $players = $playersQuery ? $playersQuery->fetch_all(MYSQLI_ASSOC) : [];
 
             const response = await fetch(url, options);
             return response.json();
+        }
+
+        async function createGuestPlayer(event) {
+            event.preventDefault();
+            const form = event.currentTarget;
+            const formData = new FormData(form);
+
+            try {
+                const response = await fetch('../../services/create_guest_player.php', {
+                    method: 'POST',
+                    body: formData,
+                });
+                const data = await response.json();
+                if (!response.ok || !data.success) {
+                    throw new Error(data.message || playersCopy.guestPlayerCreateFailed);
+                }
+
+                playersToast(playersCopy.guestPlayerCreated, 'success');
+                window.location.reload();
+            } catch (error) {
+                console.error('Error creating guest player:', error);
+                playersToast(error.message || playersCopy.guestPlayerCreateFailed, 'error');
+            }
         }
 
         function showSection(sectionName) {
@@ -599,6 +661,7 @@ $players = $playersQuery ? $playersQuery->fetch_all(MYSQLI_ASSOC) : [];
             document.getElementById('applicationStatusFilter')?.addEventListener('change', renderApplications);
             document.getElementById('registryFilter')?.addEventListener('input', renderPlayerRegistry);
             document.getElementById('registrySort')?.addEventListener('change', renderPlayerRegistry);
+            document.getElementById('createGuestPlayerForm')?.addEventListener('submit', createGuestPlayer);
             showSection('membership_applications');
             renderPlayerRegistry();
             loadApplications();

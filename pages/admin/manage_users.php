@@ -68,6 +68,23 @@ require_role('admin');
             gap: 6px;
         }
 
+        .create-user-grid {
+            display: grid;
+            gap: 12px;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            margin-top: 16px;
+        }
+
+        .create-user-grid .span-2 {
+            grid-column: span 2;
+        }
+
+        .create-user-actions {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 14px;
+        }
+
         .status-note {
             color: #5b6678;
             font-size: 0.82rem;
@@ -162,6 +179,14 @@ require_role('admin');
             .toolbar-line {
                 grid-template-columns: 1fr;
             }
+
+            .create-user-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .create-user-grid .span-2 {
+                grid-column: auto;
+            }
         }
     </style>
 </head>
@@ -197,6 +222,42 @@ require_role('admin');
                     <strong><?php echo htmlspecialchars(admin_text('Roles is not membership', 'Rol üyelik değildir')); ?></strong>
                 </div>
             </div>
+        </div>
+
+        <div class="surface-panel">
+            <h2 style="margin-top:0;"><?php echo htmlspecialchars(admin_text('Create User Manually', 'Elle Kullanıcı Oluştur')); ?></h2>
+            <p class="mini-note"><?php echo htmlspecialchars(admin_text('Create an account and its linked player profile together. Use a temporary password when email delivery is not configured yet.', 'Hesabı ve bağlı oyuncu profilini birlikte oluşturun. E-posta gönderimi henüz yapılandırılmadıysa geçici bir parola belirleyin.')); ?></p>
+            <form id="createUserForm">
+                <div class="create-user-grid">
+                    <div>
+                        <label for="createFirstName"><?php echo htmlspecialchars(admin_text('First name', 'Ad')); ?></label>
+                        <input type="text" id="createFirstName" name="fName" required>
+                    </div>
+                    <div>
+                        <label for="createLastName"><?php echo htmlspecialchars(admin_text('Surname', 'Soyad')); ?></label>
+                        <input type="text" id="createLastName" name="lName" required>
+                    </div>
+                    <div>
+                        <label for="createPhone"><?php echo htmlspecialchars(admin_text('Phone', 'Telefon')); ?></label>
+                        <input type="text" id="createPhone" name="phoneNo">
+                    </div>
+                    <div>
+                        <label for="createUsername"><?php echo htmlspecialchars(admin_text('Username', 'Kullanıcı Adı')); ?></label>
+                        <input type="text" id="createUsername" name="username" required>
+                    </div>
+                    <div>
+                        <label for="createEmail"><?php echo htmlspecialchars(admin_text('Email', 'E-posta')); ?></label>
+                        <input type="email" id="createEmail" name="email" required>
+                    </div>
+                    <div>
+                        <label for="createTemporaryPassword"><?php echo htmlspecialchars(admin_text('Temporary password', 'Geçici parola')); ?></label>
+                        <input type="text" id="createTemporaryPassword" name="temporaryPassword" minlength="8" placeholder="<?php echo htmlspecialchars(admin_text('Optional, 8+ characters', 'İsteğe bağlı, en az 8 karakter')); ?>">
+                    </div>
+                </div>
+                <div class="create-user-actions">
+                    <button type="submit" class="submit-btn"><?php echo htmlspecialchars(admin_text('Create User', 'Kullanıcı Oluştur')); ?></button>
+                </div>
+            </form>
         </div>
 
         <div class="surface-panel">
@@ -253,6 +314,8 @@ require_role('admin');
             'confirmDelete' => admin_text('Are you sure you want to delete this user?', 'Bu kullanıcıyı silmek istediğinizden emin misiniz?'),
             'userDeleted' => admin_text('User deleted successfully!', 'Kullanıcı başarıyla silindi!'),
             'deleteFailed' => admin_text('Error deleting user. Please try again.', 'Kullanıcı silinemedi. Lütfen tekrar deneyin.'),
+            'createUserFailed' => admin_text('Failed to create user.', 'Kullanıcı oluşturulamadı.'),
+            'userCreated' => admin_text('User created successfully.', 'Kullanıcı başarıyla oluşturuldu.'),
             'playerRole' => admin_role_label('player'),
             'managerRole' => admin_role_label('manager'),
             'adminRole' => admin_role_label('admin'),
@@ -444,9 +507,34 @@ require_role('admin');
             }
         }
 
+        async function createUser(event) {
+            event.preventDefault();
+            const form = event.currentTarget;
+            const formData = new FormData(form);
+
+            try {
+                const response = await fetch('../../services/create_player.php', {
+                    method: 'POST',
+                    body: formData,
+                });
+                const data = await response.json();
+                if (!response.ok || !data.success) {
+                    throw new Error(data.message || usersCopy.createUserFailed);
+                }
+
+                alert(usersCopy.userCreated);
+                form.reset();
+                loadUsers();
+            } catch (error) {
+                console.error('Error creating user:', error);
+                alert(`${usersCopy.genericErrorPrefix} ${error.message || usersCopy.createUserFailed}`);
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('userFilter')?.addEventListener('input', renderUsers);
             document.getElementById('userSort')?.addEventListener('change', renderUsers);
+            document.getElementById('createUserForm')?.addEventListener('submit', createUser);
             loadUsers();
         });
     </script>

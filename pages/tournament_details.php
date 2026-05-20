@@ -419,6 +419,16 @@
             flex-shrink: 0;
         }
 
+        .read-bracket-player.slot-winner strong,
+        .selected-match-slot.slot-winner strong {
+            color: #86efac;
+        }
+
+        .read-bracket-player.slot-loser strong,
+        .selected-match-slot.slot-loser strong {
+            color: #fca5a5;
+        }
+
         .read-bracket-meta,
         .selected-match-meta {
             display: flex;
@@ -1148,19 +1158,71 @@
             recorded: true
         };
         const pageText = (en, tr) => window.appLocaleText ? window.appLocaleText({ en, tr }) : en;
+        const publicValueText = (value) => {
+            const translations = {
+                'Round Robin': pageText('Round Robin', 'Round Robin'),
+                'League': pageText('League', 'Lig'),
+                'Group': pageText('Group', 'Grup'),
+                'Elimination': pageText('Elimination', 'Eliminasyon'),
+                'Double Elimination': pageText('Double Elimination', 'Cift Eliminasyon'),
+                'Opening Round': pageText('Opening Round', 'Acilis Turu'),
+                'Winners Bracket': pageText('Winners Bracket', 'Kazananlar Yolu'),
+                'Losers Bracket': pageText('Losers Bracket', 'Kaybedenler Yolu'),
+                'Grand Final': pageText('Grand Final', 'Buyuk Final'),
+                'Third Place Playoff': pageText('Third Place Playoff', 'Ucunculuk Maci'),
+                'Tournament Bracket': pageText('Tournament Bracket', 'Turnuva Agaci'),
+                'Knockout Bracket': pageText('Knockout Bracket', 'Eleme Agaci'),
+                'Merged Bracket': pageText('Merged Bracket', 'Birlesik Agac'),
+                'Scheduled': pageText('Scheduled', 'Planlandi'),
+                'Draft': pageText('Draft', 'Taslak'),
+                'Registration Open': pageText('Registration Open', 'Kayit Acik'),
+                'Registration Closed': pageText('Registration Closed', 'Kayit Kapandi'),
+                'Completed': pageText('Completed', 'Tamamlandi'),
+                'Archived': pageText('Archived', 'Arsivlendi'),
+                'In Progress': pageText('In Progress', 'Devam Ediyor'),
+                'Ready': pageText('Ready', 'Hazir'),
+                'Waiting': pageText('Waiting', 'Beklemede'),
+                'Active': pageText('Active', 'Aktif'),
+                'Registered': pageText('Registered', 'Kayitli'),
+                'Withdrawn': pageText('Withdrawn', 'Cekildi'),
+                'Public': pageText('Public', 'Herkese Acik'),
+                'Private': pageText('Private', 'Ozel'),
+                'TBD': pageText('TBD', 'Belirlenecek'),
+                'Fixture': pageText('Fixture', 'Fikstur'),
+                'Team Fixture': pageText('Team Fixture', 'Takim Fiksturu'),
+                'All Paths': pageText('All Paths', 'Tum Yollar'),
+                'Finals': pageText('Finals', 'Finaller'),
+                'Bye Slot': pageText('Bye Slot', 'Bay Gecisi'),
+                'Auto-advance': pageText('Auto-advance', 'Otomatik Ilerleme'),
+                'Bracket spacer': pageText('Bracket spacer', 'Agac Boslugu'),
+                'Bye / no fixture': pageText('Bye / no fixture', 'Bay / mac yok'),
+                'Top': pageText('Top', 'Ust'),
+                'Bottom': pageText('Bottom', 'Alt'),
+                'Top slot': pageText('Top slot', 'Ust sira'),
+                'Bottom slot': pageText('Bottom slot', 'Alt sira'),
+                'Waiting for result': pageText('Waiting for result', 'Sonuc bekleniyor'),
+                'Final': pageText('Final', 'Final'),
+                'Semifinal': pageText('Semifinal', 'Yari Final'),
+                'Quarterfinal': pageText('Quarterfinal', 'Ceyrek Final'),
+            };
+
+            return translations[value] || value;
+        };
+        const publicRoundText = (roundNumber) => `${pageText('Round', 'Tur')} ${roundNumber}`;
+        const publicMatchText = (matchId) => `${pageText('Match', 'Mac')} ${matchId}`;
 
         function roundTitle(roundNumber, totalRounds) {
             if (totalRounds <= 1 || roundNumber >= totalRounds) {
-                return 'Final';
+                return publicValueText('Final');
             }
             if (roundNumber === totalRounds - 1) {
-                return 'Semifinal';
+                return publicValueText('Semifinal');
             }
             if (roundNumber === totalRounds - 2) {
-                return 'Quarterfinal';
+                return publicValueText('Quarterfinal');
             }
 
-            return `Round ${roundNumber}`;
+            return publicRoundText(roundNumber);
         }
 
         function playerLabel(match, slot) {
@@ -1168,7 +1230,7 @@
             const firstName = match[`${prefix}_name`] || '';
             const surname = match[`${prefix}_surname`] || '';
             const joinedName = `${firstName} ${surname}`.trim();
-            return joinedName || 'TBD';
+            return joinedName || publicValueText('TBD');
         }
 
         function playerProfileLink(match, slot) {
@@ -1208,6 +1270,25 @@
             return 'scheduled';
         }
 
+        function playerOutcomeClass(match, slot) {
+            if (String(match.match_status || '').toLowerCase() !== 'completed') {
+                return '';
+            }
+
+            const player1Score = Number(match.player1_score);
+            const player2Score = Number(match.player2_score);
+            if (Number.isNaN(player1Score) || Number.isNaN(player2Score) || player1Score === player2Score) {
+                return '';
+            }
+
+            const player1Won = player1Score > player2Score;
+            if (slot === 'player1') {
+                return player1Won ? 'slot-winner' : 'slot-loser';
+            }
+
+            return player1Won ? 'slot-loser' : 'slot-winner';
+        }
+
         function bracketGroupOrder(label) {
             const order = {
                 'Opening Round': 1,
@@ -1224,19 +1305,19 @@
 
         function bracketRoundTitle(label, roundNumber, totalRounds) {
             if (label === 'Opening Round') {
-                return 'Opening Round';
+                return publicValueText('Opening Round');
             }
             if (label === 'Grand Final') {
-                return 'Grand Final';
+                return publicValueText('Grand Final');
             }
             if (label === 'Third Place Playoff') {
-                return 'Third Place Playoff';
+                return publicValueText('Third Place Playoff');
             }
             if (label === 'Winners Bracket') {
-                return `Winners ${roundTitle(roundNumber, totalRounds)}`;
+                return `${pageText('Winners', 'Kazananlar')} ${roundTitle(roundNumber, totalRounds)}`;
             }
             if (label === 'Losers Bracket') {
-                return `Losers ${roundTitle(roundNumber, totalRounds)}`;
+                return `${pageText('Losers', 'Kaybedenler')} ${roundTitle(roundNumber, totalRounds)}`;
             }
 
             return roundTitle(roundNumber, totalRounds);
@@ -1326,16 +1407,16 @@
                 });
 
             if (rows.length === 0) {
-                return '<p style="color: var(--text-color);">Placements will appear here once elimination results start settling the bracket.</p>';
+                return `<p style="color: var(--text-color);">${pageText('Placements will appear here once elimination results start settling the bracket.', 'Eleme sonuclari netlestikce dereceler burada gorunecek.')}</p>`;
             }
 
             return `
                 <table class="data-table">
                     <thead>
                         <tr>
-                            <th>Rank</th>
-                            <th>Player</th>
-                            <th>Placement</th>
+                            <th>${pageText('Rank', 'Sira')}</th>
+                            <th>${pageText('Player', 'Oyuncu')}</th>
+                            <th>${pageText('Placement', 'Derece')}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -1353,12 +1434,12 @@
 
         function bracketDisplayTitle(match, bracketLabel, totalRounds) {
             const roundName = bracketRoundTitle(bracketLabel, Number(match.round_number || 1), totalRounds);
-            return `${roundName} - Match ${match.match_id}`;
+            return `${roundName} - ${publicMatchText(match.match_id)}`;
         }
 
         function renderStandingsTable(rows, entityLabel = 'Player') {
             if (!rows || rows.length === 0) {
-                return '<p style="color: var(--text-color);">No standings are available yet.</p>';
+                return `<p style="color: var(--text-color);">${pageText('No standings are available yet.', 'Henuz puan durumu yok.')}</p>`;
             }
 
             const nameKey = entityLabel === 'Team' ? 'team_name' : null;
@@ -1366,13 +1447,13 @@
                 <table class="data-table">
                     <thead>
                         <tr>
-                            <th>${entityLabel}</th>
-                            <th>Played</th>
-                            <th>Won</th>
-                            <th>Lost</th>
-                            <th>Drawn</th>
-                            <th>Points</th>
-                            <th>Leg Diff</th>
+                            <th>${entityLabel === 'Team' ? pageText('Team', 'Takim') : pageText('Player', 'Oyuncu')}</th>
+                            <th>${pageText('Played', 'Oynanan')}</th>
+                            <th>${pageText('Won', 'Galibiyet')}</th>
+                            <th>${pageText('Lost', 'Maglubiyet')}</th>
+                            <th>${pageText('Drawn', 'Beraberlik')}</th>
+                            <th>${pageText('Points', 'Puan')}</th>
+                            <th>${pageText('Leg Diff', 'Leg Farki')}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -1437,14 +1518,14 @@
 
                         return `
                         <article class="match-card">
-                            <div class="pill">${match.bracket || (match.group_number ? `Group ${match.group_number}` : 'Fixture')}</div>
+                            <div class="pill">${match.bracket ? publicValueText(match.bracket) : (match.group_number ? `${pageText('Group', 'Grup')} ${match.group_number}` : publicValueText('Fixture'))}</div>
                             <h3>${playerLabel(match, 'player1')} vs ${playerLabel(match, 'player2')}</h3>
                             ${teamMeta}
                             <p style="color: var(--text-color); margin-top: 0.75rem;">
-                                ${match.match_date} at ${String(match.match_time || '').slice(0, 5)}
+                                ${match.match_date} ${pageText('at', 'saat')} ${String(match.match_time || '').slice(0, 5)}
                             </p>
                             <p style="margin-top: 0.5rem;">
-                                ${match.match_status === 'Completed' ? `<strong>${match.player1_score} - ${match.player2_score}</strong>` : detailEscapeHtml(match.match_status || 'Scheduled')}
+                                ${match.match_status === 'Completed' ? `<strong>${match.player1_score} - ${match.player2_score}</strong>` : detailEscapeHtml(publicValueText(match.match_status || 'Scheduled'))}
                             </p>
                         </article>
                     `;
@@ -1503,13 +1584,13 @@
                 <div class="match-grid">
                     ${matches.map((match) => `
                         <article class="match-card">
-                            <div class="pill">Team Fixture</div>
-                            <h3>${match.team1_name || 'TBD'} vs ${match.team2_name || 'TBD'}</h3>
+                            <div class="pill">${publicValueText('Team Fixture')}</div>
+                            <h3>${match.team1_name || publicValueText('TBD')} vs ${match.team2_name || publicValueText('TBD')}</h3>
                             <p style="color: var(--text-color); margin-top: 0.75rem;">
-                                ${match.match_date} at ${match.match_time}
+                                ${match.match_date} ${pageText('at', 'saat')} ${match.match_time}
                             </p>
                             <p style="margin-top: 0.5rem;">
-                                ${match.match_status === 'Completed' ? `<strong>${match.team1_score} - ${match.team2_score}</strong>` : 'Scheduled'}
+                                ${match.match_status === 'Completed' ? `<strong>${match.team1_score} - ${match.team2_score}</strong>` : publicValueText('Scheduled')}
                             </p>
                         </article>
                     `).join('')}
@@ -1520,12 +1601,12 @@
         function renderLeagueGroupTables(groups) {
             const entries = Object.entries(groups || {});
             if (entries.length === 0) {
-                return '<p style="color: var(--text-color);">Group-stage standings will appear once matches are underway.</p>';
+                return `<p style="color: var(--text-color);">${pageText('Group-stage standings will appear once matches are underway.', 'Maclar basladiginda grup puan durumu burada gorunecek.')}</p>`;
             }
 
             return entries.map(([groupNumber, rows]) => `
                 <div class="surface">
-                    <h3>Group ${groupNumber}</h3>
+                    <h3>${pageText('Group', 'Grup')} ${groupNumber}</h3>
                     ${renderStandingsTable(rows)}
                 </div>
             `).join('');
@@ -1605,7 +1686,7 @@
                             ${(players || []).map((player) => `
                                 <tr>
                                     <td><a href="player_profile.php?id=${player.plr_idNum}" style="color:#fff; text-decoration:none;">${player.plr_name} ${player.plr_surname}</a></td>
-                                    <td>${detailEscapeHtml(player.player_status || '-')}</td>
+                                    <td>${detailEscapeHtml(publicValueText(player.player_status || '-'))}</td>
                                     <td>${player.group_number ?? '-'}</td>
                                     ${hasPlayerPlacements ? `<td>${detailEscapeHtml(playerPlacementLabel(player) || '-')}</td>` : ''}
                                 </tr>
@@ -1626,7 +1707,7 @@
                     ${results.map((result) => {
                         const summary = result.team1_name
                             ? `${result.team1_name} ${result.team1_score} - ${result.team2_score} ${result.team2_name}`
-                            : `${result.player1_name || 'TBD'} ${result.player1_score} - ${result.player2_score} ${result.player2_name || 'TBD'}`;
+                            : `${result.player1_name || publicValueText('TBD')} ${result.player1_score} - ${result.player2_score} ${result.player2_name || publicValueText('TBD')}`;
                         const meta = result.match_date && result.match_time
                             ? `${result.match_date} ${String(result.match_time).slice(0, 5)}`
                             : pageText('Latest reported scoreline', 'Son bildirilen skor');
@@ -1685,7 +1766,7 @@
 
         function renderTeams(teams, teamStandings, matches) {
             if (!teams || teams.length === 0) {
-                return '<p style="color: var(--text-color);">Teams have not been generated yet.</p>';
+                return `<p style="color: var(--text-color);">${pageText('Teams have not been generated yet.', 'Takimlar henuz olusturulmadi.')}</p>`;
             }
 
             const playerStats = buildGroupPlayerStats(teams, matches);
@@ -1785,28 +1866,28 @@
                     <article class="public-match-modal-card">
                         <div class="public-match-modal-head">
                             <div>
-                                <div class="pill">${group.label || (match.bracket || 'Fixture')}</div>
+                                <div class="pill">${group.label ? publicValueText(group.label) : publicValueText(match.bracket || 'Fixture')}</div>
                                 <h3 style="margin-top:0.5rem;">${bracketDisplayTitle(match, group.label, group.rounds.length)}</h3>
-                                <p style="color: var(--text-color); margin-top: 0.55rem;">This matchup is opened in focus mode so the scoreline, path, and competitors are easier to read than inside the bracket node.</p>
+                                <p style="color: var(--text-color); margin-top: 0.55rem;">${pageText('This matchup is opened in focus mode so the scoreline, path, and competitors are easier to read than inside the bracket node.', 'Bu eslesme odak modunda acilir; boylece skor, yol ve oyuncular agac dugumunun icinden daha rahat okunur.')}</p>
                             </div>
-                            <button type="button" class="detail-button-secondary" onclick="closePublicMatchModal()">Close</button>
+                            <button type="button" class="detail-button-secondary" onclick="closePublicMatchModal()">${pageText('Close', 'Kapat')}</button>
                         </div>
                         <div class="public-match-modal-grid">
-                            <div class="selected-match-slot">
-                                <span>Top slot</span>
+                            <div class="selected-match-slot ${playerOutcomeClass(match, 'player1')}">
+                                <span>${publicValueText('Top slot')}</span>
                                 <strong>${playerProfileLink(match, 'player1')}</strong>
                             </div>
-                            <div class="selected-match-slot">
-                                <span>Bottom slot</span>
+                            <div class="selected-match-slot ${playerOutcomeClass(match, 'player2')}">
+                                <span>${publicValueText('Bottom slot')}</span>
                                 <strong>${playerProfileLink(match, 'player2')}</strong>
                             </div>
                         </div>
                         <div class="selected-match-meta" style="margin-top: 1rem;">
-                            <span>${match.match_date} at ${String(match.match_time || '').slice(0, 5)}</span>
-                            <span>${match.match_status}</span>
+                            <span>${match.match_date} ${pageText('at', 'saat')} ${String(match.match_time || '').slice(0, 5)}</span>
+                            <span>${publicValueText(match.match_status)}</span>
                         </div>
                         <div style="margin-top: 1rem;">
-                            <span class="selected-match-result">${hasScore ? `${match.player1_score} - ${match.player2_score}` : 'Waiting for result'}</span>
+                            <span class="selected-match-result">${hasScore ? `${match.player1_score} - ${match.player2_score}` : publicValueText('Waiting for result')}</span>
                         </div>
                     </article>
                 </div>
@@ -1841,15 +1922,15 @@
             const activeView = normalizePublicBracketView(selectedPublicBracketView, tournamentType, groupEntries);
             const views = tournamentType === 'Double Elimination'
                 ? [
-                    { key: 'merged', label: 'Merged Bracket' },
-                    { key: 'Winners Bracket', label: 'Winners Bracket' },
-                    { key: 'Losers Bracket', label: 'Losers Bracket' },
+                    { key: 'merged', label: publicValueText('Merged Bracket') },
+                    { key: 'Winners Bracket', label: publicValueText('Winners Bracket') },
+                    { key: 'Losers Bracket', label: publicValueText('Losers Bracket') },
                     ...(groupEntries.some((group) => group.rawLabel === 'Grand Final')
-                        ? [{ key: 'Grand Final', label: 'Finals' }]
+                        ? [{ key: 'Grand Final', label: publicValueText('Finals') }]
                         : [])
                 ]
                 : [
-                    { key: 'all', label: 'All Paths' },
+                    { key: 'all', label: publicValueText('All Paths') },
                     ...groupEntries.map((group) => ({
                         key: group.rawLabel,
                         label: group.label
@@ -1874,7 +1955,7 @@
         function renderBracket(matches, tournamentType) {
             const knockoutMatches = (matches || []).filter((match) => match.group_number === null);
             if (knockoutMatches.length === 0) {
-                return '<p style="color: var(--text-color);">A knockout bracket will appear here once elimination fixtures exist.</p>';
+                return `<p style="color: var(--text-color);">${pageText('A knockout bracket will appear here once elimination fixtures exist.', 'Eleme fiksturleri olustugunda turnuva agaci burada gorunecek.')}</p>`;
             }
 
             const groupsMap = new Map();
@@ -1884,8 +1965,10 @@
                     ? rawLabel
                     : (rawLabel === 'Third Place Playoff' ? 'Third Place Playoff' : 'primary');
                 const groupLabel = tournamentType === 'Double Elimination'
-                    ? rawLabel
-                    : (rawLabel === 'Third Place Playoff' ? 'Third Place Playoff' : (rawLabel === 'Knockout' ? 'Knockout Bracket' : 'Tournament Bracket'));
+                    ? publicValueText(rawLabel)
+                    : (rawLabel === 'Third Place Playoff'
+                        ? publicValueText('Third Place Playoff')
+                        : (rawLabel === 'Knockout' ? publicValueText('Knockout Bracket') : publicValueText('Tournament Bracket')));
                 const roundNumber = Number(match.round_number || 1);
 
                 if (!groupsMap.has(groupKey)) {
@@ -1954,12 +2037,12 @@
                 <div class="bracket-toolbar">
                     <p class="bracket-toolbar-copy">
                         ${tournamentType === 'Double Elimination'
-                            ? 'The opening round anchors the center lane. From there the field splits into the losers bracket on the left and the winners bracket on the right, with a dedicated finals view for the deciding matches.'
+                            ? pageText('The opening round anchors the center lane. From there the field splits into the losers path on the left and the winners path on the right, with a dedicated finals view for the deciding matches.', 'Acilis turu merkez hattini sabitler. Buradan sonra alan soldaki kaybedenler yoluna ve sagdaki kazananlar yoluna ayrilir; karar maclari icin ayri bir final gorunumu bulunur.')
                             : (groupEntries.length > 1
-                                ? 'Use the bracket filters to collapse to one knockout path at a time when the layout gets crowded, then open focus mode for a larger connected view.'
-                                : 'Open focus mode for a larger, scrollable bracket view when the elimination path gets crowded.')}
+                                ? pageText('Use the path filters to collapse to one knockout route at a time when the layout gets crowded, then open focus mode for a larger connected view.', 'Duzen kalabaliklastiginda yol filtreleriyle tek bir eleme yoluna inin, sonra daha buyuk baglantili gorunum icin odak modunu acin.')
+                                : pageText('Open focus mode for a larger, scrollable view when the elimination path gets crowded.', 'Eleme yolu kalabaliklastiginda daha buyuk ve kaydirilabilir gorunum icin odak modunu acin.'))}
                     </p>
-                    ${groupEntries.length > 1 ? '<span class="legend-chip">Bracket placeholders keep bye lines visible even when the entrant count is not a power of two.</span>' : ''}
+                    ${groupEntries.length > 1 ? `<span class="legend-chip">${pageText('Placeholder nodes keep bye lines visible even when the entrant count is not a power of two.', 'Yer tutucu dugumler, katilimci sayisi ikinin kuvveti olmasa bile bay gecis cizgilerini gorunur tutar.')}</span>` : ''}
                 </div>
                 ${renderBracketViewToggle(groupEntries, tournamentType)}
                 <div class="${groupStackClass}" data-public-active-view="${detailEscapeHtml(activeBracketView)}">
@@ -1969,16 +2052,16 @@
                             <div class="bracket-group" id="public-bracket-group-${bracketDomKey(group.key)}" data-public-bracket-group="${detailEscapeHtml(group.rawLabel)}">
                                 <h3>${group.label}</h3>
                                 <p>${group.rawLabel === 'Opening Round'
-                                    ? 'Every entrant starts here before the bracket splits into the left-side losers path and the right-side winners path.'
+                                    ? pageText('Every entrant starts here before the tree splits into the left-side losers path and the right-side winners path.', 'Her katilimci, agac soldaki kaybedenler yolu ve sagdaki kazananlar yolu olarak ayrilmadan once burada baslar.')
                                     : (group.rawLabel === 'Grand Final'
-                                        ? 'The winners-side champion meets the losers-side champion here.'
+                                        ? pageText('The winners-side champion meets the losers-side champion here.', 'Kazananlar yolu sampiyonu burada kaybedenler yolu sampiyonuyla karsilasir.')
                                         : (group.rawLabel === 'Third Place Playoff'
-                                            ? 'The losing finalists from each branch meet here to settle third and fourth place.'
+                                            ? pageText('The losing finalists from each branch meet here to settle third and fourth place.', 'Her koldaki kaybeden finalistler burada ucuncu ve dorduncu sirayi belirlemek icin karsilasir.')
                                             : (group.rawLabel === 'Winners Bracket'
-                                                ? 'Opening-round winners continue through this right-side single-elimination path.'
+                                                ? pageText('Opening-round winners continue through this right-side single-elimination path.', 'Acilis turu kazananlari sagdaki tekli eleme yolunda devam eder.')
                                                 : (group.rawLabel === 'Losers Bracket'
-                                                    ? 'Opening-round losers continue through this left-side single-elimination path.'
-                                                    : 'Follow this path round by round through the connected bracket below.'))))}</p>
+                                                    ? pageText('Opening-round losers continue through this left-side single-elimination path.', 'Acilis turu kaybedenleri soldaki tekli eleme yolunda devam eder.')
+                                                    : pageText('Follow this path round by round through the connected tree below.', 'Asagidaki baglantili agacta bu yolu tur tur takip edin.'))))}</p>
                                 <div class="read-bracket-shell" ${group.rawLabel === 'Losers Bracket' ? 'data-mirrored-bracket-shell' : ''}>
                                     <div class="read-bracket">
                                         ${group.rounds.map(([roundNumber, roundMatches], roundIndex) => `
@@ -2006,17 +2089,17 @@
                                                                         ${isPlaceholder ? 'disabled' : `onclick="showBracketMatch(${match.match_id})"`}
                                                                     >
                                                                         <div class="read-bracket-summary">
-                                                                            <span>${isPlaceholder ? 'Bye Slot' : `Match ${match.match_id}`}</span>
-                                                                            <span>${isPlaceholder ? 'Auto-advance' : match.match_status}</span>
+                                                                            <span>${isPlaceholder ? publicValueText('Bye Slot') : publicMatchText(match.match_id)}</span>
+                                                                            <span>${isPlaceholder ? publicValueText('Auto-advance') : publicValueText(match.match_status)}</span>
                                                                         </div>
                                                                         <div class="read-bracket-vs">
-                                                                            <div class="read-bracket-player">
-                                                                                <span>Top</span>
-                                                                                <strong>${isPlaceholder ? 'Bye / no fixture' : playerLabel(match, 'player1')}</strong>
+                                                                            <div class="read-bracket-player ${isPlaceholder ? '' : playerOutcomeClass(match, 'player1')}">
+                                                                                <span>${publicValueText('Top')}</span>
+                                                                                <strong>${isPlaceholder ? publicValueText('Bye / no fixture') : playerLabel(match, 'player1')}</strong>
                                                                             </div>
-                                                                            <div class="read-bracket-player">
-                                                                                <span>Bottom</span>
-                                                                                <strong>${isPlaceholder ? 'Bracket spacer' : playerLabel(match, 'player2')}</strong>
+                                                                            <div class="read-bracket-player ${isPlaceholder ? '' : playerOutcomeClass(match, 'player2')}">
+                                                                                <span>${publicValueText('Bottom')}</span>
+                                                                                <strong>${isPlaceholder ? publicValueText('Bracket spacer') : playerLabel(match, 'player2')}</strong>
                                                                             </div>
                                                                         </div>
                                                                     </button>
@@ -2060,31 +2143,31 @@
                             <button type="button" class="detail-button-secondary" onclick="navigateBackFromTournament()" style="margin-bottom: 1rem;">
                                 <i class="ri-arrow-left-line"></i> ${pageText('Back', 'Geri')}
                             </button>
-                            <div class="pill">${tournament.status.replaceAll('_', ' ')}</div>
+                            <div class="pill">${publicValueText(tournament.status.replaceAll('_', ' ').replace(/\b\w/g, (letter) => letter.toUpperCase()))}</div>
                             <h1>${tournament.tour_title}</h1>
-                            <p style="color: var(--text-color); margin-top: 1rem;">Format: ${tournament.tour_type}</p>
+                            <p style="color: var(--text-color); margin-top: 1rem;">${pageText('Format', 'Format')}: ${publicValueText(tournament.tour_type)}</p>
                         </div>
                         <div class="meta-grid">
                             <div>
-                                <strong>Start</strong>
+                                <strong>${pageText('Start', 'Baslangic')}</strong>
                                 <p>${new Date(tournament.tour_creationDate).toLocaleDateString()}</p>
                             </div>
                             <div>
-                                <strong>End</strong>
+                                <strong>${pageText('End', 'Bitis')}</strong>
                                 <p>${new Date(tournament.tour_endDate).toLocaleDateString()}</p>
                             </div>
                             <div>
-                                <strong>Visibility</strong>
-                                <p>${Number(tournament.is_public) === 1 ? 'Public' : 'Private'}</p>
+                                <strong>${pageText('Visibility', 'Gorunurluk')}</strong>
+                                <p>${publicValueText(Number(tournament.is_public) === 1 ? 'Public' : 'Private')}</p>
                             </div>
                     <div>
-                        <strong>Winner</strong>
-                        <p>${tournament.winner_label || 'TBD'}</p>
+                        <strong>${pageText('Winner', 'Kazanan')}</strong>
+                        <p>${tournament.winner_label || publicValueText('TBD')}</p>
                     </div>
                     ${tournament.tour_type !== 'Group' ? `
                         <div>
-                            <strong>Bracket</strong>
-                            <p>${data.matches.some((match) => match.group_number === null) ? (tournament.tour_type === 'Double Elimination' ? 'Merged, winners-only, losers-only, and grand-final views are available below' : 'Available below') : 'Will appear after elimination fixtures exist'}</p>
+                            <strong>${pageText('Tournament tree', 'Turnuva agaci')}</strong>
+                            <p>${data.matches.some((match) => match.group_number === null) ? (tournament.tour_type === 'Double Elimination' ? pageText('Merged, winners-only, losers-only, and finals views are available below.', 'Birlesik, sadece kazananlar, sadece kaybedenler ve final gorunumleri asagida bulunur.') : pageText('Available below.', 'Asagida bulunur.')) : pageText('Will appear after elimination fixtures exist.', 'Eleme fiksturleri olustugunda gorunecek.')}</p>
                         </div>
                     ` : ''}
                 </div>
@@ -2095,7 +2178,7 @@
                     <article class="summary-card"><strong>${data.players.length}</strong><span>${pageText('Registered entrants', 'Kayitli katilimcilar')}</span></article>
                     <article class="summary-card"><strong>${data.matches.length}</strong><span>${pageText('Fixtures created', 'Olusturulan fiksturler')}</span></article>
                     <article class="summary-card"><strong>${data.recent_results.length}</strong><span>${pageText('Recent results', 'Son sonuclar')}</span></article>
-                    <article class="summary-card"><strong>${tournament.winner_label || 'TBD'}</strong><span>${pageText('Current winner', 'Guncel kazanan')}</span></article>
+                    <article class="summary-card"><strong>${tournament.winner_label || publicValueText('TBD')}</strong><span>${pageText('Current winner', 'Guncel kazanan')}</span></article>
                 </section>
 
                 ${renderTournamentInfoSection(data.players, data.recent_results, hasPlayerPlacements)}
@@ -2106,7 +2189,7 @@
                         <section class="surface bracket-section" id="publicBracketSection">
                             <div class="bracket-section-head">
                                 <div>
-                                    <h2>${pageText('Tournament Bracket', 'Turnuva Braketi')}</h2>
+                                    <h2>${pageText('Tournament Tree', 'Turnuva Agaci')}</h2>
                                     <p style="color: var(--text-color); margin-top: 0.6rem;">${tournament.tour_type === 'Double Elimination' ? pageText('Click any matchup to open a larger match-details view. The double-elimination layout starts from the center opening round, then splits into the losers path on the left and winners path on the right.', 'Daha buyuk bir mac detayi gormek icin herhangi bir eslesmeye tiklayin. Double-elimination duzeni merkezdeki acilis turundan baslar, sonra solda kaybedenler yoluna ve sagda kazananlar yoluna ayrilir.') : pageText('Use the bracket filters when separate knockout paths appear, then click any matchup to open a larger match-details view.', 'Ayrik eleme yollari gorundugunde braket filtrelerini kullanin; ardindan daha buyuk mac detayi icin herhangi bir eslesmeye tiklayin.')}</p>
                                 </div>
                                 <button type="button" class="detail-button-secondary" id="publicBracketFocusButton" onclick="togglePublicBracketFocus()">
