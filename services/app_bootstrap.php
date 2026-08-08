@@ -7,9 +7,33 @@ if (!defined('APP_BOOTSTRAPPED')) {
 
     mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 
+    function app_is_production(): bool
+    {
+        return APP_ENV === 'production';
+    }
+
+    function app_is_https(): bool
+    {
+        if (!empty($_SERVER['HTTPS']) && strtolower((string) $_SERVER['HTTPS']) !== 'off') {
+            return true;
+        }
+
+        return isset($_SERVER['SERVER_PORT']) && (int) $_SERVER['SERVER_PORT'] === 443;
+    }
+
     function app_start_session(): void
     {
         if (session_status() === PHP_SESSION_NONE) {
+            ini_set('session.use_strict_mode', '1');
+            ini_set('session.use_only_cookies', '1');
+            session_name('dart_club_session');
+            session_set_cookie_params([
+                'lifetime' => 0,
+                'path' => '/',
+                'secure' => app_is_production() || app_is_https(),
+                'httponly' => true,
+                'samesite' => 'Lax',
+            ]);
             session_start();
         }
     }
@@ -20,6 +44,10 @@ if (!defined('APP_BOOTSTRAPPED')) {
 
         if ($connection instanceof mysqli) {
             return $connection;
+        }
+
+        if (app_is_production() && trim(APP_DB_PASS) === '') {
+            throw new RuntimeException('Database credentials are not configured for production.');
         }
 
         $connection = new mysqli(APP_DB_HOST, APP_DB_USER, APP_DB_PASS, APP_DB_NAME, APP_DB_PORT);
@@ -57,17 +85,27 @@ if (!defined('APP_BOOTSTRAPPED')) {
 
         if (!headers_sent()) {
             header('Content-Type: application/json');
+            header('X-Content-Type-Options: nosniff');
         }
 
         echo json_encode($payload);
         exit();
     }
 
+    function app_safe_error_message(Throwable $exception, string $fallback = 'Unexpected server error.'): string
+    {
+        if (app_is_production()) {
+            return $fallback;
+        }
+
+        return $exception->getMessage() !== '' ? $exception->getMessage() : $fallback;
+    }
+
     function app_service_exception_payload(Throwable $exception): array
     {
         return [
             'success' => false,
-            'message' => $exception->getMessage() !== '' ? $exception->getMessage() : 'Unexpected server error.',
+            'message' => app_safe_error_message($exception),
         ];
     }
 
