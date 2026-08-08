@@ -16,23 +16,38 @@ Dart Club Website is being prepared as a public engineering portfolio project. T
 - [x] Upgrade/audit the maintained PHPMailer dependency and remove committed `vendor/` files.
 - [x] Remove generated Cursor transcript material from the maintained tree.
 - [x] Add publication/security CI and security smoke coverage.
+- [x] Run a full-history object/path audit to decide whether in-place public visibility is safe.
 - [ ] Choose and add an explicit public source-code license.
 - [ ] Complete an authenticated manual browser/database walkthrough after the final branch is installed in a disposable local environment.
 - [ ] Use only synthetic/demo membership documents, user data, and credentials in public screenshots.
+- [ ] Confirm redistribution rights for retained gallery/demo photography.
 
 ## Repository-history decision
 
-GitHub reports a repository footprint much larger than the maintained working tree. CI inventory shows the current tracked tree at roughly 47 MiB, with most bytes coming from intentional gallery/demo imagery. The discrepancy is therefore historical Git data rather than current application code.
+The full-history audit makes this decision non-optional rather than stylistic.
 
-The recommended portfolio release path is:
+Observed Git history:
+
+- packed Git objects: approximately **432.69 MiB**;
+- current maintained working tree: approximately **47 MiB**;
+- historical membership uploads include two DOCX files, including one approximately **5.01 MiB** document;
+- historical configuration contains the removed local database defaults `dartadmin` / `1234`;
+- historical objects also contain a large batch of imported photography under `files/media/Other Images/...`, committed Composer `vendor/` files, and the removed `progress.md` development transcript.
+
+The targeted credential-filename scan did not surface private key/credential files; it only matched the existing reset-password page. That is useful evidence, but it is not proof that every historical blob is free of private content.
+
+Because private membership documents definitely exist in history, **do not make this original repository public in place**.
+
+The required portfolio release path is:
 
 1. keep this original repository private as the development archive;
 2. use `publication/dart-club-release` as the canonical maintained source snapshot;
-3. create a new public repository from that cleaned tree with fresh history;
-4. retain the documentation that this is a maintained legacy PHP/MySQL application rather than implying it was newly built from scratch;
-5. add the selected source-code license before public visibility.
+3. create a separate public repository from the cleaned current tree with fresh history;
+4. copy only assets whose redistribution rights are confirmed;
+5. retain the documentation that this is a maintained legacy PHP/MySQL application rather than implying it was newly built from scratch;
+6. add the selected source-code license before public visibility.
 
-A clean public history is a presentation and privacy choice, not an attempt to conceal authorship or development provenance.
+A clean public history is a privacy boundary here, not merely a nicer commit graph.
 
 ## Supported portfolio claims
 
