@@ -1,143 +1,151 @@
 # RUN_PROTOCOL
 
 ## Purpose
-Define how to verify work in this repo when there is no single automated test command and PHP is typically available locally through XAMPP rather than PATH.
 
-## Companion Doc
-- Use `docs/TESTING_CHECKLIST.md` for the concrete click path, seed data, and step-by-step operator checklist.
-- Use this file for the validation ladder and reporting rules.
+Define the validation ladder for Dart Club Website. CI covers dependency/security/static checks, while database-backed browser behavior remains a manual local regression responsibility.
 
-## Verification Ladder
-### Level 0 - Static Repo Validation
-Use for:
-- docs/config updates
-- path cleanup
-- low-risk HTML/JS changes
-- service wiring changes that can be checked by inspection
+Use `docs/TESTING_CHECKLIST.md` for the detailed click path and this document for validation levels and reporting rules.
 
-Checks:
-- inspect changed files
-- scan for banned patterns:
-  - direct `new mysqli(...)` outside shared bootstrap
-  - request-path `ALTER TABLE`
-  - old username-based player resolution in steady-state public/tournament reads
-  - membership logic that conflates `user_role` with `membership_status`
+## Level 0 — Automated Publication Checks
 
-### Level 1 - Schema And Bootstrap Validation
-Use for:
-- DB config changes
-- schema changes
-- service-layer refactors
+Run for every maintained change:
 
-Checks:
-- confirm `dart_club.sql` contains the columns the code expects
-- confirm active code uses:
-  - `services/config.php`
-  - `services/app_bootstrap.php`
-  - `services/dbConnection.php`
-- confirm PHP handlers no longer mutate schema at request time
-- confirm active tables exist for:
-  - `membership_applications`
-  - `tournament_teams`
-  - `tournament_team_players`
-  - `team_matches`
-  - `blog_images`
-  - `blog_comments`
-  - `blog_reactions`
-  - `gallery_images`
+```bash
+composer validate --strict
+composer install --no-interaction --prefer-dist
+composer audit
+python3 scripts/publication_guard.py
+php scripts/security_smoke.php
+```
 
-### Level 2 - Local Browser/XAMPP Smoke Validation
-Use for:
-- page/service integration work
-- auth/profile/tournament flow work
-- membership/blog/gallery flow work
+Then lint PHP syntax across the maintained tree:
 
-Recommended local environment:
-- XAMPP or equivalent Apache + MariaDB stack
+```bash
+find . -path './vendor' -prune -o -name '*.php' -print0 | xargs -0 -n1 php -l
+```
+
+GitHub Actions runs the equivalent checks on PHP 8.3 with `mysqli`, `mbstring`, `fileinfo`, `zip`, and `dom` enabled.
+
+## Level 1 — Schema and Bootstrap Validation
+
+Use for database/config/service refactors.
+
+Confirm active code uses:
+
+- `services/config.php`
+- `services/app_bootstrap.php`
+- `services/dbConnection.php`
+
+Confirm the schema contains the fields/tables expected by the maintained application, including:
+
+- `membership_applications`
+- `tournament_teams`
+- `tournament_team_players`
+- `team_matches`
+- `blog_images`
+- `blog_comments`
+- `blog_reactions`
+- `gallery_images`
+
+Check that request paths do not mutate schema and that `user_role` remains distinct from `membership_status`.
+
+## Level 2 — Local Browser / Database Smoke
+
+Recommended environment:
+
+- Apache/XAMPP or equivalent PHP-capable web server
+- MySQL/MariaDB
 - database imported from `dart_club.sql`
-- env/config aligned with `services/config.php`
+- local configuration copied from `services/config.local.example.php`
 
-Smoke checks:
+Install dependencies:
+
+```bash
+composer install
+```
+
+Import the database:
+
+```bash
+mysql -u root -p dart_club < dart_club.sql
+```
+
+For a lightweight non-Apache check:
+
+```bash
+php -S 127.0.0.1:8090 -t .
+```
+
+Use Apache/XAMPP for the complete membership-document `.htaccess` boundary.
+
+Minimum smoke path:
+
 - signup
 - login/logout
 - profile save
-- membership submission
-- public tournaments hub load
-- public tournament detail load
-- blog page load
-- gallery page load
+- membership submission and authorized admin review/download
+- public tournament hub/detail
+- blog and gallery pages
 - player approval/creation
-- admin tournament list/detail page load
-- admin membership/player page load
+- admin tournament list/detail
 
-### Level 3 - Tournament Regression Validation
-Use for:
-- tournament creation/management changes
-- bracket/group logic changes
-- match result propagation changes
+## Level 3 — Tournament Regression
 
-Checks:
-- create a `Round Robin` tournament and confirm:
-  - round-robin matches are generated
-  - standings update after results
-- create a `League` tournament and confirm:
-  - `group_number` persists on roster rows
-  - group-stage matches only happen within groups
-  - group standings rank correctly
-  - knockout creation happens automatically after the group stage finishes
-- create a `Group` tournament and confirm:
-  - teams are created inside the tournament
-  - players are assigned to team rosters
-  - team fixtures generate correctly
-  - team standings update correctly after team results
-- create an `Elimination` tournament and confirm:
-  - bracket rounds are linked through `next_match_id`
-  - byes carry forward correctly
-  - results advance winners into the next round
-- archive a completed tournament and confirm:
-  - public reads still work
-  - mutation services reject edits with a read-only message
+For tournament engine changes, exercise every supported format:
 
-### Level 4 - Membership And Community Validation
-Use for:
-- membership workflow changes
-- blog/gallery/community changes
+### Round Robin
 
-Checks:
-- submit a membership application as a signed-in player
-- approve or reject it as a manager/admin
-- confirm `membership_status` changes without changing `user_role`
+- generate fixtures
+- record several results
+- verify standings update
+
+### League
+
+- create groups
+- complete group stage
+- verify group standings and promoted knockout structure
+
+### Group
+
+- verify two-team roster assignment
+- generate cross-team player fixtures
+- record results and verify team standings
+
+### Elimination
+
+- verify bracket links, byes, winner advancement, and placement/third-place behavior
+
+### Double Elimination
+
+- verify opening round
+- winners and losers paths
+- loser propagation
+- third-place playoff
+- grand final
+- public/admin path filters
+
+Also archive a completed tournament and verify public reads remain available while mutation services reject edits.
+
+## Level 4 — Membership and Community Regression
+
+- submit membership application as a signed-in player
+- verify unsupported document types are rejected
+- verify direct `/files/applications/membership/...` access is denied under Apache
+- approve/reject as manager/admin using the authorized download route
+- confirm membership changes do not silently change auth role
 - create a blog draft as an approved member
-- publish it as a manager/admin
-- add a comment and like as an authenticated user
-- confirm blog images are inserted into `gallery_images`
-
-## Local Commands
-- Preferred local PHP CLI path:
-  - `C:\Users\Ali\xampp\php\php.exe`
-- Preferred local MariaDB client path:
-  - `C:\Users\Ali\xampp\mysql\bin\mysql.exe`
-- Syntax lint command:
-
-```powershell
-Get-ChildItem -Recurse -Filter *.php | ForEach-Object { & 'C:\Users\Ali\xampp\php\php.exe' -l $_.FullName }
-```
-
-- Fresh DB import command:
-
-```powershell
-Get-Content -Raw 'dart_club.sql' | & 'C:\Users\Ali\xampp\mysql\bin\mysql.exe' -u root dart_club
-```
-
-- Built-in local PHP server:
-
-```powershell
-& 'C:\Users\Ali\xampp\php\php.exe' -S 127.0.0.1:8090 -t .
-```
+- test rich HTML sanitization with safe formatting and hostile event/script payloads
+- publish as manager/admin
+- add/delete comments and reactions
+- verify blog images appear in gallery as intended
 
 ## Reporting Rule
-If full validation was not run, explicitly report:
-- what commands were run
-- what was only inspected
-- what local/XAMPP or Apache verification still needs to happen
-- any remaining risks tied to missing runtime validation
+
+When reporting verification, separate:
+
+- automated commands that passed;
+- browser/database workflows that were manually exercised;
+- behaviors only inspected in source;
+- deployment assumptions not tested locally.
+
+Do not report the project as runtime-verified merely because syntax/CI is green. A PHP file can be syntactically flawless while still making terrible decisions with a database, a tradition the ecosystem has maintained with impressive consistency.
