@@ -12,6 +12,10 @@ if (!is_logged_in()) {
     app_json_response(['success' => false, 'message' => 'You must be logged in to apply for club membership.'], 401);
 }
 
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    app_json_response(['success' => false, 'message' => 'Invalid request method.'], 405);
+}
+
 $userId = get_current_user_id();
 $player = player_fetch_for_user($conn, $userId);
 if (!$player || empty($player['plr_idNum'])) {
@@ -27,22 +31,56 @@ if ($file['error'] !== UPLOAD_ERR_OK) {
     app_json_response(['success' => false, 'message' => 'Upload failed.'], 422);
 }
 
-if ($file['size'] > 10 * 1024 * 1024) {
-    app_json_response(['success' => false, 'message' => 'File too large. Max 10MB.'], 422);
+if ($file['size'] <= 0 || $file['size'] > 10 * 1024 * 1024) {
+    app_json_response(['success' => false, 'message' => 'File must be between 1 byte and 10MB.'], 422);
 }
 
-$extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-$allowedExtensions = ['pdf', 'doc', 'docx'];
-if (!in_array($extension, $allowedExtensions, true)) {
+$extension = strtolower(pathinfo((string) $file['name'], PATHINFO_EXTENSION));
+$allowedMimes = [
+    'pdf' => ['application/pdf'],
+    'doc' => ['application/msword', 'application/CDFV2', 'application/x-ole-storage', 'application/octet-stream'],
+    'docx' => [
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/zip',
+        'application/octet-stream',
+    ],
+];
+
+if (!isset($allowedMimes[$extension])) {
     app_json_response(['success' => false, 'message' => 'Only PDF, DOC, and DOCX files are allowed.'], 422);
 }
 
-$uploadDirectory = __DIR__ . '/../files/applications/membership';
-if (!is_dir($uploadDirectory)) {
-    mkdir($uploadDirectory, 0775, true);
+$finfo = finfo_open(FILEINFO_MIME_TYPE);
+$mime = $finfo ? finfo_file($finfo, $file['tmp_name']) : false;
+if ($finfo) {
+    finfo_close($finfo);
 }
 
-$filename = time() . '_' . bin2hex(random_bytes(6)) . '.' . $extension;
+if ($mime === false || !in_array($mime, $allowedMimes[$extension], true)) {
+    app_json_response(['success' => false, 'message' => 'The uploaded file content does not match an allowed document type.'], 422);
+}
+
+if ($extension === 'docx' && $mime !== 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' && class_exists('ZipArchive')) {
+    $zip = new ZipArchive();
+    if ($zip->open($file['tmp_name']) !== true) {
+        app_json_response(['success' => false, 'message' => 'The DOCX file is invalid.'], 422);
+    }
+
+    $hasContentTypes = $zip->locateName('[Content_Types].xml') !== false;
+    $hasDocument = $zip->locateName('word/document.xml') !== false;
+    $zip->close();
+
+    if (!$hasContentTypes || !$hasDocument) {
+        app_json_response(['success' => false, 'message' => 'The DOCX file is invalid.'], 422);
+    }
+}
+
+$uploadDirectory = __DIR__ . '/../files/applications/membership';
+if (!is_dir($uploadDirectory) && !mkdir($uploadDirectory, 0775, true) && !is_dir($uploadDirectory)) {
+    app_json_response(['success' => false, 'message' => 'Upload storage is unavailable.'], 500);
+}
+
+$filename = time() . '_' . bin2hex(random_bytes(12)) . '.' . $extension;
 $destination = $uploadDirectory . DIRECTORY_SEPARATOR . $filename;
 
 if (!move_uploaded_file($file['tmp_name'], $destination)) {
@@ -50,6 +88,7 @@ if (!move_uploaded_file($file['tmp_name'], $destination)) {
 }
 
 $webPath = '/files/applications/membership/' . $filename;
+$originalFilename = mb_substr(basename((string) $file['name']), 0, 255);
 
 $conn->begin_transaction();
 
@@ -72,7 +111,7 @@ try {
         ) VALUES (?, ?, ?, ?)'
     );
     $status = 'Pending';
-    $applicationStmt->bind_param('isss', $userId, $webPath, $file['name'], $status);
+    $applicationStmt->bind_param('isss', $userId, $webPath, $originalFilename, $status);
     $applicationStmt->execute();
     $applicationId = (int) $conn->insert_id;
     $applicationStmt->close();
@@ -81,7 +120,7 @@ try {
         'INSERT INTO applications (user_id, app_path, original_filename, isApproved)
          VALUES (?, ?, ?, NULL)'
     );
-    $legacyStmt->bind_param('iss', $userId, $webPath, $file['name']);
+    $legacyStmt->bind_param('iss', $userId, $webPath, $originalFilename);
     $legacyStmt->execute();
     $legacyStmt->close();
 
@@ -95,5 +134,8 @@ try {
     ]);
 } catch (Throwable $exception) {
     $conn->rollback();
-    app_json_response(['success' => false, 'message' => $exception->getMessage()], 500);
+    if (is_file($destination)) {
+        @unlink($destination);
+    }
+    app_json_response(['success' => false, 'message' => app_safe_error_message($exception, 'Membership application could not be saved.')], 500);
 }

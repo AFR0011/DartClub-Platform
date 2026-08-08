@@ -1,3 +1,6 @@
+# Composer dependencies
+/vendor/
+
 # Local runtime logs
 php-server.log
 php-server-error.log
@@ -26,7 +29,8 @@ files/media/images/gallery/[0-9a-f]*.gif
 files/media/images/gallery/[0-9a-f]*.webp
 files/media/Other Images/
 
-# Local scratch notes
+# Generated development transcripts and scratch notes
+progress.md
 Manual Verification.txt
 
 # OS/editor noise

@@ -1,17 +1,27 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) session_start();
 
-// Unset all session variables
-$_SESSION = array();
+require_once __DIR__ . '/app_bootstrap.php';
 
-// Destroy the session
+app_start_session();
+$_SESSION = [];
+
+if (ini_get('session.use_cookies')) {
+    $params = session_get_cookie_params();
+    setcookie(session_name(), '', [
+        'expires' => time() - 42000,
+        'path' => $params['path'] ?: '/',
+        'domain' => $params['domain'] ?? '',
+        'secure' => (bool) ($params['secure'] ?? false),
+        'httponly' => (bool) ($params['httponly'] ?? true),
+        'samesite' => $params['samesite'] ?? 'Lax',
+    ]);
+}
+
 $sessionDestroyed = session_destroy();
 
-// Return a JSON response
-header('Content-Type: application/json');
-if ($sessionDestroyed) {
-    echo json_encode(array("success" => true));
-} else {
-    echo json_encode(array("success" => false, "message" => "Session destruction failed"));
-}
-exit();
+app_json_response(
+    $sessionDestroyed
+        ? ['success' => true]
+        : ['success' => false, 'message' => 'Session destruction failed.'],
+    $sessionDestroyed ? 200 : 500
+);

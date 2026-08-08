@@ -1,480 +1,151 @@
 # PROJECT_STATE
 
-## Metadata
-- Project: `Dart Club`
-- Last updated: 2026-04-20
-- Repo type: legacy PHP/MySQL website
-- Current repo status: mapped, documented, runtime-tested on XAMPP, and further debug-hardened across the shared public shell, JSON service layer, tournament engine, public/community surfaces, and the latest admin-console EN/TR rollout spanning the shared admin locale rail plus the core admin pages
+Last updated: 2026-08-08
 
-## Current Objective
-- Finish the migration from an ad-hoc legacy codebase to a maintainable public club platform.
-- Keep the existing plain PHP/MySQL stack.
-- Complete visual/manual QA and polish after the new tournament model, membership workflow, public/community surfaces, and the new EN/TR shell/auth/public-UX fixes are in place.
-- Finish authenticated browser QA on the now-shared admin EN/TR console and close the remaining legacy admin/auth inconsistencies.
+## Current Status
 
-## Current Technical Status
-- The repo now has:
-  - root `AGENTS.md`
-  - repo-local `.codex/config.toml`
-  - `docs/` operating docs
-  - a shared PHP bootstrap/config path
-  - shared tournament helper code
-- The imported tree originally behaved like an untracked project snapshot. Git was initialized locally during the earlier mapping pass, but there is no prior upstream commit history in the current checkout.
-- Frontend/public pages are largely present:
-  - home/main
-  - tournaments hub
-  - tournament details
-  - blog/community
-  - gallery
-  - profile dashboard
-  - membership registration
-- Backend maturity is now stronger in the core product lanes:
-  - auth/signup/login now share one bootstrap/session path
-  - tournament flows are consolidated behind shared helpers, including deferred fixture generation after registration
-  - membership, blog, gallery, and profile dashboard flows now have working service layers
-  - visual polish, admin locale QA, and some legacy admin cleanup still remain
+Dart Club Website is a maintained legacy PHP/MySQL application with substantial public, player, membership, community, tournament, and admin workflows. The current publication branch focuses on preserving that functionality while tightening configuration, session handling, private-document access, content sanitization, dependency hygiene, and release documentation.
 
-## Active Backend Baseline
-- Canonical DB/bootstrap path:
-  - `services/config.php`
-  - `services/app_bootstrap.php`
-  - `services/dbConnection.php`
-- Canonical tournament helper layer:
-  - `services/shared/tournament_helpers.php`
-  - `services/shared/tournament_view_helpers.php`
-  - `services/shared/player_helpers.php`
-- Active supported tournament types:
-  - `Round Robin`
-  - `League`
-  - `Group`
-  - `Elimination`
-  - `Double Elimination`
-- Current tournament semantics:
-  - `Round Robin` = single-table round robin
-  - `League` = group-stage plus knockout
-  - `Group` = two-team competition where every player from one team plays every player from the other team
-  - `Elimination` = single-elimination bracket with a third-place playoff and placement sync
-  - `Double Elimination` = shared opening round, then separate winners-side and losers-side single-elimination branches, followed by a third-place playoff and grand final
-- Current audience model:
-  - guests
-  - signed-in players
-  - approved club members
-  - managers/admins
-- Current identity and permissions model:
-  - `user_role` controls auth permissions
-  - `membership_status` controls club-membership workflow
-  - approved members can author blog drafts
-  - managers/admins can publish and moderate
+This document records the current implementation rather than serving as an exhaustive chronological changelog.
 
-## What Changed In This Pass
-- Added a shared admin EN/TR locale layer (`services/shared/admin_locale_helpers.php`) plus a console-wide floating language rail in `js/admin_nav.js` / `css/admin_style.css` so the admin locale preference now persists across the full admin surface instead of living on one page.
-- Localized the remaining admin pages, including the tournament detail workspace and the legacy match detail/result fallbacks, so the admin console now renders Turkish copy across headers, tables, modal labels, bracket controls, and shared navigation text.
-- Restyled the shared admin locale switch so it matches the existing admin glass/card treatment instead of reading like a foreign control bolted onto the page chrome.
-- Applied the remaining `Manual Verification.txt` notes by turning the admin tournament `Players` section into a remembered two-panel toggle (`Roster Management` vs `Players Snapshot`) instead of keeping both cards side by side.
-- Added public `tournament_details` back navigation and extended both public/admin single-elimination bracket surfaces with path filters so separate knockout groups can collapse to one visible path at a time instead of crowding the same viewport.
-- Fixed the blog page search field focus regression by restoring focus/caret position after the shell rerender, so typing no longer drops after a single character.
-- Added first-login profile onboarding for player accounts by returning a `profile.html?onboarding=1` redirect from `services/login.php`, then rebuilt the dashboard profile form into stronger dark-surface field cards with clearer input affordances and onboarding copy.
-- Reworked the public/admin small-screen bracket presentation again so the public `Tournament Bracket` and admin `Tournament Bracket` / `Bracket Board` stop reusing the desktop merged-grid placement below their mobile breakpoints and instead collapse into a true vertical stack of full-width bracket groups/round cards.
-- Applied the latest `Manual Verification.txt` round to the public/admin tournament surfaces by replacing the side-by-side public `Participants` and `Recent Results` blocks with a single interchangeable toggle panel.
-- Rebuilt the public and admin `Group` tournament team views into richer roster cards that surface team standing chips plus per-player stats instead of plain name lists.
-- Tightened the public/admin double-elimination mirrored losers-lane behavior so merged and losers-only views force the mirrored shell to the far-right edge more reliably on load, and widened the latest mobile bracket fallback again so round headings and player names stop collapsing.
-- Exempted the public membership DOCX downloads from the shell page-transition overlay so the registration-form links no longer fade to black before the browser starts the download.
-- Added a back CTA to the main-page hero and right-aligned the `FACEBOOK` / `PHONE` contact block on smaller screens while keeping the homepage hero actions inside one shared flex row.
-- Strengthened the dark-surface borders/glow treatment on tournament/blog/auth controls so the smaller secondary actions and inputs read more clearly on dark backgrounds.
-- Reworked the login/signup shell again so larger screens now keep the auth cards title-only until hover while small/touch layouts keep the full form expanded below the fixed header instead of letting fields clip upward into the nav.
-- Centered the signup/login submit actions inside the auth shell and added an explicit `Forgot Password` CTA on `pages/login.html` that routes to the existing account-help page.
-- Applied the `docs/Dart Club SRE 120426.md` follow-up across the shared public shell with a persistent EN/TR language toggle, shell text hydration, and locale hooks for key public/auth/tournament/community pages.
-- Applied the `Manual Verification.txt` follow-up across the responsive admin/public shell by fixing the tournament-create player-role picker on smaller screens, making admin tables horizontally navigable on mobile, and keeping membership-review action menus visible inside the table flow.
-- Reworked the main-site navbar locale control into an in-nav language dropdown that stays outside the collapsed mobile menu, opened up logo-to-nav spacing, nudged the homepage hero image left on larger screens, and tightened the hero copy width so the lead sentence reads as a shorter two-line block.
-- Expanded the public/admin elimination and double-elimination mobile bracket fallbacks again, added extra winners/losers opening-round spacing, and capped league group-stage cards at three per row in the admin tournament detail view.
-- Reworked the public tournament-detail bracket on smaller screens into a stacked round-by-round mobile presentation so round labels no longer collapse into each other and matchup cards stop overflowing the bracket card.
-- Replaced the navbar locale select with a compact globe-trigger language menu, kept it outside the mobile drawer next to the hamburger control, and tightened desktop nav spacing/no-wrap behavior so top-level links stop breaking onto two lines.
-- Fixed the signup page's native password pattern so browser-side validation matches the intended "at least 8 characters with one letter and one number" rule instead of rejecting valid passwords before submit.
-- Normalized the seeded local test-account emails in `dart_club.sql` from `@test.local` to `@local.test` and aligned the current local database rows so `admin@local.test` / `adminpass` works again for manual verification.
-- Reworked the admin tournament-detail mobile bracket fallbacks so connected-bracket and bracket-board views stack cleanly on smaller screens instead of collapsing into unreadable narrow columns.
-- Smoothed the public-shell UX with a lightweight page-transition overlay, footer-aware scroll-up spacing, brighter shared button hover treatment, and a small homepage/about image-alignment pass.
-- Improved auth/signup behavior by expanding the login/signup card by default on small/touch layouts, enforcing a stronger-but-still-light password rule, and sending a best-effort welcome email after signup.
-- Added `pages/developers.html`, linked it from the homepage and about page, preserved the Neo DoubleEdged logo in the homepage logo rail, and reserved placeholder slots for pending team/personal identity assets.
-- Added an explicit gallery lightbox close button, split fixture counts from the fixture-section collapse control, and synced the public/admin bracket focus-mode buttons so they flip between open/close labels while tightening mobile bracket fallbacks again.
-- Added a root `index.php` redirect to `pages/main.php` so shared-host docroots like Hostinger `public_html` can open the site without manually moving page files out of `pages/`.
-- Whitelisted the two public registration-form DOCX files in root `.htaccess` so the membership downloads linked from `pages/register.html` no longer 403 behind the broader `other/` directory deny rule.
-- Finished the largest remaining public-content cleanup items by rebuilding `pages/about.html`, replacing placeholder homepage copy in `pages/main.php`, and removing the fake footer newsletter/contact form from the live public shell direction.
-- Removed the fake self-service password-reset flow from the login path and replaced `pages/reset_password.html` with an explicit account-help/support page until a real reset backend exists.
-- Added `services/shared/mail_helpers.php` and unified best-effort outbound email handling so player-creation emails and signed-in tournament registration confirmations now use one SMTP-aware helper.
-- Added a small option-C admin summary dashboard on `pages/admin/admin_panel.php` with pending membership, pending draft, registration, and scoring-backlog visibility.
-- Expanded the public player profile into a richer tournament-facing page with titles, podiums, win rate, best finish, placement highlights, and recent results.
-- Restored the missing local regression toolkit by adding:
-  - `scripts/seed_large_tournaments.php`
-  - `scripts/lint_php.ps1`
-  - `scripts/run_smoke_checks.ps1`
-- Removed confirmed dead legacy assets/scripts:
-  - `js/main.js`
-  - `js/blog.js`
-  - `js/contact_form.js`
-  - `js/select_row.js`
-  - `js/upload.js`
-  - `css/gallety_style.css`
-- Labeled the old standalone admin match pages as legacy fallbacks and removed the broken link from `view_match_details.php` to the missing `edit_match_details.php`.
-- Restored `services/get_tournaments.php` runtime loading by requiring `services/shared/tournament_view_helpers.php`, fixing the public tournament feed under the local built-in PHP server.
-- Hardened the shared public-shell fetch path so guests no longer need a working DB connection just to load navigation/session context.
-- Added service-level exception/error handling so JSON endpoints return JSON failures instead of leaking HTML warning/fatal output into frontend `.json()` callers.
-- Fixed config env parsing so empty-string DB passwords are no longer overwritten by fallback defaults.
-- Removed the duplicated legacy navbar bootstrap from `pages/main.php` so the shared shell owns the public-nav contract again.
-- Fixed shared `js/behaviour.js` shell edge cases around missing section anchors, dynamically injected nav links, and `href="#"` logout links.
-- Fixed admin user deletion to resolve players through `players.user_id` before deleting tournament/player data.
-- Changed tournament creation and roster management so tournaments can be created empty, stay in a registration-first state, and generate fixtures only after registration closes.
-- Added public tournament registration fallback for guests or signed-in users without a player profile by collecting a first name and surname at registration time.
-- Fixed tournament page-data aggregation so admin/public detail reads keep `player_count`, `match_count`, and related summary fields after lifecycle refreshes.
-- Refreshed the tournament admin UI with a less dense visual layout, compact controls, searchable player selection, and a more direct fixture-management workspace.
-- Added same-page quick scoring for individual matches and drag-and-drop slot swapping inside the knockout bracket view.
-- Added a connected tournament-bracket visualization with live drag-and-drop slot swaps and quick-score controls, while preserving the older compact card stack as a renamed bracket-board view.
-- Added row-click player selection on tournament admin roster forms so add/remove actions no longer depend on tiny raw checkboxes.
-- Added a public tournament-hub filter for “My tournaments” and refreshed the logged-in registration flow so signed-in users without a player row can still register instantly from their account name.
-- Extended the newer tournament/public visual language onto the public tournament-detail page, the blog page, and older admin landing/user-management surfaces.
-- Promoted the public tournament-detail bracket into a clearly labeled main-website section so visitors can find the bracket separately from the fixtures list.
-- Shrunk the public main-website bracket into compact clickable matchup nodes so the detailed match card only appears for the currently selected matchup.
-- Added a dedicated form/button styling pass on the public blog and gallery pages so their inputs, upload controls, and action buttons no longer fall back to raw browser defaults.
-- Added a read-only public player-profile route plus service so visitors can open another player's tournament-facing profile without exposing private dashboard-only fields.
-- Linked tournament participant names and selected bracket-detail cards to the new public player-profile page on both the main site and the admin bracket detail view.
-- Reworked the admin connected bracket into a denser selector layout where the full detail card appears only for the currently selected matchup.
-- Added editable registration-open/close dates plus a one-click `Start Tournament` action on the admin tournament-detail page so managers can close registration and build the structure together.
-- Normalized membership-application file URLs to `/files/...` and added DOC/DOCX open-in-new-tab handling in the admin membership review screen.
-- Tightened admin user and membership-review UI consistency with clearer role-vs-membership badges and aligned action/delete button styling.
-- Added filter/sort controls across the remaining admin player lists, including membership review, tournament roster management, and tournament creation pickers.
-- Changed membership-review action buttons to collapse into a compact dropdown on smaller screens while keeping the full inline button row on wider layouts.
-- Reworked the admin tournament bracket so clicking a matchup opens a focused modal for score entry and schedule editing instead of expanding detail cards below the bracket.
-- Increased connected-bracket track spacing and compacted matchup cards so admin knockout nodes stop visually colliding while staying reasonably dense.
-- Restyled tournament section-toggle buttons and the modal time/schedule controls so the admin tournament surface reads more consistently with the rest of the console.
-- Rebuilt the public blog page into a clearer preview-rail plus full-article workflow, with previous/next article navigation and a dedicated composer dialog instead of inline authoring controls.
-- Added multi-image blog post support so blog entries can carry a small image gallery instead of only one oversized image.
-- Restored the gallery page to a stable four-column desktop card layout and added linked-post navigation for blog-originated images.
-- Switched admin tournament mutations onto a soft-refresh flow that preserves the active section and page position instead of hard-resetting the whole page after common saves.
-- Expanded `docs/TESTING_CHECKLIST.md` into a fuller section-by-section QA runbook covering home, auth, profile, tournaments, player profiles, blog, gallery, admin, responsive, and abuse-input sweeps.
-- Added active `Double Elimination` support end to end, including winners-bracket, losers-bracket, and grand-final generation plus loser-path propagation.
-- Added bracket-aware display labels and separate bracket-group rendering on both the public tournament page and the admin tournament console for multi-path brackets.
-- Added `scripts/seed_large_tournaments.php` plus deterministic 64-player seed data for `League`, `Group`, `Elimination`, and `Double Elimination` scale verification.
-- Fixed the missing `tournament_round_title()` helper include on the public tournament-detail service path so completed tournament reads stop failing at runtime.
-- Rebuilt double-elimination generation around a shared opening round that then splits into a left-side losers branch and a right-side winners branch, with dedicated third-place and grand-final matches.
-- Updated the public tournament-detail page so double-elimination matchups open in a larger modal, fixtures are grouped into toggleable status sections, and the merged bracket now treats the opening round as the center spine.
-- Updated the admin tournament-detail bracket filters and merged-lane rendering so winners-only and losers-only views stop showing the same branch and the losers lane mirrors outward from the center opening round.
-- Rebuilt `pages/blog.html` into a clean event-delegated implementation so the preview rail, featured announcement, tag/category filters, and multi-image reader all execute reliably in a real browser.
-- Switched the public gallery page and public tournament-detail page onto the shared `window.appFetchJson(...)` helper so service failures stop degrading into raw `.json()` parser crashes.
-- Restored the shared `js/ui_feedback.js` helper and versioned its page includes so stale cached 404s stop breaking blog, gallery, and admin feedback flows.
-- Filtered orphaned blog/gallery media rows with missing files out of the public services so dead image requests no longer leak into browser console output.
-- Removed the standalone featured-post block from `pages/blog.html` so the page now starts directly with the searchable preview-rail workflow.
-- Added focus-mode/full-screen controls plus bracket-path jump buttons on both the public tournament-detail page and the admin connected bracket for large elimination and double-elimination trees.
-- Increased the admin-panel container width by 20% so the denser tournament/admin workflows have enough horizontal room before responsive collapse.
-- Split the admin tournament-detail page into modular toggleable sections for tournament details, players, matches, type-specific standings/teams, connected bracket, and bracket board.
-- Changed `Group` tournaments to generate exactly two teams and schedule player-vs-player cross-team fixtures in `matches`, while still reading older `team_matches` tournaments as legacy fallback data.
-- Corrected knockout round naming so 4-player league knockouts render `Semifinal` and `Final`, and 64-player elimination brackets always finish on `Quarterfinal`, `Semifinal`, and `Final`.
-- Added single-elimination third-place playoff generation plus placement syncing so champion, runner-up, third place, fourth place, and earlier elimination labels now populate automatically as results land.
-- Reworked the public and admin double-elimination bracket views into merged three-lane layouts with explicit winners-only, losers-only, and grand-final filters instead of always dumping every path together.
-- Added bye/placeholder bracket nodes to keep knockout connectors stable when the entrant count is not a power of two.
-- Changed the public and admin double-elimination view toggles so winners-only and losers-only collapse the opposite branch instead of removing the whole layout outright, keeping the opening round visible as the center spine.
-- Fixed the public/admin `Finals` view so it renders only the grand final and third-place playoff cards instead of falling back to a broken combined bracket state.
-- Tightened the mobile bracket fallbacks on the public tournament page plus the admin connected-bracket and bracket-board views so large elimination trees remain scrollable and readable on narrower screens.
-- Added deployment prep for real PHP hosting:
-  - optional `services/config.local.php` override loading in `services/config.php`
-  - `services/config.local.example.php` for server-side DB credentials
-  - root `.htaccess` to block direct web access to sensitive repo files/directories
-  - `docs/FREE_DEPLOYMENT_GUIDE.md` covering Oracle Cloud Always Free as the recommended free long-term target plus shared-hosting fallback guidance
-- Rebuilt `dart_club.sql` around the productized data model:
-  - membership state
-  - membership applications
-  - tournament lifecycle
-  - team tournaments
-  - blog/community tables
-  - gallery records
-- Removed request-path `ALTER TABLE` calls from active PHP handlers.
-- Standardized DB access away from mixed `root` vs `dartadmin/1234` usage.
-- Standardized session/bootstrap/auth handling through shared helpers.
-- Added an explicit `Round Robin` format and corrected the overloaded tournament-type semantics.
-- Moved tournament scheduling, progression, lifecycle refresh, and archive guards into shared helpers.
-- Updated public/profile/tournament identity resolution to use `players.user_id`.
-- Reworked tournament admin pages around canonical `group_count`, `advancers_per_group`, and `team_count` inputs.
-- Added a public tournament hub and public tournament detail page.
-- Added a real player dashboard and profile-save flow.
-- Replaced the old application page with a membership submission/review flow.
-- Rebuilt blog, comment, like, moderation, and gallery auto-insertion behavior.
-- Fixed the SQL dump so a fresh import succeeds again.
-- Fixed broken session bootstrap in multiple services by switching to `session_status() === PHP_SESSION_NONE`.
-- Added service-level auth checks to admin mutation handlers.
-- Fixed a live team-standings aggregation bug that double-counted completed matches.
-- Fixed a missing helper include that caused `pages/admin/manage_tournaments.php` to fatal.
-- Rebuilt the legacy `create_player.php` endpoint onto the current bootstrap/auth path and blocked unauthenticated access.
-- Fixed shared-media cleanup so removing a gallery entry that originated from a blog post no longer breaks the blog image.
+## Application Surface
 
-## Verified Repo Facts
-- There is no framework scaffolding such as Laravel, Symfony, React build tooling, or Node package management in this repo.
-- Composer is present only for PHPMailer.
-- PHP CLI is not on PATH by default in this Codex environment, but it is available locally via `C:\Users\Ali\xampp\php\php.exe`.
-- MariaDB is available locally via XAMPP and the repo can be exercised against a real imported database.
-- The app ran successfully behind the PHP built-in server at `http://127.0.0.1:8090` against a fresh local import.
-- Historical migration notes still exist in:
-  - `README.md`
-  - `progress.md`
-  - `todolist.md`
-  - `tournament-errors.md`
+### Public / player
 
-## Open Risks
-- Visual/manual QA under Apache/XAMPP still needs a real click-through pass.
-- The new shared admin locale rail and the localized tournament-detail/match-detail flows still need an authenticated browser-eye pass; PHP lint is clean, but no signed-in browser session was run in this pass.
-- Local built-in-server checks showed `pages/admin/admin_panel.php` and `pages/admin/manage_users.php` redirecting cleanly, while DB-backed legacy/tournament detail routes (`pages/admin/show_tournament_details.php`, `pages/admin/view_match_details.php`, and `pages/admin/record_match_result.php`) hit fatal HTML because local MariaDB was refusing connections before those pages reached their auth guard.
-- `create_player.php` plus SMTP/email delivery, including the new signup welcome email path, has not been exercised end to end.
-- Public registration still stores roster registration only; admins decide whether and when registrations become active competition entries.
-- Final UI polish still needs a true browser/responsive pass on the public and admin shells.
-- Some local XAMPP/MariaDB installs may still have broken or missing grants for `dartadmin`; the repo now surfaces clean JSON failures in that state, but the DB user itself still needs an environment-level fix.
-- The new guest registration path creates lightweight `players` rows with `user_id = NULL`; long-term cleanup/reporting rules for those guest-only records are still undocumented.
-- The new public player profile intentionally exposes only safe public tournament history and identity labels; broader profile visibility still needs an explicit privacy decision before expanding further.
-- Existing seeded/demo `Group` tournaments created before this pass can still reflect the older multi-team `team_matches` model until they are regenerated under the new two-team player-vs-player rules.
-- Free shared PHP hosting may still fail on this repo depending on provider-specific MySQL import/runtime limits; Oracle Cloud Always Free is the preferred free path if account setup succeeds.
-- Self-service password reset remains intentionally deferred; account recovery is currently a manual support/admin workflow.
-- `pages/developers.html` still uses placeholder avatars and pending LinkedIn targets because real team photos/URLs were not supplied in the repo.
-- EN/TR localization is partial; the shared shell and key public flows are translated, but some legacy/admin strings still remain English-only.
+- home and shared navigation
+- signup and login/logout
+- player profile onboarding and public profiles
+- tournament hub and tournament details
+- tournament registration
+- fixtures, standings, placements, and connected brackets
+- membership application submission/status
+- blog reader/composer workflow
+- comments and reactions
+- gallery and lightbox behavior
+- EN/TR interface support across major public/admin surfaces
 
-## Remaining Priorities
-- Use `docs/TESTING_CHECKLIST.md` as the next-session manual verification order.
-- Finish the remaining manual/runtime items:
-  - Apache visual QA
-  - responsive/mobile review
-  - SMTP-backed credential email behavior
-  - visual/admin navigation click-through
-- Do a manual browser pass on the new shared public-shell polish:
-  - EN/TR language toggle persistence and copy coverage
-  - page-transition feel, including browser back/forward behavior
-  - footer-safe scroll-up spacing near the social links
-  - `pages/developers.html` once real LinkedIn URLs/photos/logos are available
-- Do a manual browser pass on the new deferred tournament workflow:
-  - empty tournament creation
-  - guest registration modal
-  - signed-in no-profile registration fallback
-  - admin generate/rebuild structure button
-  - admin start-tournament button
-- Do a manual browser pass on the upgraded tournament admin UX:
-  - verify the wider admin layout still behaves cleanly at desktop and tablet widths
-  - verify the new sectioned `show_tournament_details` workflow is easier to navigate on desktop and mobile
-  - compact match scoring in the table view
-  - connected bracket drag-and-drop seeding
-  - bracket-board vs connected-bracket readability
-  - modal-first bracket matchup workflow
-  - mobile/tablet readability of the denser admin tournament screens
-  - responsive membership-review action dropdown behavior
-  - tournament roster filter/sort controls on create/edit pages
-- Do a manual browser pass on the refreshed content/community UX:
-  - preview rail vs full-post reading flow on `pages/blog.html`
-  - multi-image blog authoring dialog
-  - gallery linked-post CTA behavior
-  - four-column gallery desktop layout and responsive collapse
-  - console-clean rendering when posts or gallery rows reference files that no longer exist on disk
-- Do a manual browser pass on the new double-elimination workflow:
-  - create/update a `Double Elimination` tournament from admin
-  - verify merged, winners-only, losers-only, and grand-final filters on public/admin pages
-  - verify the opening round stays centered while the losers path stays left and the winners path stays right in merged view
-  - verify winners-only and losers-only animate by collapsing the opposite branch while keeping the opening round visible in both the connected bracket and bracket-board views
-  - verify the `Finals` button shows only the grand final and third-place playoff on both the public page and the admin page
-  - record results deep enough to verify loser-path propagation and the grand final
-  - verify the seeded `Scale Test - Double Elimination 64` tournament remains readable across desktop, tablet, and mobile widths
-  - verify the new public/admin bracket focus mode is usable at scale
-- Regenerate and manually QA a fresh `Group` tournament under the new rules:
-  - exactly two teams
-  - player-vs-player cross-team fixtures only
-  - no newly generated `team_matches`
-  - team standings aggregated from player results
-- Do a manual browser pass on the new cross-profile navigation:
-  - public bracket detail player links
-  - public participant-list player links
-  - admin bracket detail player links
-- Do a manual browser pass on the updated public tournament hub:
-  - “My tournaments” filtering
-  - logged-in quick registration
-  - guest name-entry registration modal copy and flow
-- Clean up or retire remaining legacy admin pages once replacement coverage is confirmed.
-- Standardize any remaining asset-path or presentation inconsistencies and document SMTP expectations clearly for deployment.
-- Run the first real hosting deployment using `docs/FREE_DEPLOYMENT_GUIDE.md` and record the final host-specific notes once one path is proven end to end.
+### Administration
 
-## Verification State
-- Verified in this pass:
-  - targeted PHP lint for:
-    - `pages/tournament_details.php`
-    - `pages/admin/show_tournament_details.php`
-  - static source inspection confirming the new mobile bracket containers now switch from desktop grid placement to stacked full-width flows at:
-    - `@media (max-width: 820px)` in `pages/tournament_details.php`
-    - `@media (max-width: 900px)` in `pages/admin/show_tournament_details.php`
-  - live built-in-server HTTP `200` check for:
-    - `pages/tournament_details.php?id=8`
-  - live built-in-server unauthenticated redirect check confirming:
-    - `pages/admin/show_tournament_details.php?id=8` still routes to auth instead of fatalling after the responsive CSS changes
-  - targeted PHP lint for:
-    - `services/signup.php`
-    - `pages/main.php`
-    - `pages/tournament_details.php`
-    - `pages/admin/show_tournament_details.php`
-  - live built-in-server HTTP `200` checks for:
-    - `pages/main.php`
-    - `pages/about.html`
-    - `pages/developers.html`
-    - `pages/login.html`
-    - `pages/sign_up.html`
-    - `pages/reset_password.html`
-  - live page/source marker checks for:
-    - homepage build-team CTA plus logo placeholder rail
-    - gallery lightbox close button hooks
-    - public bracket focus-mode button wiring
-    - membership-shell render target on `pages/register.html`
-    - registration-modal wiring on `pages/tournaments.html`
-  - static JS/CSS inspection for:
-    - shared locale toggle and locale persistence in `js/behaviour.js`
-    - footer-aware scroll-up spacing and page-transition shell hooks
-    - mobile auth-card default expansion in `css/login_style.css`
-    - desktop-only title-first auth reveal behavior and centered submit/button layout in `css/login_style.css`
-    - separated fixture-summary count vs toggle button behavior in `pages/tournament_details.php`
-  - targeted PHP lint for the new shared mail helper, refreshed public pages, admin dashboard, legacy fallback admin pages, and regression scripts
-  - live HTTP/source checks for the rebuilt home page, about page, login page, public player profile, admin panel, and reset/help page
-  - live tournament registration confirmation path for signed-in users after introducing the shared mail helper contract
-  - local script verification for:
-    - `scripts/seed_large_tournaments.php`
-    - `scripts/lint_php.ps1`
-    - `scripts/run_smoke_checks.ps1`
-  - static repo scan confirming removed legacy assets/scripts are no longer referenced from active pages
-  - live built-in-server HTTP verification that `services/get_tournaments.php` now returns `200` after restoring the missing tournament-view helper include
-  - guest `services/get_session_context.php` now returns clean JSON even when the configured DB user cannot connect
-  - DB-backed service CLI checks using `putenv(...)` overrides for blank-password local root access:
-    - `services/get_tournaments.php`
-    - `services/get_blogs.php`
-    - `services/gallery_get.php`
-  - shared shell/frontend static inspection for:
-    - dynamic nav-link close handling
-    - missing-section scroll guards
-    - `href="#"` smooth-scroll guard
-  - canonical admin user delete path inspection against `players.user_id -> users.user_id`
-  - fresh DB import from `dart_club.sql`
-  - PHP syntax lint via `C:\Users\Ali\xampp\php\php.exe -l`
-  - public/auth/profile/membership/tournament/blog/gallery HTTP smoke checks
-  - public tournament-detail payloads for `Round Robin`, `League`, `Group`, and `Elimination`
-  - admin page loading for tournament, membership, user-management, and legacy fallback admin screens
-  - tournament helper/runtime coverage for:
-    - `Round Robin`
-    - `League`
-    - `Group`
-    - `Elimination`
-    - odd-player byes
-    - uneven player-group distribution
-    - uneven team allocation
-    - full 128-player completion
-  - tournament HTTP service coverage for:
-    - create/update
-    - match CRUD
-    - match results
-    - team match results
-    - reschedule
-    - archive read-only enforcement
-  - membership submission and approval flow
-  - member-authored blog draft creation
-  - manager/admin blog publish flow
-  - authenticated comments and likes
-  - blog delete flow
-  - automatic gallery insertion from blog images
-  - gallery upload/delete, including blog-linked gallery removal without breaking the blog post
-  - admin `create_player.php` flow and unauthenticated blocking
-  - admin user role update and self-delete guard
-  - broad HTML sweep for inline PHP warnings/fatals on key public/admin pages
-  - unauthenticated access blocking for admin pages and admin mutation services
-  - deferred tournament workflow coverage for:
-    - empty tournament creation
-    - guest/public registration name fallback
-    - registration-open structure generation blocking
-    - registration-closed structure generation and roster promotion
-    - admin page-data summary counts after lifecycle refresh
-  - tournament admin interaction coverage for:
-    - quick-score submissions through the live `match_result.php` endpoint
-    - knockout-slot swapping through the live `match_swap_players.php` endpoint
-    - winner propagation after same-page bracket scoring
-  - public-hub contract coverage for:
-    - `pages/tournaments.html` source updates for “My tournaments” and quick-register copy
-    - live signed-in registration without a manual name prompt via an auto-seeded temporary player profile
-  - public/admin page-source smoke checks for:
-    - `pages/tournament_details.php`
-    - `pages/blog.html`
-    - `pages/admin/show_tournament_details.php`
-    - `pages/admin/manage_users.php`
-    - `pages/admin/admin_panel.php`
-  - public tournament-detail source check for:
-    - explicit `Tournament Bracket` section label
-    - separate `Fixtures List` label
-    - compact clickable bracket nodes with a selected-match detail card
-    - player-profile links from participant rows and selected bracket cards
-  - live public-profile coverage for:
-    - `services/get_public_player_profile.php`
-    - `pages/player_profile.php`
-  - direct HTTP availability for a stored membership document under `/files/applications/membership/...`
-  - public page-source smoke checks for:
-    - upgraded blog button/input styling hooks
-    - upgraded gallery button/input styling hooks
-    - preview-rail blog layout hooks
-    - linked-post gallery lightbox hooks
-  - runtime browser-engine DOM checks for:
-    - `pages/blog.html`
-    - `pages/gallery.html`
-    - `pages/tournament_details.php?id=8`
-  - public tournament-detail DOM markers confirming:
-    - merged/winners/losers/grand-final bracket filter buttons
-    - bye/placeholder nodes in the rendered bracket
-    - merged double-elimination bracket group layout hooks
-  - live HTTP verification that `js/ui_feedback.js?v=20260406-1` now returns `200`
-  - live `Double Elimination` payload verification for `services/get_tournament_details.php?id=8`, including winners/losers/grand-final bracket metadata and loser-path source labels
-  - live public tournament-detail verification after the opening-round split rewrite, including:
-    - `services/get_tournament_details.php?id=8` returning `Opening Round: 32`, `Winners Bracket: 31`, `Losers Bracket: 31`, `Third Place Playoff: 1`, and `Grand Final: 1`
-    - Chrome headless screenshot confirmation that the merged public view now places the opening round in the center and mirrors the losers branch from the left side toward that center lane
-  - temporary transaction-backed tournament helper verification proving that:
-    - fresh `Group` tournaments now generate exactly two teams, four cross-team player fixtures for a 2x2 sample, and zero `team_matches`
-    - fresh 4-player elimination brackets now generate a third-place playoff and sync `Champion`, `Runner-up`, `3rd Place`, and `4th Place`
-    - round-title helpers now return `Semifinal`/`Final` for 4-player league knockouts and `Quarterfinal`/`Semifinal`/`Final` at the end of 64-player elimination brackets
-  - live `get_blogs.php?page=1&pageSize=100` verification after widening the public blog fetch window
-  - live orphan-media filtering verification:
-    - blog post `4` now returns `0` usable images instead of a dead image path
-    - `gallery_get.php` now returns only existing image files
-  - seeded large-tournament verification through `scripts/seed_large_tournaments.php` for:
-    - `Scale Test - League 64`
-    - `Scale Test - Group 64`
-    - `Scale Test - Elimination 64`
-    - `Scale Test - Double Elimination 64`
-  - static admin tournament-detail wiring for:
-    - wider layout plus toggleable details/players/matches/teams/bracket/board sections
-    - editable `registration_close_at`
-    - `Start Tournament`
-    - compact bracket selectors with modal-first match details
-    - shared merged/winners/losers/grand-final filters across both connected bracket and bracket board
-    - player-profile links in bracket-driven match details
-  - static admin-management page wiring for:
-    - role-vs-membership badges in `manage_users.php`
-    - aligned membership action buttons in `manage_players.php`
-    - filter/sort controls in `manage_tournaments.php` and `show_tournament_details.php`
-    - modal-first bracket interaction hooks in `show_tournament_details.php`
-    - soft-refresh tournament admin flow in `js/admin_tournament_details.js`
-    - admin bracket focus-mode button and bracket-path jump controls
-- Not verified in this pass:
-  - real browser-eye QA for the revised desktop auth hover behavior and the new login-side forgot-password CTA
-  - real browser-eye QA for the new EN/TR language toggle across the public pages that now opt into locale switching
-  - real browser/mobile QA for the updated login-card expansion, page-transition overlay, gallery close button, scroll-up spacing, and latest public/admin bracket focus/mobile tweaks
-  - SMTP delivery for the new signup welcome email path
-  - JS syntax checks via `node --check` because `node` is not installed on PATH in this environment
-  - Apache-backed visual QA
-  - SMTP/email delivery
-  - full manual click-through of all admin navigation/items under a real browser
-  - end-to-end browser execution of the updated admin user delete flow
-  - signed-in browser registration flow for a user without a player profile
-  - real drag-and-drop interaction under an actual browser pointer/touch session
-  - real browser rendering of the new connected public/admin bracket layouts
-  - real browser rendering of the new merged double-elimination bracket layouts and view filters
-  - authenticated browser rendering of the admin merged losers-side lane after the new mirrored-lane layout fix
-  - real browser-eye QA for the new click-to-expand public bracket interaction
-  - real browser-eye QA for the admin bracket after switching from selected detail cards to a modal-first workflow
-  - authenticated browser execution of the new admin `Start Tournament` action
-  - authenticated browser verification of the membership DOC/DOCX preview fallback behavior
-  - responsive browser verification of the new membership-action dropdown collapse behavior
-  - browser QA for the new filter/sort controls across tournament roster lists
-  - browser QA for the new preview-rail blog flow and multi-image blog authoring path
-  - browser QA for the updated gallery lightbox and linked-post navigation
-  - standard built-in-server DB-backed smoke checks under the default `dartadmin` credentials because the local MariaDB grant state is unhealthy
-- Next-session operator guide:
-  - `docs/TESTING_CHECKLIST.md`
+- user/role management
+- player registry
+- membership review/approval/rejection
+- player-account creation
+- tournament creation, roster management, lifecycle controls, and archival
+- match scheduling/results
+- connected bracket and bracket-board controls
+- blog moderation/publishing
+- gallery upload/removal
+
+## Identity and Permission Model
+
+- `user_role` controls authorization.
+- `membership_status` tracks club-membership state separately.
+- approved members may author blog drafts.
+- managers/admins may publish/moderate and review membership applications.
+- admin-only behavior remains distinct from manager/player behavior where services enforce it.
+
+## Tournament Engine
+
+Supported formats:
+
+- `Round Robin`
+- `League`
+- `Group`
+- `Elimination`
+- `Double Elimination`
+
+The maintained helpers cover registration/rosters, fixture generation, standings, result propagation, bracket linkage, byes, group promotion, team behavior, loser-path propagation, third-place matches, and grand-final workflows as appropriate to each format.
+
+## Persistence and File Model
+
+- MySQL/MariaDB stores users, players, membership state, tournaments, matches, teams, blogs, comments, reactions, and gallery metadata.
+- Local server storage holds gallery/blog images and membership documents.
+- Membership documents are private application data and must not be served directly.
+- Composer installs PHPMailer from the committed lockfile; `vendor/` is not part of maintained source control.
+
+## Security Baseline
+
+The publication branch now includes:
+
+- environment/ignored-local database configuration with no tracked default password;
+- production refusal of empty DB passwords;
+- strict cookie-only PHP sessions;
+- HttpOnly + SameSite=Lax cookies and Secure cookies in production/HTTPS;
+- session-ID regeneration after login and cookie clearing on logout;
+- production-safe service exception responses;
+- production same-origin checks for unsafe HTTP methods;
+- bcrypt password storage and bcrypt-hashed local seed credentials;
+- no temporary-password delivery by email;
+- manager/admin-authorized membership downloads;
+- MIME/content validation and rollback cleanup for membership uploads;
+- Apache denial for direct membership-document access;
+- allowlist DOM sanitization for blog rich HTML on both write and read;
+- MIME-validated randomized gallery/blog image uploads;
+- audited Composer dependencies and PHPMailer 6.12.x;
+- publication guard, sanitizer smoke tests, and PHP syntax CI.
+
+See `SECURITY.md` for deployment boundaries.
+
+## Local Seed Data
+
+`dart_club.sql` contains demonstration users for the main authorization/membership states. Known local QA passwords may be documented for operators, but the SQL fixture stores password hashes rather than plaintext credentials.
+
+Seed accounts are for local testing only and must be replaced or removed in any real deployment.
+
+## Automated Verification
+
+The maintained branch is checked with:
+
+```text
+composer validate --strict
+composer install
+composer audit
+python3 scripts/publication_guard.py
+php scripts/security_smoke.php
+PHP syntax scan across the non-vendor tree
+```
+
+CI currently targets PHP 8.3 with `mysqli`, `mbstring`, `fileinfo`, `zip`, and `dom`.
+
+## Manual Verification
+
+Automated CI does not currently create a MariaDB/Apache browser environment. Before a portfolio/demo release, run the manual database/browser matrix in:
+
+- `docs/RUN_PROTOCOL.md`
+- `docs/TESTING_CHECKLIST.md`
+
+Particular attention should go to:
+
+- login/session behavior;
+- membership upload/download privacy;
+- every tournament format;
+- bracket progression and responsive rendering;
+- blog rich content/comments/reactions;
+- gallery workflows;
+- manager/admin permission boundaries;
+- EN/TR admin/public navigation.
+
+## Repository Hygiene
+
+CI inventory measured the maintained tracked tree at roughly 47 MiB. Most bytes are intentional gallery/demo images. Generated Composer `vendor/` files and an exported Cursor conversation transcript have been removed from maintained source control.
+
+The GitHub repository remains much larger historically because deleted/old objects still exist in Git history. A clean-history public portfolio copy is therefore preferred over making the original development archive public in place.
+
+## Current Limitations
+
+- No self-service password-reset backend.
+- No object storage for uploads.
+- No automated full database/browser E2E in CI.
+- No claim of horizontal scalability or cloud-native deployment.
+- Membership privacy depends on equivalent web-server denial rules when Apache `.htaccess` is not used.
+- Email delivery is best-effort and deployment-specific.
+- Gallery/image publication rights must be confirmed independently from source-code licensing.
+
+## Publication Blockers
+
+Before public portfolio visibility:
+
+1. choose and add an explicit source-code license;
+2. confirm rights to redistribute the retained gallery/demo imagery;
+3. complete a final authenticated local browser/database walkthrough using synthetic data;
+4. preferably publish the maintained tree into a fresh-history public repository while preserving this original repository privately as development history.

@@ -14,6 +14,10 @@ if (!function_exists('app_config_env')) {
     }
 }
 
+if (!defined('APP_ENV')) {
+    define('APP_ENV', strtolower(trim(app_config_env('APP_ENV', 'development'))));
+}
+
 if (!defined('APP_DB_HOST')) {
     define('APP_DB_HOST', app_config_env('APP_DB_HOST', 'localhost'));
 
@@ -21,7 +25,7 @@ if (!defined('APP_DB_HOST')) {
     define('APP_DB_PORT', $portValue === false ? 3306 : (int) $portValue);
 
     define('APP_DB_NAME', app_config_env('APP_DB_NAME', 'dart_club'));
-    define('APP_DB_USER', app_config_env('APP_DB_USER', 'dartadmin'));
-    define('APP_DB_PASS', app_config_env('APP_DB_PASS', '1234'));
+    define('APP_DB_USER', app_config_env('APP_DB_USER', 'root'));
+    define('APP_DB_PASS', app_config_env('APP_DB_PASS', ''));
     define('APP_DB_CHARSET', app_config_env('APP_DB_CHARSET', 'utf8mb4'));
 }

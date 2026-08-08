@@ -42,11 +42,24 @@ if (!filter_var($input['email'], FILTER_VALIDATE_EMAIL)) {
     app_json_response(['success' => false, 'message' => 'Email address is invalid.'], 422);
 }
 
-$applicationId = $input['appId'] !== '' ? (int) $input['appId'] : null;
-$rawPassword = $input['temporaryPassword'] !== '' ? $input['temporaryPassword'] : bin2hex(random_bytes(10));
-if ($input['temporaryPassword'] !== '' && strlen($input['temporaryPassword']) < 8) {
-    app_json_response(['success' => false, 'message' => 'Temporary password must be at least 8 characters.'], 422);
+if ($input['temporaryPassword'] === '') {
+    app_json_response([
+        'success' => false,
+        'message' => 'A temporary password is required so club management can deliver it through a separate trusted channel.',
+    ], 422);
 }
+
+if (strlen($input['temporaryPassword']) < 10
+    || !preg_match('/[A-Za-z]/', $input['temporaryPassword'])
+    || !preg_match('/\d/', $input['temporaryPassword'])) {
+    app_json_response([
+        'success' => false,
+        'message' => 'Temporary password must be at least 10 characters and include a letter and a number.',
+    ], 422);
+}
+
+$applicationId = $input['appId'] !== '' ? (int) $input['appId'] : null;
+$rawPassword = $input['temporaryPassword'];
 $hashedPassword = password_hash($rawPassword, PASSWORD_BCRYPT);
 $role = 'player';
 $approvedByUserId = $applicationId ? get_current_user_id() : null;
@@ -139,20 +152,23 @@ try {
     $conn->commit();
 } catch (Throwable $exception) {
     $conn->rollback();
-    app_json_response(['success' => false, 'message' => $exception->getMessage()], 422);
+    app_json_response([
+        'success' => false,
+        'message' => app_safe_error_message($exception, 'Player account could not be created.'),
+    ], 422);
 }
 
 app_send_best_effort_email(
     $input['email'],
     trim($input['fName'] . ' ' . $input['lName']),
-    'Your player account credentials',
-    "Hello {$input['fName']} {$input['lName']},<br>Your account has been created.<br>Username: {$input['username']}<br>Temporary password: {$rawPassword}",
-    "Hello {$input['fName']} {$input['lName']},\nYour account has been created.\nUsername: {$input['username']}\nTemporary password: {$rawPassword}"
+    'Your player account is ready',
+    "Hello {$input['fName']} {$input['lName']},<br>Your account has been created.<br>Username: {$input['username']}<br>Please obtain your temporary password directly from club management through the agreed trusted channel.",
+    "Hello {$input['fName']} {$input['lName']},\nYour account has been created.\nUsername: {$input['username']}\nPlease obtain your temporary password directly from club management through the agreed trusted channel."
 );
 
 app_json_response([
     'success' => true,
-    'message' => 'Player and user created successfully.',
+    'message' => 'Player and user created successfully. Deliver the temporary password separately; it was not sent by email.',
     'user_id' => $userId,
     'player_id' => $playerId,
 ]);

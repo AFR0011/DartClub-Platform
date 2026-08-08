@@ -3,6 +3,7 @@
 require_once __DIR__ . '/app_bootstrap.php';
 require_once __DIR__ . '/dbConnection.php';
 require_once __DIR__ . '/auth.php';
+require_once __DIR__ . '/shared/html_sanitizer.php';
 
 app_start_session();
 
@@ -67,6 +68,7 @@ try {
 
     foreach ($items as &$item) {
         $blogId = (int) $item['blog_id'];
+        $item['blog_content'] = app_sanitize_rich_html((string) ($item['blog_content'] ?? ''));
 
         $imagesStmt = $conn->prepare(
             'SELECT blog_image_id, file_path, title
@@ -138,5 +140,5 @@ try {
         'total' => $total,
     ]);
 } catch (Throwable $exception) {
-    app_json_response(['error' => 'Failed to fetch blogs: ' . $exception->getMessage()], 500);
+    app_json_response(['error' => app_safe_error_message($exception, 'Failed to fetch blogs.')], 500);
 }

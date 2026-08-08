@@ -21,7 +21,7 @@ Use this as the full manual QA path for the website. Run it top to bottom after 
    - at least one closed/archived tournament
    - at least one tournament of each type: `Round Robin`, `League`, `Group`, `Elimination`, `Double Elimination`
 7. If local tournament data is sparse, seed the large regression set before starting:
-   - `C:\Users\Ali\xampp\php\php.exe scripts/seed_large_tournaments.php`
+   - `php scripts/seed_large_tournaments.php`
    - verify these titles exist:
      - `Scale Test - League 64`
      - `Scale Test - Group 64`

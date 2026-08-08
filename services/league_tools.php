@@ -53,5 +53,5 @@ try {
         } catch (Throwable $ignored) {
         }
     }
-    app_json_response(['success' => false, 'message' => $exception->getMessage()], 422);
+    app_json_response(['success' => false, 'message' => app_safe_error_message($exception)], 422);
 }

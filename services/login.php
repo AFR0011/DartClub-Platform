@@ -58,6 +58,7 @@ if (!$verified) {
     app_json_response(['success' => false, 'message' => 'Incorrect email or password.'], 401);
 }
 
+session_regenerate_id(true);
 $_SESSION['user_id'] = (int) $user['user_id'];
 $_SESSION['user_name'] = $user['user_name'];
 $_SESSION['user_role'] = $user['user_role'];
