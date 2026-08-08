@@ -28,6 +28,9 @@ def main() -> int:
     membership = read("services/submit_membership_application.php")
     membership_download = read("services/download_membership_application.php")
     membership_htaccess = read("files/applications/membership/.htaccess")
+    sanitizer = read("services/shared/html_sanitizer.php")
+    create_blog = read("services/create_blog.php")
+    get_blogs = read("services/get_blogs.php")
     sql = read("dart_club.sql")
     read("services/config.local.example.php")
 
@@ -42,6 +45,14 @@ def main() -> int:
     ):
         if marker not in bootstrap:
             fail(f"session hardening marker missing: {marker}")
+
+    for marker in (
+        "app_enforce_same_origin_mutation",
+        "HTTP_ORIGIN",
+        "Cross-origin state-changing requests are not allowed.",
+    ):
+        if marker not in bootstrap:
+            fail(f"same-origin mutation boundary missing: {marker}")
 
     if "session_regenerate_id(true)" not in login:
         fail("login does not rotate the session identifier")
@@ -58,6 +69,18 @@ def main() -> int:
         fail("membership download endpoint is not manager/admin-gated")
     if "Require all denied" not in membership_htaccess:
         fail("membership upload directory is not blocked from direct Apache access")
+
+    for marker in (
+        "DOMDocument",
+        "app_safe_rich_html_url",
+        "noopener noreferrer",
+        "allowedAttributes",
+    ):
+        if marker not in sanitizer:
+            fail(f"rich HTML sanitizer is missing allowlist/security marker: {marker}")
+    for name, text in (("create_blog.php", create_blog), ("get_blogs.php", get_blogs)):
+        if "shared/html_sanitizer.php" not in text or "app_sanitize_rich_html" not in text:
+            fail(f"{name} does not use the shared rich HTML sanitizer")
 
     plaintext_seed_passwords = ("adminpass", "managerpass", "memberpass", "playerpass")
     for password in plaintext_seed_passwords:
