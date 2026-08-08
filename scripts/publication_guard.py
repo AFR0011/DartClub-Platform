@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+import subprocess
 from pathlib import Path
 
 
@@ -20,6 +21,17 @@ def read(relative: str) -> str:
     return path.read_text(encoding="utf-8", errors="replace")
 
 
+def tracked_files() -> list[str]:
+    result = subprocess.run(
+        ["git", "ls-files"],
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    return [line.strip() for line in result.stdout.splitlines() if line.strip()]
+
+
 def main() -> int:
     config = read("services/config.php")
     bootstrap = read("services/app_bootstrap.php")
@@ -32,6 +44,10 @@ def main() -> int:
     create_blog = read("services/create_blog.php")
     get_blogs = read("services/get_blogs.php")
     sql = read("dart_club.sql")
+    readme = read("README.md")
+    security = read("SECURITY.md")
+    publication = read("PUBLICATION.md")
+    composer = read("composer.json")
     read("services/config.local.example.php")
 
     if "APP_DB_PASS', '1234'" in config or "APP_DB_PASS\", \"1234" in config:
@@ -93,6 +109,34 @@ def main() -> int:
         text = path.read_text(encoding="utf-8", errors="replace")
         if "$exception->getMessage()" in text:
             fail(f"raw exception message returned/used in service: {path.relative_to(ROOT)}")
+
+    for marker in (
+        "No public source-code license has been selected yet",
+        "clean modern history",
+        "PHPMailer 6.12",
+    ):
+        if marker not in readme:
+            fail(f"README missing publication boundary/state marker: {marker}")
+    if "Historical repository boundary" not in security:
+        fail("SECURITY.md must document the historical Git boundary")
+    if "License blocker" not in publication:
+        fail("PUBLICATION.md must retain the explicit license blocker")
+    if '"license": "proprietary"' not in composer:
+        fail("composer.json must remain explicitly proprietary until a public source license is chosen")
+
+    tracked = tracked_files()
+    if any(path.startswith("vendor/") for path in tracked):
+        fail("Composer vendor files are still tracked")
+    if "progress.md" in tracked:
+        fail("generated Cursor progress transcript is still tracked")
+
+    public_text_paths = [ROOT / "README.md", ROOT / "PUBLICATION.md", ROOT / "SECURITY.md"]
+    public_text_paths.extend((ROOT / "docs").rglob("*.md"))
+    private_path_marker = "C:\\Users\\Ali\\"
+    for path in public_text_paths:
+        text = path.read_text(encoding="utf-8", errors="replace")
+        if private_path_marker in text:
+            fail(f"machine-specific home-directory path remains in public documentation: {path.relative_to(ROOT)}")
 
     if FAILURES:
         print("publication guard failed:")
