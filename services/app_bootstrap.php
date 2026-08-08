@@ -109,6 +109,51 @@ if (!defined('APP_BOOTSTRAPPED')) {
         ];
     }
 
+    function app_request_host(): string
+    {
+        return strtolower(trim((string) ($_SERVER['HTTP_HOST'] ?? '')));
+    }
+
+    function app_origin_host(string $origin): string
+    {
+        $host = strtolower((string) parse_url($origin, PHP_URL_HOST));
+        if ($host === '') {
+            return '';
+        }
+
+        $port = parse_url($origin, PHP_URL_PORT);
+
+        return $port ? $host . ':' . (int) $port : $host;
+    }
+
+    function app_enforce_same_origin_mutation(): void
+    {
+        $method = strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET'));
+        if (!in_array($method, ['POST', 'PUT', 'PATCH', 'DELETE'], true)) {
+            return;
+        }
+
+        $origin = trim((string) ($_SERVER['HTTP_ORIGIN'] ?? ''));
+        if ($origin === '') {
+            if (app_is_production()) {
+                app_json_response([
+                    'success' => false,
+                    'message' => 'Request origin could not be verified.',
+                ], 403);
+            }
+            return;
+        }
+
+        $requestHost = app_request_host();
+        $originHost = app_origin_host($origin);
+        if ($requestHost === '' || $originHost === '' || !hash_equals($requestHost, $originHost)) {
+            app_json_response([
+                'success' => false,
+                'message' => 'Cross-origin state-changing requests are not allowed.',
+            ], 403);
+        }
+    }
+
     function app_redirect(string $path): void
     {
         header('Location: ' . $path);
@@ -196,5 +241,7 @@ if (!defined('APP_BOOTSTRAPPED')) {
         set_exception_handler(static function (Throwable $exception): void {
             app_json_response(app_service_exception_payload($exception), 500);
         });
+
+        app_enforce_same_origin_mutation();
     }
 }
