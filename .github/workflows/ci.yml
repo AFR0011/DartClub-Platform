@@ -18,7 +18,7 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.3'
-          extensions: mysqli, mbstring, fileinfo, zip
+          extensions: mysqli, mbstring, fileinfo, zip, dom
           tools: composer:v2
           coverage: none
 
@@ -33,6 +33,9 @@ jobs:
 
       - name: Publication guard
         run: python3 scripts/publication_guard.py
+
+      - name: Security smoke
+        run: php scripts/security_smoke.php
 
       - name: PHP syntax scan
         run: |
