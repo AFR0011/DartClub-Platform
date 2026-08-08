@@ -13,7 +13,6 @@ if (!is_manager_or_admin()) {
 $sql = "SELECT
             ma.application_id,
             ma.status,
-            ma.application_file_path,
             ma.original_filename,
             ma.submitted_at,
             ma.reviewed_at,
@@ -42,7 +41,8 @@ $sql = "SELECT
 $result = $conn->query($sql);
 $items = [];
 while ($row = $result->fetch_assoc()) {
-    $row['application_file_path'] = app_public_path($row['application_file_path'] ?? null);
+    $applicationId = (int) $row['application_id'];
+    $row['application_file_path'] = '/services/download_membership_application.php?application_id=' . $applicationId;
     $items[] = $row;
 }
 
