@@ -3,6 +3,7 @@
 require_once __DIR__ . '/app_bootstrap.php';
 require_once __DIR__ . '/dbConnection.php';
 require_once __DIR__ . '/auth.php';
+require_once __DIR__ . '/shared/html_sanitizer.php';
 
 app_start_session();
 
@@ -102,11 +103,10 @@ if (mb_strlen($blogTags) > 255) {
 }
 
 $blogTitle = strip_tags($blogTitle);
-$allowedTags = '<p><br><strong><em><ul><ol><li><a><blockquote><code><pre><h1><h2><h3><h4><h5><h6><img>';
-$blogContent = strip_tags($blogContent, $allowedTags);
-$blogContent = preg_replace('/on[a-z]+\s*=\s*"[^"]*"/i', '', $blogContent);
-$blogContent = preg_replace("/on[a-z]+\s*=\s*'[^']*'/i", '', $blogContent);
-$blogContent = preg_replace('/javascript:/i', '', $blogContent);
+$blogContent = app_sanitize_rich_html($blogContent);
+if ($blogContent === '') {
+    app_json_response(['success' => false, 'message' => 'Blog content is empty after sanitization.'], 422);
+}
 
 $status = can_publish_blog_posts() && $requestedStatus === 'published' ? 'published' : 'draft';
 $userId = get_current_user_id();
