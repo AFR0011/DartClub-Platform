@@ -1,0 +1,44 @@
+name: Composer Lock Refresh
+
+on:
+  pull_request:
+    branches:
+      - master
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out publication branch
+        uses: actions/checkout@v7
+        with:
+          ref: publication/dart-club-release
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mysqli, mbstring, fileinfo, zip
+          tools: composer:v2
+          coverage: none
+
+      - name: Refresh PHPMailer lock
+        run: composer update phpmailer/phpmailer --with-all-dependencies --no-interaction --no-progress
+
+      - name: Audit refreshed dependencies
+        run: composer audit --no-interaction
+
+      - name: Commit verified lockfile
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add composer.lock
+          if git diff --cached --quiet; then
+            echo "Composer lockfile already matches the publication dependency graph."
+          else
+            git commit -m "Refresh PHPMailer dependency lock"
+            git push origin HEAD:publication/dart-club-release
+          fi
