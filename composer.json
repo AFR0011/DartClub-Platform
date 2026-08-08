@@ -2,7 +2,7 @@
     "name": "afr0011/dart-club-website",
     "description": "Legacy plain-PHP/MySQL club, membership, community, and tournament-management web application.",
     "type": "project",
-    "license": "proprietary",
+    "license": "MIT",
     "require": {
         "phpmailer/phpmailer": "^6.12"
     }
