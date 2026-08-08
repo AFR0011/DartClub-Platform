@@ -1,0 +1,78 @@
+name: Dart Club History Audit
+
+on:
+  pull_request:
+    branches:
+      - master
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out full history
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Git object footprint
+        run: git count-objects -vH
+
+      - name: Largest historical blobs
+        run: |
+          python3 - <<'PY'
+          import subprocess
+
+          rev = subprocess.run(
+              ['git', 'rev-list', '--objects', '--all'],
+              check=True,
+              capture_output=True,
+              text=True,
+          ).stdout.splitlines()
+          rows = []
+          for line in rev:
+              if not line.strip():
+                  continue
+              object_id, *rest = line.split(' ', 1)
+              path = rest[0] if rest else ''
+              info = subprocess.run(
+                  ['git', 'cat-file', '-t', object_id],
+                  check=True,
+                  capture_output=True,
+                  text=True,
+              ).stdout.strip()
+              if info != 'blob':
+                  continue
+              size = int(subprocess.run(
+                  ['git', 'cat-file', '-s', object_id],
+                  check=True,
+                  capture_output=True,
+                  text=True,
+              ).stdout.strip())
+              rows.append((size, object_id, path))
+          for size, object_id, path in sorted(rows, reverse=True)[:30]:
+              print(f'{size / 1024 / 1024:8.2f} MiB  {object_id[:12]}  {path}')
+          PY
+
+      - name: Sensitive-looking historical paths
+        run: |
+          git log --all --name-only --pretty=format: \
+            | sed '/^$/d' \
+            | sort -u \
+            | grep -Ei '(^|/)(\.env($|\.)|config\.local\.php$|config\.php$|progress\.md$|vendor/|files/applications/membership/)' \
+            || true
+
+      - name: Historical database configuration changes
+        run: |
+          git log -p --all -- services/config.php \
+            | grep -E '^[+-].*(APP_DB_(HOST|PORT|NAME|USER|PASS)|dartadmin|1234)' \
+            || true
+
+      - name: Historical credential filename scan
+        run: |
+          git rev-list --objects --all \
+            | grep -Ei '(secret|credential|token|password|cookie|\.pem$|\.key$)' \
+            | head -100 \
+            || true
