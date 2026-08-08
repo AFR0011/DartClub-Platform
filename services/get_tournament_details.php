@@ -60,5 +60,5 @@ try {
         'recent_results' => array_slice($recentResults, 0, 8),
     ]);
 } catch (Throwable $exception) {
-    app_json_response(['success' => false, 'message' => $exception->getMessage()], 404);
+    app_json_response(['success' => false, 'message' => app_safe_error_message($exception)], 404);
 }

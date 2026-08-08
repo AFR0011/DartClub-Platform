@@ -76,5 +76,5 @@ try {
 
     app_json_response($tournaments);
 } catch (Throwable $exception) {
-    app_json_response(['error' => 'Failed to fetch tournaments: ' . $exception->getMessage()], 500);
+    app_json_response(['error' => 'Failed to fetch tournaments: ' . app_safe_error_message($exception)], 500);
 }

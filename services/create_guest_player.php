@@ -36,7 +36,7 @@ try {
     $playerId = (int) $db->insert_id;
     $stmt->close();
 } catch (Throwable $exception) {
-    app_json_response(['success' => false, 'message' => $exception->getMessage()], 422);
+    app_json_response(['success' => false, 'message' => app_safe_error_message($exception)], 422);
 }
 
 app_json_response([

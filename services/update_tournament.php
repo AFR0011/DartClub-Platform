@@ -30,7 +30,7 @@ try {
         $db->rollback();
     }
 
-    $_SESSION['error'] = 'Error updating tournament: ' . $exception->getMessage();
+    $_SESSION['error'] = 'Error updating tournament: ' . app_safe_error_message($exception);
 }
 
 app_redirect('../pages/admin/show_tournament_details.php?id=' . $tourId);

@@ -193,5 +193,5 @@ try {
             @unlink($storedFile);
         }
     }
-    app_json_response(['success' => false, 'message' => $exception->getMessage()], 500);
+    app_json_response(['success' => false, 'message' => app_safe_error_message($exception)], 500);
 }

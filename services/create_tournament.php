@@ -27,7 +27,7 @@ try {
         $db->rollback();
     }
 
-    $_SESSION['error'] = 'Error creating tournament: ' . $exception->getMessage();
+    $_SESSION['error'] = 'Error creating tournament: ' . app_safe_error_message($exception);
 }
 
 app_redirect('../pages/admin/manage_tournaments.php');

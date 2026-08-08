@@ -323,10 +323,10 @@ ALTER TABLE `tournaments`
 INSERT INTO `users`
   (`user_id`, `user_name`, `email`, `password`, `user_role`, `membership_status`, `member_since`, `membership_approved_at`)
 VALUES
-  (1, 'admin', 'admin@local.test', 'adminpass', 'admin', 'approved', NOW(), NOW()),
-  (2, 'manager', 'manager@local.test', 'managerpass', 'manager', 'approved', NOW(), NOW()),
-  (3, 'member', 'member@local.test', 'memberpass', 'player', 'approved', NOW(), NOW()),
-  (4, 'player', 'player@local.test', 'playerpass', 'player', 'not_submitted', NULL, NULL);
+  (1, 'admin', 'admin@local.test', '$2y$12$34vBtdj5ZjmmgN56Qp2Fqed/Kwg1x0cwcF8kAcjZiJFmg07HzmZia', 'admin', 'approved', NOW(), NOW()),
+  (2, 'manager', 'manager@local.test', '$2y$12$iMVa5WDKHbpg98T/Wvpb1ui6jZMBBi.U9TGDQ1XslitgFJ3J2btNC', 'manager', 'approved', NOW(), NOW()),
+  (3, 'member', 'member@local.test', '$2y$12$T2n8918KXu3MYT2XbjHCsOKKJNArfMP0.tW.EUgUKJbuc6iluezKq', 'player', 'approved', NOW(), NOW()),
+  (4, 'player', 'player@local.test', '$2y$12$eIJfOw9pFguU3JrSgPGiRu9tW506HjvJ8gOJ./ORjcVnZIRVAot9a', 'player', 'not_submitted', NULL, NULL);
 
 INSERT INTO `players`
   (`plr_idNum`, `plr_name`, `plr_surname`, `plr_address`, `plr_dob`, `plr_phone`, `plr_username`, `user_id`)

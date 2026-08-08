@@ -64,5 +64,5 @@ try {
 
     app_json_response($fallbackImages);
 } catch (Throwable $exception) {
-    app_json_response(['error' => 'Failed to fetch gallery images: ' . $exception->getMessage()], 500);
+    app_json_response(['error' => 'Failed to fetch gallery images: ' . app_safe_error_message($exception)], 500);
 }
