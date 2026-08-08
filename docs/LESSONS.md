@@ -24,7 +24,7 @@
 
 ## PowerShell SQL Import Needs A Pipe, Not `<`
 - In this Windows workspace, PowerShell does not support shell-style `<` redirection for `mysql.exe`.
-- Use `Get-Content -Raw 'dart_club.sql' | & 'C:\Users\Ali\xampp\mysql\bin\mysql.exe' -u root dart_club` for reproducible imports.
+- Use `Get-Content -Raw 'dart_club.sql' | & 'mysql' -u root dart_club` for reproducible imports.
 
 ## Team Standings Cannot Aggregate Roster Rows And Match Rows Together
 - In team-mode tournaments, joining `tournament_team_players` and `team_matches` in one aggregate query multiplies completed-match stats by roster size.
