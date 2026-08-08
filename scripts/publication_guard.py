@@ -48,6 +48,7 @@ def main() -> int:
     security = read("SECURITY.md")
     publication = read("PUBLICATION.md")
     composer = read("composer.json")
+    license_text = read("LICENSE")
     read("services/config.local.example.php")
 
     if "APP_DB_PASS', '1234'" in config or "APP_DB_PASS\", \"1234" in config:
@@ -110,19 +111,17 @@ def main() -> int:
         if "$exception->getMessage()" in text:
             fail(f"raw exception message returned/used in service: {path.relative_to(ROOT)}")
 
-    for marker in (
-        "No public source-code license has been selected yet",
-        "clean modern history",
-        "PHPMailer",
-    ):
+    for marker in ("MIT License", "clean modern history", "PHPMailer"):
         if marker not in readme:
             fail(f"README missing publication boundary/state marker: {marker}")
     if "Historical repository boundary" not in security:
         fail("SECURITY.md must document the historical Git boundary")
-    if "License blocker" not in publication:
-        fail("PUBLICATION.md must retain the explicit license blocker")
-    if '"license": "proprietary"' not in composer:
-        fail("composer.json must remain explicitly proprietary until a public source license is chosen")
+    if "MIT License" not in publication:
+        fail("PUBLICATION.md must document the MIT License")
+    if '"license": "MIT"' not in composer:
+        fail("composer.json must declare MIT")
+    if not license_text.startswith("MIT License") or "Copyright (c) 2026 Ali Farrokhnejad" not in license_text:
+        fail("LICENSE must contain the MIT license and project copyright notice")
 
     tracked = tracked_files()
     if any(path.startswith("vendor/") for path in tracked):
