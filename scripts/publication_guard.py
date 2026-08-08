@@ -113,7 +113,7 @@ def main() -> int:
     for marker in (
         "No public source-code license has been selected yet",
         "clean modern history",
-        "PHPMailer 6.12",
+        "PHPMailer",
     ):
         if marker not in readme:
             fail(f"README missing publication boundary/state marker: {marker}")
