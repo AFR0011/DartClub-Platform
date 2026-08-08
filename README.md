@@ -205,4 +205,4 @@ The historical Git repository is much larger than the current tree because old o
 
 ## License
 
-No public source-code license has been selected yet. Composer is temporarily marked `proprietary` so dependency metadata is explicit while the repository remains private. Do not change repository visibility to public until the intended source-code license is deliberately chosen and added.
+Dart Club Website is released under the MIT License. See [`LICENSE`](LICENSE).
