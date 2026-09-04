@@ -48,9 +48,7 @@ jobs:
         run: sudo apt-get update && sudo apt-get install --yes mariadb-client
 
       - name: Import deterministic schema
-        env:
-          MARIADB_PWD: dart_club_ci_root
-        run: mariadb --host=127.0.0.1 --user=root dart_club < dart_club.sql
+        run: mariadb --host=127.0.0.1 --user=root --password=dart_club_ci_root dart_club < dart_club.sql
 
       - name: Audit Composer dependencies
         run: composer audit --no-interaction
