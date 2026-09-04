@@ -1,208 +1,177 @@
-# Dart Club Website
+# DartClub-Platform
 
-Dart Club Website is a legacy plain-PHP/MySQL web application for club membership, community publishing, player profiles, tournament administration, registration, standings, and connected bracket workflows.
+A maintained plain-PHP/MySQL club operations application with role-aware
+administration, membership review, community publishing, and five tournament
+formats—including linked single- and double-elimination brackets.
 
-The project is maintained as an engineering portfolio artifact rather than presented as a modern framework rewrite. Its value is the breadth of application behavior implemented in a deliberately simple stack: role-aware authentication, membership review, multiple tournament formats, bracket progression, admin workflows, community content, file handling, and incremental security hardening around an older codebase.
+![DartClub-Platform homepage](docs/assets/dartclub-homepage.png)
 
-## Implemented product surface
+This is a legacy-modernization portfolio project, not a framework rewrite. Its
+engineering value is the breadth of real application behavior preserved and
+made testable in a deliberately simple stack.
 
-### Public and player experience
+## What it demonstrates
 
-- Club home page and responsive navigation.
-- Signup, login/logout, and player-profile onboarding.
-- Public player profiles.
-- Tournament discovery, details, registration, fixtures, standings, and bracket views.
-- Membership application upload and status workflow.
-- Blog feed, draft/publish workflow, comments, reactions, and linked gallery images.
-- Standalone gallery browsing and lightbox behavior.
-- English/Turkish interface support across major screens.
+- named, hardened PHP sessions with player, manager, and administrator roles;
+- membership submission/review while keeping club status separate from auth role;
+- public/player profiles, tournament registration, fixtures, standings, and results;
+- Round Robin, League, two-team Group, Elimination, and Double Elimination;
+- winner/loser bracket propagation, byes, group promotion, placements, and archives;
+- blog drafts/publishing, comments, reactions, gallery integration, and safe rich HTML;
+- private local document handling and MIME-validated media uploads;
+- a reproducible MariaDB-backed integration job in GitHub Actions.
 
-### Administration
+## Verified release boundary
 
-- User, role, player, and membership management.
-- Membership application approval/rejection with reviewer notes.
-- Player-account creation after approval.
-- Tournament creation and management.
-- Match scheduling/results and bracket-board interaction.
-- Gallery upload/removal and blog moderation.
-- Tournament archival/read-only behavior.
+| Area | Evidence |
+| --- | --- |
+| Dependencies and syntax | Composer strict validation/audit and full PHP syntax scan |
+| Sessions and user administration | HTTP tests prove the `dart_club_session` login path, admin listing/role mutation, and guest/player denial |
+| Membership authorization | HTTP tests prove review access and that membership approval does not change auth role |
+| Tournament engine | Database contracts exercise all five formats, Round Robin standings, League promotion, Group fixtures, and Double Elimination winner/loser propagation |
+| Content safety | UTF-8 sanitizer smoke tests cover event/script/style and unsafe-protocol removal |
+| Presentation | Publication guard checks required files, claims, placeholders, and tracked-worktree hygiene |
 
-### Tournament formats
-
-The maintained application includes workflows for:
-
-- Round Robin
-- League / group-stage-to-knockout
-- Group/team competition
-- Single Elimination
-- Double Elimination
-
-Tournament services cover registration validation, roster management, standings, match result propagation, bracket advancement, byes, group promotion, and team/player fixture behavior depending on the format.
+The release does **not** claim comprehensive browser E2E coverage, Internet-scale
+deployment, fault tolerance, realtime scoring, or verified SMTP delivery.
 
 ## Architecture
 
-```text
-Browser pages / admin console
-        |
-        v
-Plain HTML/CSS/JavaScript + PHP pages
-        |
-        v
-PHP service endpoints
-  - auth / roles
-  - membership
-  - tournaments / matches
-  - blogs / gallery
-  - profiles
-        |
-        +--> shared bootstrap/config/security helpers
-        +--> PHPMailer (optional best-effort SMTP)
-        |
-        v
-MySQL / MariaDB
-```
+![DartClub-Platform architecture](docs/assets/dartclub-architecture.svg)
 
-This is intentionally not described as a horizontally scalable or framework-managed application. Sessions, Apache/PHP behavior, database state, and local upload storage are part of the deployment boundary.
+Browser-facing PHP/HTML pages call role-protected service endpoints. Shared
+bootstrap, auth, sanitization, mail, player, and tournament helpers own common
+behavior; MySQL/MariaDB stores application state, while approved local paths
+hold media and membership documents.
 
-## Security hardening in the maintained release
+## Contribution
 
-The publication branch adds or verifies:
+Ali Farrokhnejad authored and maintains the application code, including the
+portfolio hardening and verification work. Morteza Farrokhnejad and Nazife
+Dimililer contributed non-code project support.
 
-- environment/local-file database configuration with no tracked default DB password;
-- strict cookie-only PHP sessions with HttpOnly, SameSite=Lax, and production/HTTPS Secure cookies;
-- session-ID rotation after successful authentication;
-- production-safe exception responses rather than raw database/runtime error disclosure;
-- production same-origin enforcement for state-changing service requests;
-- bcrypt password storage, including bcrypt-hashed local seed credentials;
-- no temporary passwords sent by email;
-- manager/admin-authorized membership document downloads rather than public file URLs;
-- MIME/content validation and failed-transaction cleanup for membership uploads;
-- direct Apache denial for the private membership-document directory;
-- allowlist-based rich HTML sanitization on blog write **and read** to protect legacy rows from stored XSS;
-- MIME validation and randomized filenames for gallery/blog image uploads;
-- audited PHPMailer dependency installation through Composer;
-- publication guards, sanitizer security smoke, and full PHP syntax verification in CI.
+## Stack
 
-See [`SECURITY.md`](SECURITY.md) for the trust and deployment boundaries.
-
-## Requirements
-
-A typical local setup uses:
-
-- PHP 8.3+ with `mysqli`, `mbstring`, `fileinfo`, `zip`, and `dom` extensions;
-- Apache or another PHP-capable web server;
-- MySQL/MariaDB;
-- Composer 2.
-
-CI verifies the maintained tree on PHP 8.3.
+- PHP 8.3+ and Apache or PHP's development server
+- MySQL/MariaDB
+- plain JavaScript, HTML, and CSS
+- Composer with PHPMailer 6.12.x
+- Python 3 for HTTP integration and publication checks
 
 ## Local setup
 
-Install PHP dependencies from the committed lockfile:
+Install the locked dependency set:
 
 ```bash
 composer install
 ```
 
-Import the development schema/seed data:
+Create and import the development database:
 
 ```bash
+mysql -u root -p -e "CREATE DATABASE IF NOT EXISTS dart_club"
 mysql -u root -p dart_club < dart_club.sql
 ```
 
-Copy the safe local configuration template:
-
-```bash
-cp services/config.local.example.php services/config.local.php
-```
-
-On PowerShell:
+PowerShell does not support shell-style input redirection. Use:
 
 ```powershell
-Copy-Item services/config.local.example.php services/config.local.php
+Get-Content -Raw dart_club.sql | mysql -u root -p dart_club
 ```
 
-Edit the local file or set environment variables for your database. `services/config.local.php` is ignored by Git.
+Copy `services/config.local.example.php` to the ignored
+`services/config.local.php`, then set the local database values. Environment
+variables are also supported:
 
-For a lightweight PHP development server:
+- `APP_ENV`
+- `APP_DB_HOST`, `APP_DB_PORT`, `APP_DB_NAME`
+- `APP_DB_USER`, `APP_DB_PASS`, `APP_DB_CHARSET`
+- optional `SMTP_HOST`, `SMTP_PORT`, `SMTP_AUTH`, `SMTP_USER`, `SMTP_PASS`,
+  `SMTP_SECURE`, and `SMTP_FROM`
+
+Start a lightweight development server:
 
 ```bash
 php -S 127.0.0.1:8090 -t .
 ```
 
-Apache/XAMPP or an equivalent local stack is still recommended for the complete upload/`.htaccess` behavior.
-
-## Configuration
-
-Database configuration can be supplied through the local override file or environment:
-
-- `APP_ENV` (`development` or `production`)
-- `APP_DB_HOST`
-- `APP_DB_PORT`
-- `APP_DB_NAME`
-- `APP_DB_USER`
-- `APP_DB_PASS`
-- `APP_DB_CHARSET`
-
-Production refuses an empty database password.
-
-### Optional SMTP
-
-Best-effort email notifications use PHPMailer when SMTP is configured:
-
-- `SMTP_HOST`
-- `SMTP_PORT`
-- `SMTP_AUTH`
-- `SMTP_USER`
-- `SMTP_PASS`
-- `SMTP_SECURE`
-- `SMTP_FROM`
-
-Player-account email does **not** contain the temporary password. Club management must deliver that credential through a separate trusted channel.
-
-## Local seed accounts
-
-`dart_club.sql` includes local-only demonstration accounts for the major roles. Their known demo passwords may be documented for local QA, but the SQL fixture stores those credentials as bcrypt hashes rather than plaintext values.
-
-Do not reuse demo credentials in a real deployment. Replace or remove seeded accounts before deployment.
+Use Apache or equivalent server rules when validating direct access denial for
+membership documents.
 
 ## Verification
 
-GitHub Actions currently requires:
+Static/security checks:
 
-- `composer validate --strict`
-- clean Composer security audit
-- repository publication guard
-- rich-HTML sanitizer security smoke
-- PHP syntax validation across the maintained tree
+```bash
+composer validate --strict
+composer install --no-interaction --prefer-dist
+composer audit --no-interaction
+python3 scripts/publication_guard.py
+php scripts/security_smoke.php
+```
 
-Useful local helpers also live under `scripts/`; see [`docs/RUN_PROTOCOL.md`](docs/RUN_PROTOCOL.md) and [`docs/TESTING_CHECKLIST.md`](docs/TESTING_CHECKLIST.md) for the broader browser/database regression ladder.
+After importing a fresh database and exporting the `APP_DB_*` variables:
 
-## Repository footprint
+```bash
+php tests/prepare_integration_fixture.php
+php tests/tournament_contracts.php
+python3 tests/http_integration.py
+```
 
-The maintained working tree is roughly **47 MiB**, mostly intentional gallery/demo imagery. Generated Composer `vendor/` files and an exported Cursor development transcript were removed from the maintained branch.
+The fixture values are local-only synthetic test data. See
+[`docs/RUN_PROTOCOL.md`](docs/RUN_PROTOCOL.md) for the complete ladder and
+[`docs/TESTING_CHECKLIST.md`](docs/TESTING_CHECKLIST.md) for optional broader
+manual browser coverage.
 
-The historical Git repository is much larger than the current tree because old objects remain in history. For a recruiter-facing public release, [`PUBLICATION.md`](PUBLICATION.md) recommends publishing the maintained tree with a clean modern history while preserving this private repository as the development archive.
+## Security and deployment boundary
+
+This repository is intended for local demonstration or controlled deployment.
+Before any Internet-facing use, independently review TLS/origin configuration,
+rate limiting, account recovery, private-file server rules, filesystem quotas,
+SMTP policy, seed accounts, backups, and data retention.
+
+Passwords use PHP password hashes; the maintained login path can migrate legacy
+plaintext/MD5 development rows after a verified login. New credentials must
+never use a legacy format. Self-service password reset is intentionally absent;
+the application directs users to administrator/support recovery.
+
+See [`SECURITY.md`](SECURITY.md) for the full trust boundary.
+
+## Data, forms, and media
+
+The checked-in accounts and profile fields are synthetic or publication-
+consented fixtures. The blank DOCX forms under `other/` are intentionally public
+templates for users to download, complete, and submit. Retained photographs and
+logos are owner-created or cleared for public redistribution.
+
+The current photographs are web-sized copies; original high-resolution files do
+not belong in the maintained tree.
 
 ## Known limitations
 
-- Self-service password reset is not implemented; the reset page directs users to account-help/contact paths instead of pretending a backend reset flow exists.
-- Email is best-effort and deployment-specific.
-- Private membership documents currently rely on Apache `.htaccess` denial plus the authenticated PHP download endpoint; equivalent web-server rules are required when deploying outside Apache.
-- Uploads live on local server storage rather than object storage.
-- There is no automated full browser/database E2E environment in CI; the existing CI is static/security/dependency verification plus extensive manual regression documentation.
-- The codebase remains a legacy server-rendered/plain-JavaScript application rather than a framework migration.
-- The historical repository is substantially larger than the maintained source tree.
+- local server storage rather than object storage;
+- Apache-specific `.htaccess` rules require equivalents on other servers;
+- manual administrator/support account recovery;
+- best-effort, deployment-specific email;
+- no application-level rate limiter under the controlled-demo boundary;
+- several large tournament files remain mixed-concern legacy code;
+- no exhaustive browser/device, SMTP, or real-host verification;
+- historical Git objects make the repository roughly 443 MiB even though the
+  maintained tree is much smaller.
 
-## Project documentation
+The large history is retained intentionally as authentic development evidence;
+this release uses the same repository and normal commits rather than a rewritten
+or replacement history.
 
-- [`docs/PROJECT_STATE.md`](docs/PROJECT_STATE.md) — maintained feature/state snapshot.
-- [`docs/REPO_MAP.md`](docs/REPO_MAP.md) — routes/services/data-flow map.
-- [`docs/RUN_PROTOCOL.md`](docs/RUN_PROTOCOL.md) — verification ladder.
-- [`docs/TESTING_CHECKLIST.md`](docs/TESTING_CHECKLIST.md) — detailed manual regression matrix.
-- [`PUBLICATION.md`](PUBLICATION.md) — portfolio/release boundaries.
-- [`SECURITY.md`](SECURITY.md) — security and disclosure policy.
+## Documentation
+
+- [`docs/PROJECT_STATE.md`](docs/PROJECT_STATE.md) — current implemented state
+- [`docs/REPO_MAP.md`](docs/REPO_MAP.md) — routes, services, and data flow
+- [`docs/RUN_PROTOCOL.md`](docs/RUN_PROTOCOL.md) — reproducible checks
+- [`PUBLICATION.md`](PUBLICATION.md) — release evidence and boundaries
+- [`SECURITY.md`](SECURITY.md) — security policy
 
 ## License
 
-Dart Club Website is released under the MIT License. See [`LICENSE`](LICENSE).
+Source code is available under the [MIT License](LICENSE). Media and trademarks
+retain their respective ownership and are not relicensed by the source license.

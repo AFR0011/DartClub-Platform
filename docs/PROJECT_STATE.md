@@ -1,151 +1,72 @@
-# PROJECT_STATE
+# Project state
 
-Last updated: 2026-08-08
+Last updated: 2026-09-03
+State: portfolio finalization in verification
 
-## Current Status
+## Product boundary
 
-Dart Club Website is a maintained legacy PHP/MySQL application with substantial public, player, membership, community, tournament, and admin workflows. The current publication branch focuses on preserving that functionality while tightening configuration, session handling, private-document access, content sanitization, dependency hygiene, and release documentation.
+DartClub-Platform is a maintained plain-PHP/MySQL portfolio application for
+local demonstration and controlled deployment. It models public club pages plus
+role-aware membership, community, player, and tournament administration. It is
+not presented as a production Internet service or a modern framework project.
 
-This document records the current implementation rather than serving as an exhaustive chronological changelog.
+## Maintained application surface
 
-## Application Surface
+- signup, login/logout, profile onboarding, and public player profiles;
+- club membership application, review, approval/rejection, and protected download;
+- blogs, comments, reactions, moderation, multi-image posts, and gallery views;
+- player/user administration with auth role separate from membership state;
+- tournament creation, registration, rosters, fixtures, results, standings,
+  placements, lifecycle, archival, and public/admin bracket views;
+- Round Robin, League, Group, Elimination, and Double Elimination formats;
+- EN/TR support across major public and administration surfaces.
 
-### Public / player
+Detached blog/gallery bridge pages and standalone match-result/detail fallbacks
+were removed from the maintained tree. Their evolution remains in Git history.
 
-- home and shared navigation
-- signup and login/logout
-- player profile onboarding and public profiles
-- tournament hub and tournament details
-- tournament registration
-- fixtures, standings, placements, and connected brackets
-- membership application submission/status
-- blog reader/composer workflow
-- comments and reactions
-- gallery and lightbox behavior
-- EN/TR interface support across major public/admin surfaces
+## Current engineering baseline
 
-### Administration
+- shared configuration/bootstrap/session/JSON/error helpers;
+- prepared statements across maintained data paths;
+- service-level role enforcement;
+- bcrypt password storage with bounded legacy-row migration;
+- production same-origin checks for mutation requests;
+- private membership-file authorization, confinement, MIME checks, and rollback;
+- rich-HTML allowlist sanitization on write/read;
+- randomized, MIME-validated image uploads;
+- Composer lockfile, dependency audit, publication guard, and syntax CI;
+- MariaDB-backed HTTP/session/membership and tournament contract tests.
 
-- user/role management
-- player registry
-- membership review/approval/rejection
-- player-account creation
-- tournament creation, roster management, lifecycle controls, and archival
-- match scheduling/results
-- connected bracket and bracket-board controls
-- blog moderation/publishing
-- gallery upload/removal
+## Ownership and provenance
 
-## Identity and Permission Model
+Ali Farrokhnejad authored and maintains the application code. Morteza
+Farrokhnejad and Nazife Dimililer provided non-code project support.
 
-- `user_role` controls authorization.
-- `membership_status` tracks club-membership state separately.
-- approved members may author blog drafts.
-- managers/admins may publish/moderate and review membership applications.
-- admin-only behavior remains distinct from manager/player behavior where services enforce it.
+Checked-in fixture identities/data are synthetic or publication-consented.
+Current photographs/logos are owner-created or cleared for public
+redistribution. Blank DOCX membership forms are intentional public templates.
+The historical short database value was disposable local-only and never reused.
 
-## Tournament Engine
+## Verification state
 
-Supported formats:
+Required release checks are defined in `docs/RUN_PROTOCOL.md`. Local PHP 8.4
+syntax and sanitizer smoke checks pass. The MariaDB-backed contracts require the
+public GitHub Actions environment before release closure.
 
-- `Round Robin`
-- `League`
-- `Group`
-- `Elimination`
-- `Double Elimination`
+Do not claim comprehensive browser/device, Apache, SMTP, or real-host validation.
 
-The maintained helpers cover registration/rosters, fixture generation, standings, result propagation, bracket linkage, byes, group promotion, team behavior, loser-path propagation, third-place matches, and grand-final workflows as appropriate to each format.
+## Known limitations
 
-## Persistence and File Model
+- manual administrator/support account recovery;
+- no application-level rate limiter under the controlled-demo boundary;
+- local uploads and Apache-specific direct-access denial;
+- best-effort deployment-specific email;
+- several large mixed-concern tournament files;
+- no exhaustive browser or device suite;
+- roughly 443 MiB historical repository footprint retained intentionally.
 
-- MySQL/MariaDB stores users, players, membership state, tournaments, matches, teams, blogs, comments, reactions, and gallery metadata.
-- Local server storage holds gallery/blog images and membership documents.
-- Membership documents are private application data and must not be served directly.
-- Composer installs PHPMailer from the committed lockfile; `vendor/` is not part of maintained source control.
+## Release gate
 
-## Security Baseline
-
-The publication branch now includes:
-
-- environment/ignored-local database configuration with no tracked default password;
-- production refusal of empty DB passwords;
-- strict cookie-only PHP sessions;
-- HttpOnly + SameSite=Lax cookies and Secure cookies in production/HTTPS;
-- session-ID regeneration after login and cookie clearing on logout;
-- production-safe service exception responses;
-- production same-origin checks for unsafe HTTP methods;
-- bcrypt password storage and bcrypt-hashed local seed credentials;
-- no temporary-password delivery by email;
-- manager/admin-authorized membership downloads;
-- MIME/content validation and rollback cleanup for membership uploads;
-- Apache denial for direct membership-document access;
-- allowlist DOM sanitization for blog rich HTML on both write and read;
-- MIME-validated randomized gallery/blog image uploads;
-- audited Composer dependencies and PHPMailer 6.12.x;
-- publication guard, sanitizer smoke tests, and PHP syntax CI.
-
-See `SECURITY.md` for deployment boundaries.
-
-## Local Seed Data
-
-`dart_club.sql` contains demonstration users for the main authorization/membership states. Known local QA passwords may be documented for operators, but the SQL fixture stores password hashes rather than plaintext credentials.
-
-Seed accounts are for local testing only and must be replaced or removed in any real deployment.
-
-## Automated Verification
-
-The maintained branch is checked with:
-
-```text
-composer validate --strict
-composer install
-composer audit
-python3 scripts/publication_guard.py
-php scripts/security_smoke.php
-PHP syntax scan across the non-vendor tree
-```
-
-CI currently targets PHP 8.3 with `mysqli`, `mbstring`, `fileinfo`, `zip`, and `dom`.
-
-## Manual Verification
-
-Automated CI does not currently create a MariaDB/Apache browser environment. Before a portfolio/demo release, run the manual database/browser matrix in:
-
-- `docs/RUN_PROTOCOL.md`
-- `docs/TESTING_CHECKLIST.md`
-
-Particular attention should go to:
-
-- login/session behavior;
-- membership upload/download privacy;
-- every tournament format;
-- bracket progression and responsive rendering;
-- blog rich content/comments/reactions;
-- gallery workflows;
-- manager/admin permission boundaries;
-- EN/TR admin/public navigation.
-
-## Repository Hygiene
-
-CI inventory measured the maintained tracked tree at roughly 47 MiB. Most bytes are intentional gallery/demo images. Generated Composer `vendor/` files and an exported Cursor conversation transcript have been removed from maintained source control.
-
-The GitHub repository remains much larger historically because deleted/old objects still exist in Git history. A clean-history public portfolio copy is therefore preferred over making the original development archive public in place.
-
-## Current Limitations
-
-- No self-service password-reset backend.
-- No object storage for uploads.
-- No automated full database/browser E2E in CI.
-- No claim of horizontal scalability or cloud-native deployment.
-- Membership privacy depends on equivalent web-server denial rules when Apache `.htaccess` is not used.
-- Email delivery is best-effort and deployment-specific.
-- Gallery/image publication rights must be confirmed independently from source-code licensing.
-
-## Publication Blockers
-
-Before public portfolio visibility:
-
-1. choose and add an explicit source-code license;
-2. confirm rights to redistribute the retained gallery/demo imagery;
-3. complete a final authenticated local browser/database walkthrough using synthetic data;
-4. preferably publish the maintained tree into a fresh-history public repository while preserving this original repository privately as development history.
+The repository remains active. Publish `v1.0.0-portfolio`, update GitHub
+metadata/security controls, and delete merged branches only after exact-SHA
+public CI and fresh-clone verification pass.

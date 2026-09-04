@@ -1,10 +1,10 @@
 param(
-    [string]$PhpExe = "C:\Users\Ali\xampp\php\php.exe",
+    [string]$PhpExe = "php",
     [string]$Root = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 )
 
-if (-not (Test-Path $PhpExe)) {
-    Write-Error "PHP executable not found at $PhpExe"
+if (-not (Get-Command $PhpExe -ErrorAction SilentlyContinue)) {
+    Write-Error "PHP executable not found: $PhpExe. Pass -PhpExe with an explicit path if PHP is not on PATH."
     exit 1
 }
 

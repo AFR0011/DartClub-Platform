@@ -67,30 +67,6 @@
         </div>
       </section>
 
-      <section class="logos section">
-        <div class="logos__container container grid">
-          <img
-            src="../files/media/images/emulogo.png"
-            alt="Eastern Mediterranean University logo"
-            class="logos__img"
-            loading="lazy"
-          />
-          <img
-            src="../files/media/images/doubleedgedlogo.png"
-            alt="Neo DoubleEdged logo"
-            class="logos__img"
-            loading="lazy"
-          />
-          <img
-            src="../files/media/images/logoblackandgray.png"
-            alt="Studio logo placeholder"
-            class="logos__img"
-            loading="lazy"
-          />
-          <div class="logos__placeholder" data-i18n-en="Personal logo slot reserved" data-i18n-tr="Kisisel logo alani ayrildi">Personal logo slot reserved</div>
-        </div>
-      </section>
-
       <section class="events section" id="events">
         <div class="container">
           <div class="section__data">
@@ -230,12 +206,9 @@
                 The website now handles public tournament discovery, player profiles, membership applications, club news, and media so the whole community can follow the same workflow.
                 Whether you are joining your first event or tracking a full tournament run, the goal is the same: make the club easy to follow and easy to participate in.
               </p>
-              <div style="display:flex; flex-wrap:wrap; gap:0.85rem; justify-content:center;">
+              <div style="display:flex; justify-content:center;">
                 <a href="about.html" class="button button__flex">
                   <span data-i18n-en="About the Club & Platform" data-i18n-tr="Kulup ve Platform Hakkinda">About the Club & Platform</span> <i class="ri-information-2-line"></i>
-                </a>
-                <a href="developers.html" class="button button__flex" style="background:rgba(255,255,255,0.05); color:#fff; border-color:rgba(255,255,255,0.16);">
-                  <span data-i18n-en="Meet the Build Team" data-i18n-tr="Ekibi Taniyin">Meet the Build Team</span> <i class="ri-team-line"></i>
                 </a>
               </div>
             </div>

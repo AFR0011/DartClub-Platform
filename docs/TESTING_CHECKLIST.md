@@ -292,12 +292,13 @@ For `main`, `tournaments`, `tournament_details`, `profile`, `register`, `blog`, 
 8. Confirm no screen throws raw PHP warnings, JSON parse errors, or layout-breaking overflow.
 9. Confirm no screen depends on a missing shared `ui_feedback.js` asset and that toast/confirm/prompt flows still work where present.
 
-## 20. Legacy And Fallback Pages
-1. Open `pages/admin/manage_blogs.php`.
-2. Open `pages/admin/image_upload.php`.
-3. Open `pages/admin/record_match_result.php`.
-4. Open `pages/admin/view_match_details.php`.
-5. Confirm these still load without fatal errors, even if they are no longer the primary workflow.
+## 20. Release Contracts
+1. Import `dart_club.sql` into a fresh disposable database.
+2. Run `tests/prepare_integration_fixture.php`.
+3. Run `tests/tournament_contracts.php`.
+4. Run `tests/http_integration.py`.
+5. Confirm the public CI job passes these contracts on the exact release commit.
+6. Confirm removed legacy bridge/fallback pages are not linked from any maintained surface.
 
 ## Exit Criteria
 The run passes only if all of these are true:

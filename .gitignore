@@ -6,9 +6,10 @@ php-server.log
 php-server-error.log
 *.log
 
-# Local Codex workspace state
-.codex/*
-!.codex/config.toml
+# Local agent/editor workspace state
+.codex/
+.codex-observer/
+.claude/
 
 # Local deployment overrides
 services/config.local.php
@@ -36,3 +37,5 @@ Manual Verification.txt
 # OS/editor noise
 .DS_Store
 Thumbs.db
+__pycache__/
+*.pyc

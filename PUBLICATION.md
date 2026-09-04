@@ -1,77 +1,79 @@
-# Publication Readiness
+# Publication readiness
 
-Dart Club Website is being prepared as a public engineering portfolio project showcasing the maintained legacy PHP/MySQL application, its tournament/community feature set, and the security-hardening work applied to the codebase.
+DartClub-Platform is published in place as a controlled-demo legacy PHP/MySQL
+portfolio application. The same repository name and authentic development
+history are intentional.
 
-## Required before public visibility
+## Release gates
 
-- [x] Remove tracked default database passwords and local machine-specific configuration from the maintained runtime path.
-- [x] Harden PHP sessions and rotate the session identifier after login.
-- [x] Stop emailing temporary player passwords.
-- [x] Protect membership documents behind manager/admin authorization and block direct Apache access.
-- [x] Validate membership document MIME/content and clean up failed uploads.
-- [x] Replace plaintext local seed passwords with bcrypt hashes.
-- [x] Route service exception details through the production-safe error boundary.
-- [x] Add same-origin protection for state-changing production service requests.
-- [x] Replace regex-only rich HTML filtering with allowlist DOM sanitization on blog write and read.
-- [x] Upgrade/audit the maintained PHPMailer dependency and remove committed `vendor/` files.
-- [x] Remove generated Cursor transcript material from the maintained tree.
-- [x] Add publication/security CI and security smoke coverage.
-- [x] Run a full-history object/path audit to decide whether in-place public visibility is safe.
-- [x] License the source code under the MIT License.
-- [x] Confirm redistribution rights for retained gallery/demo photography and project assets.
-- [ ] Complete an authenticated manual browser/database walkthrough after the final branch is installed in a disposable local environment.
-- [ ] Use only synthetic/demo membership documents, user data, and credentials in public screenshots.
+- [x] Source licensed under MIT.
+- [x] Current photographs/logos confirmed owner-created or cleared for public
+  redistribution.
+- [x] Checked-in identities and personal-looking fields confirmed synthetic or
+  publication-consented.
+- [x] Blank membership forms confirmed intentional public download/submission
+  templates.
+- [x] Historical short database value confirmed disposable local-only and never
+  reused for a real system.
+- [x] Current runtime configuration contains no tracked usable database password.
+- [x] Named sessions, login rotation, same-origin production mutation checks,
+  password hashing, private document access, MIME validation, and rich-HTML
+  sanitization are present.
+- [x] Admin user listing/role mutation uses the canonical auth/session/error path.
+- [x] Detached fallback pages and public identity/logo placeholders are removed.
+- [x] Tool/editor state and generated dependencies are excluded from the
+  maintained tree.
+- [x] Current 6000×4000 photographs are replaced by web-sized equivalents.
+- [ ] Public MariaDB-backed CI passes on the final release commit.
+- [ ] A fresh public clone repeats the documented integration checks.
+- [x] The final privacy-safe screenshot is captured from the reviewed tree and
+  checked at desktop and mobile widths.
+- [ ] Final repository metadata, security settings, tag, release, and merged-
+  branch cleanup are read back successfully.
 
-## Repository-history decision
+## History decision
 
-The full-history audit makes the release-path decision technical rather than stylistic.
+The repository previously recommended a clean-history successor based on an
+incorrect classification of two historical DOCX objects. Inspection established
+that one is the public blank membership form and the other is an unrelated
+document, not a completed private membership application. The owner also
+confirmed the historical short database value was disposable and never reused.
 
-Observed Git history:
+Therefore the approved release preserves:
 
-- packed Git objects: approximately **432.69 MiB**;
-- current maintained working tree: approximately **47 MiB**;
-- historical membership uploads include two DOCX files, including one approximately **5.01 MiB** document;
-- historical configuration contains the removed local database defaults `dartadmin` / `1234`;
-- historical objects also contain a large batch of imported photography under `files/media/Other Images/...`, committed Composer `vendor/` files, and the removed `progress.md` development transcript.
+- the name `DartClub-Platform`;
+- every pre-finalization commit;
+- the normal Git graph and public URL.
 
-The targeted credential-filename scan did not surface private key/credential files; it only matched the existing reset-password page. Because private membership documents definitely exist in history, **do not make this original repository public in place**.
+No rebase, squash, force-push, replacement repository, or manufactured history
+is part of this release. The approximately 443 MiB historical footprint remains
+a known tradeoff.
 
-The portfolio release path is:
+## Verified scope
 
-1. keep this original repository private as the development archive;
-2. use `publication/dart-club-release` as the canonical maintained source snapshot;
-3. create a separate public repository from the cleaned current tree with fresh history;
-4. copy the maintained project assets into that clean public tree;
-5. retain the documentation that this is a maintained legacy PHP/MySQL application;
-6. preserve the MIT license in the public repository.
+The release gate covers Composer/dependency health, PHP/JavaScript syntax,
+sanitizer behavior, named-session HTTP authentication, admin role management,
+membership authorization/status separation, fresh schema import, and synthetic
+tournament contracts for all five maintained formats.
 
-A clean public history is a privacy boundary here, not merely a nicer commit graph.
+This evidence does not turn the project into a production Internet service. It
+does not establish exhaustive browser/device behavior, SMTP delivery, non-Apache
+private-file rules, rate limiting, backups, retention policy, or real-host
+operations.
 
-## Engineering scope
+## Attribution and assets
 
-The repository demonstrates:
+Ali Farrokhnejad authored and maintains the application code. Morteza
+Farrokhnejad and Nazife Dimililer provided non-code project support.
 
-- a substantial role-aware PHP/MySQL application;
-- signup/login/profile onboarding and public player profiles;
-- membership application submission, review, approval, and account creation;
-- user/role/membership administration;
-- tournament registration and several tournament formats;
-- standings, fixtures, connected bracket progression, byes, group promotion, and team competition workflows;
-- blog drafting/publishing, comments, reactions, rich content, and gallery integration;
-- image/document upload boundaries;
-- multilingual EN/TR user-interface work;
-- legacy-code security hardening, dependency hygiene, CI, and manual regression discipline.
+Current photographs/logos are owner-created or cleared for public
+redistribution. Source-code licensing does not relicense third-party marks or
+media. Public screenshots must use only the cleared fixture/media set and must
+not show submitted membership documents, real credentials, or live service data.
 
-## Current boundaries
+## Release policy
 
-The maintained release uses local server uploads, Apache/PHP sessions, and MySQL/MariaDB rather than object storage or horizontally scaled infrastructure. Self-service password reset is not implemented, and full authenticated browser/database regression remains a manual verification step rather than a CI job.
-
-## Demo data and screenshots
-
-Public screenshots should use local demonstration accounts and synthetic membership/player information. Do not use real membership documents, phone numbers, addresses, private email addresses, or live SMTP/database configuration.
-
-The retained gallery and demo assets are cleared for publication.
-
-## License
-
-Dart Club Website source code is released under the MIT License. See `LICENSE`.
+Create `v1.0.0-portfolio` only after public CI and fresh-clone verification pass.
+Attach no database dump, user upload, secret, binary dependency tree, or
+unverified benchmark. Delete a branch only after its tip is proved reachable
+from the final default branch.

@@ -23,19 +23,17 @@ def read(relative: str) -> str:
 
 def tracked_files() -> list[str]:
     result = subprocess.run(
-        ["git", "ls-files"],
-        cwd=ROOT,
-        check=True,
-        capture_output=True,
-        text=True,
+        ["git", "ls-files"], cwd=ROOT, check=True, capture_output=True, text=True
     )
-    return [line.strip() for line in result.stdout.splitlines() if line.strip()]
+    return [line.strip().replace("\\", "/") for line in result.stdout.splitlines() if line.strip()]
 
 
 def main() -> int:
     config = read("services/config.php")
     bootstrap = read("services/app_bootstrap.php")
     login = read("services/login.php")
+    get_users = read("services/get_users.php")
+    update_role = read("services/update_user_role.php")
     create_player = read("services/create_player.php")
     membership = read("services/submit_membership_application.php")
     membership_download = read("services/download_membership_application.php")
@@ -50,92 +48,126 @@ def main() -> int:
     composer = read("composer.json")
     license_text = read("LICENSE")
     read("services/config.local.example.php")
+    read("tests/prepare_integration_fixture.php")
+    read("tests/tournament_contracts.php")
+    read("tests/http_integration.py")
+    read("docs/assets/dartclub-architecture.svg")
+    read("docs/assets/dartclub-homepage.png")
 
-    if "APP_DB_PASS', '1234'" in config or "APP_DB_PASS\", \"1234" in config:
-        fail("services/config.php still contains the historical hardcoded DB password")
+    password_default = re.search(
+        r"app_config_env\(['\"]APP_DB_PASS['\"],\s*['\"]([^'\"]*)['\"]\)",
+        config,
+    )
+    if password_default is None or password_default.group(1) != "":
+        fail("services/config.php contains a non-empty default DB password")
 
     for marker in (
+        "session_name('dart_club_session')",
         "session.use_strict_mode",
         "session.use_only_cookies",
         "'httponly' => true",
         "'samesite' => 'Lax'",
-    ):
-        if marker not in bootstrap:
-            fail(f"session hardening marker missing: {marker}")
-
-    for marker in (
         "app_enforce_same_origin_mutation",
         "HTTP_ORIGIN",
-        "Cross-origin state-changing requests are not allowed.",
     ):
         if marker not in bootstrap:
-            fail(f"same-origin mutation boundary missing: {marker}")
+            fail(f"bootstrap security marker missing: {marker}")
 
     if "session_regenerate_id(true)" not in login:
         fail("login does not rotate the session identifier")
 
+    for name, text in (("get_users.php", get_users), ("update_user_role.php", update_role)):
+        if "'/auth.php'" not in text or "app_json_response" not in text:
+            fail(f"{name} bypasses the canonical auth/JSON path")
+        if re.search(r"\bsession_start\s*\(", text):
+            fail(f"{name} starts a default PHP session directly")
+
     if "Temporary password:" in create_player or "temporary password: {$rawPassword}" in create_player:
-        fail("create_player.php still sends a temporary password by email")
+        fail("create_player.php sends a temporary password by email")
 
-    if "finfo_file" not in membership:
-        fail("membership document upload does not validate server-detected MIME type")
-    if "@unlink($destination)" not in membership:
-        fail("membership upload does not clean up moved files after DB failure")
-
+    if "finfo_file" not in membership or "@unlink($destination)" not in membership:
+        fail("membership upload MIME/rollback controls are incomplete")
     if "is_manager_or_admin()" not in membership_download:
         fail("membership download endpoint is not manager/admin-gated")
     if "Require all denied" not in membership_htaccess:
         fail("membership upload directory is not blocked from direct Apache access")
 
-    for marker in (
-        "DOMDocument",
-        "app_safe_rich_html_url",
-        "noopener noreferrer",
-        "allowedAttributes",
-    ):
+    for marker in ("DOMDocument", "app_safe_rich_html_url", "noopener noreferrer", "allowedAttributes"):
         if marker not in sanitizer:
-            fail(f"rich HTML sanitizer is missing allowlist/security marker: {marker}")
+            fail(f"rich HTML sanitizer marker missing: {marker}")
+    if "mb_convert_encoding" in sanitizer:
+        fail("rich HTML sanitizer retains the PHP 8.4-deprecated HTML-entity conversion")
     for name, text in (("create_blog.php", create_blog), ("get_blogs.php", get_blogs)):
         if "shared/html_sanitizer.php" not in text or "app_sanitize_rich_html" not in text:
             fail(f"{name} does not use the shared rich HTML sanitizer")
 
-    plaintext_seed_passwords = ("adminpass", "managerpass", "memberpass", "playerpass")
-    for password in plaintext_seed_passwords:
+    for password in ("adminpass", "managerpass", "memberpass", "playerpass"):
         if re.search(rf"['\"]{re.escape(password)}['\"]", sql):
-            fail(f"dart_club.sql still stores local seed password in plaintext: {password}")
+            fail(f"dart_club.sql stores a local seed password in plaintext: {password}")
 
+    raw_exception = re.compile(r"\$[A-Za-z_][A-Za-z0-9_]*->getMessage\s*\(")
     for path in (ROOT / "services").rglob("*.php"):
         if path.name == "app_bootstrap.php":
             continue
-        text = path.read_text(encoding="utf-8", errors="replace")
-        if "$exception->getMessage()" in text:
-            fail(f"raw exception message returned/used in service: {path.relative_to(ROOT)}")
+        if raw_exception.search(path.read_text(encoding="utf-8", errors="replace")):
+            fail(f"raw exception message used in service: {path.relative_to(ROOT)}")
 
-    for marker in ("MIT License", "clean modern history", "PHPMailer"):
+    for marker in (
+        "controlled deployment",
+        "MariaDB-backed integration",
+        "Ali Farrokhnejad authored and maintains",
+        "same repository and normal commits",
+        "MIT License",
+    ):
         if marker not in readme:
-            fail(f"README missing publication boundary/state marker: {marker}")
-    if "Historical repository boundary" not in security:
-        fail("SECURITY.md must document the historical Git boundary")
-    if "MIT License" not in publication:
-        fail("PUBLICATION.md must document the MIT License")
+            fail(f"README missing release marker: {marker}")
+    normalized_security = " ".join(security.split())
+    normalized_publication = " ".join(publication.split())
+    if "local demonstration and controlled deployment" not in normalized_security:
+        fail("SECURITY.md does not state the supported deployment boundary")
+    if "same repository name and authentic development history" not in normalized_publication:
+        fail("PUBLICATION.md does not state the approved history boundary")
     if '"license": "MIT"' not in composer:
         fail("composer.json must declare MIT")
     if not license_text.startswith("MIT License") or "Copyright (c) 2026 Ali Farrokhnejad" not in license_text:
-        fail("LICENSE must contain the MIT license and project copyright notice")
+        fail("LICENSE must contain the expected MIT text and copyright notice")
 
     tracked = tracked_files()
-    if any(path.startswith("vendor/") for path in tracked):
-        fail("Composer vendor files are still tracked")
-    if "progress.md" in tracked:
-        fail("generated Cursor progress transcript is still tracked")
+    forbidden_prefixes = ("vendor/", ".codex/", ".codex-observer/", ".claude/", "__pycache__/")
+    for path in tracked:
+        if path.startswith(forbidden_prefixes) or path.endswith((".pyc", ".log")):
+            fail(f"generated/tool state is tracked: {path}")
 
-    public_text_paths = [ROOT / "README.md", ROOT / "PUBLICATION.md", ROOT / "SECURITY.md"]
-    public_text_paths.extend((ROOT / "docs").rglob("*.md"))
-    private_path_marker = "C:\\Users\\Ali\\"
-    for path in public_text_paths:
+    forbidden_files = {
+        "progress.md",
+        "Manual Verification.txt",
+        "Finalization Options.txt",
+        "todolist.md",
+        "tournament-errors.md",
+        "pages/developers.html",
+        "pages/admin/manage_blogs.php",
+        "pages/admin/image_upload.php",
+        "pages/admin/view_match_details.php",
+        "pages/admin/record_match_result.php",
+    }
+    for path in sorted(forbidden_files.intersection(tracked)):
+        fail(f"retired publication surface remains tracked: {path}")
+
+    public_files = [ROOT / "README.md", ROOT / "PUBLICATION.md", ROOT / "SECURITY.md", ROOT / "AGENTS.md"]
+    public_files.extend((ROOT / "docs").rglob("*.md"))
+    forbidden_phrases = (
+        "C:\\Users\\Ali\\",
+        "LinkedIn URL pending",
+        "Personal logo slot reserved",
+        "Studio logo placeholder",
+        "clean modern history",
+        "clean-history public repository",
+    )
+    for path in public_files:
         text = path.read_text(encoding="utf-8", errors="replace")
-        if private_path_marker in text:
-            fail(f"machine-specific home-directory path remains in public documentation: {path.relative_to(ROOT)}")
+        for phrase in forbidden_phrases:
+            if phrase in text:
+                fail(f"stale/private publication phrase in {path.relative_to(ROOT)}: {phrase}")
 
     if FAILURES:
         print("publication guard failed:")

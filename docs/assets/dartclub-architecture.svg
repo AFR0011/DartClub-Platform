@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="650" viewBox="0 0 1200 650" role="img" aria-labelledby="title desc">
+  <title id="title">DartClub-Platform architecture</title>
+  <desc id="desc">Public and administration pages call role-protected PHP services, which use shared application helpers and persist to MariaDB and controlled local storage. GitHub Actions verifies a fresh database and application contracts.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#07111f"/>
+      <stop offset="1" stop-color="#14273f"/>
+    </linearGradient>
+    <linearGradient id="blue" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2563eb"/>
+      <stop offset="1" stop-color="#38bdf8"/>
+    </linearGradient>
+    <linearGradient id="amber" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f59e0b"/>
+      <stop offset="1" stop-color="#fb7185"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#000" flood-opacity=".28"/>
+    </filter>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#7dd3fc"/>
+    </marker>
+    <style>
+      .label{font-family:Inter,Segoe UI,Arial,sans-serif;fill:#f8fafc}
+      .muted{font-family:Inter,Segoe UI,Arial,sans-serif;fill:#b7c7da}
+      .card{fill:#12243a;stroke:#355270;stroke-width:2}
+      .line{fill:none;stroke:#7dd3fc;stroke-width:3;marker-end:url(#arrow)}
+    </style>
+  </defs>
+  <rect width="1200" height="650" rx="32" fill="url(#bg)"/>
+  <text class="label" x="64" y="68" font-size="30" font-weight="700">DartClub-Platform</text>
+  <text class="muted" x="64" y="98" font-size="16">Controlled-demo PHP/MySQL application boundary</text>
+
+  <g filter="url(#shadow)">
+    <rect class="card" x="64" y="160" width="250" height="310" rx="24"/>
+    <rect x="84" y="180" width="210" height="8" rx="4" fill="url(#blue)"/>
+    <text class="label" x="92" y="230" font-size="21" font-weight="700">Browser surfaces</text>
+    <text class="muted" x="92" y="270" font-size="16">Public club pages</text>
+    <text class="muted" x="92" y="303" font-size="16">Player profile &amp; membership</text>
+    <text class="muted" x="92" y="336" font-size="16">Tournament views</text>
+    <text class="muted" x="92" y="369" font-size="16">Blog &amp; gallery</text>
+    <text class="muted" x="92" y="402" font-size="16">Admin operations</text>
+    <rect x="92" y="430" width="155" height="28" rx="14" fill="#1e3a5a"/>
+    <text class="label" x="110" y="449" font-size="13">HTML · CSS · JS · PHP</text>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect class="card" x="400" y="132" width="330" height="365" rx="24"/>
+    <rect x="420" y="152" width="290" height="8" rx="4" fill="url(#amber)"/>
+    <text class="label" x="448" y="205" font-size="21" font-weight="700">PHP application layer</text>
+    <rect x="448" y="237" width="234" height="52" rx="14" fill="#1a3552"/>
+    <text class="label" x="470" y="269" font-size="15">Role-protected services</text>
+    <rect x="448" y="305" width="234" height="52" rx="14" fill="#1a3552"/>
+    <text class="label" x="470" y="337" font-size="15">Session · JSON · errors</text>
+    <rect x="448" y="373" width="234" height="52" rx="14" fill="#1a3552"/>
+    <text class="label" x="470" y="405" font-size="15">Tournament domain engine</text>
+    <rect x="448" y="441" width="234" height="34" rx="17" fill="#1e3a5a"/>
+    <text class="muted" x="477" y="463" font-size="13">auth · sanitize · mail · paths</text>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect class="card" x="818" y="160" width="318" height="145" rx="24"/>
+    <text class="label" x="850" y="211" font-size="20" font-weight="700">MariaDB / MySQL</text>
+    <text class="muted" x="850" y="246" font-size="15">users · membership · tournaments</text>
+    <text class="muted" x="850" y="273" font-size="15">matches · content · gallery metadata</text>
+  </g>
+  <g filter="url(#shadow)">
+    <rect class="card" x="818" y="345" width="318" height="125" rx="24"/>
+    <text class="label" x="850" y="393" font-size="20" font-weight="700">Controlled local storage</text>
+    <text class="muted" x="850" y="428" font-size="15">cleared media · private submissions</text>
+  </g>
+
+  <path class="line" d="M314 315 H392"/>
+  <path class="line" d="M730 260 H810"/>
+  <path class="line" d="M730 410 H810"/>
+
+  <g>
+    <rect x="64" y="548" width="1072" height="62" rx="20" fill="#0d1c2d" stroke="#294763"/>
+    <circle cx="102" cy="579" r="13" fill="#22c55e"/>
+    <text class="label" x="130" y="573" font-size="15" font-weight="700">GitHub Actions release gate</text>
+    <text class="muted" x="130" y="595" font-size="13">fresh schema · named-session HTTP · role/membership boundaries · five tournament formats · syntax/security</text>
+  </g>
+</svg>

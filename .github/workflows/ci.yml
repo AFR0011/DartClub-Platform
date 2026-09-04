@@ -10,6 +10,19 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    services:
+      mariadb:
+        image: mariadb:11.4
+        env:
+          MARIADB_DATABASE: dart_club
+          MARIADB_ROOT_PASSWORD: dart_club_ci_root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
     steps:
       - name: Check out repository
         uses: actions/checkout@v7
@@ -31,6 +44,12 @@ jobs:
       - name: Install Composer dependencies
         run: composer install --no-interaction --prefer-dist --no-progress
 
+      - name: Install MariaDB client
+        run: sudo apt-get update && sudo apt-get install --yes mariadb-client
+
+      - name: Import deterministic schema
+        run: mariadb --host=127.0.0.1 --user=root --password=dart_club_ci_root dart_club < dart_club.sql
+
       - name: Audit Composer dependencies
         run: composer audit --no-interaction
 
@@ -39,6 +58,19 @@ jobs:
 
       - name: Security smoke
         run: php scripts/security_smoke.php
+
+      - name: Database and HTTP integration contracts
+        env:
+          APP_ENV: development
+          APP_DB_HOST: 127.0.0.1
+          APP_DB_PORT: 3306
+          APP_DB_NAME: dart_club
+          APP_DB_USER: root
+          APP_DB_PASS: dart_club_ci_root
+        run: |
+          php tests/prepare_integration_fixture.php
+          php tests/tournament_contracts.php
+          python3 tests/http_integration.py
 
       - name: PHP syntax scan
         run: |

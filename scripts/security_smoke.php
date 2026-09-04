@@ -33,6 +33,12 @@ $cases = [
         'forbidden' => ['<script', '</script>'],
         'required' => ['<p>kept</p>'],
     ],
+    [
+        'name' => 'preserves utf-8 text',
+        'input' => '<p>Kulüp üyeliği — güvenli içerik</p>',
+        'forbidden' => [],
+        'required' => ['Kulüp üyeliği — güvenli içerik'],
+    ],
 ];
 
 $failed = false;
