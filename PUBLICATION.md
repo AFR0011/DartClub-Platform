@@ -24,12 +24,16 @@ history are intentional.
 - [x] Tool/editor state and generated dependencies are excluded from the
   maintained tree.
 - [x] Current 6000×4000 photographs are replaced by web-sized equivalents.
-- [ ] Public MariaDB-backed CI passes on the final release commit.
-- [ ] A fresh public clone repeats the documented integration checks.
+- [x] Public MariaDB-backed CI passes on the reviewed branch and merged default
+  branch.
+- [x] A fresh public clone matches the merged commit and repeats the portable
+  publication/security checks; GitHub's fresh checkout repeats the full
+  MariaDB-backed integration suite.
 - [x] The final privacy-safe screenshot is captured from the reviewed tree and
   checked at desktop and mobile widths.
-- [ ] Final repository metadata, security settings, tag, release, and merged-
-  branch cleanup are read back successfully.
+- [x] Final repository metadata and supported security settings are read back
+  successfully.
+- [x] Merged publication branches are deleted only after ancestry proof.
 
 ## History decision
 

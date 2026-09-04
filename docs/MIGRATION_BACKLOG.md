@@ -5,14 +5,18 @@ is preserved in `docs/VERSION_LOG.md` and Git history rather than repeated here.
 
 ## Release gate
 
-- [ ] Public PHP 8.3/MariaDB CI passes on the final commit.
-- [ ] Fresh public clone repeats Composer, schema import, database/HTTP,
-  tournament, sanitizer, syntax, and publication checks.
+- [x] Public PHP 8.3/MariaDB CI passes on the reviewed branch and merged default
+  branch.
+- [x] A fresh public clone repeats the portable checks, while GitHub's fresh
+  checkout repeats Composer, schema import, database/HTTP, tournament,
+  sanitizer, syntax, and publication checks.
 - [x] Final homepage screenshot is reviewed for accuracy and privacy at desktop
   and mobile widths.
-- [ ] GitHub description/topics and security controls are read back.
-- [ ] `v1.0.0-portfolio` points to the verified default-branch commit.
-- [ ] Merged branches are deleted only after remote ancestry proof.
+- [x] GitHub description/topics and supported security controls are read back.
+- [x] Merged branches are deleted only after remote ancestry proof.
+
+The external `v1.0.0-portfolio` release is created from the final verified
+default-branch commit; it is intentionally not a source-tree prerequisite.
 
 ## Future maintenance, not release blockers
 
