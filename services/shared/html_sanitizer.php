@@ -19,9 +19,8 @@ function app_sanitize_rich_html(string $html): string
     $previous = libxml_use_internal_errors(true);
     $document = new DOMDocument('1.0', 'UTF-8');
     $wrapperId = 'app-rich-html-root';
-    $encoded = mb_convert_encoding($html, 'HTML-ENTITIES', 'UTF-8');
     $document->loadHTML(
-        '<div id="' . $wrapperId . '">' . $encoded . '</div>',
+        '<?xml encoding="UTF-8"><div id="' . $wrapperId . '">' . $html . '</div>',
         LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD
     );
     libxml_clear_errors();

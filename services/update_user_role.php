@@ -1,46 +1,25 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) session_start();
-include 'dbConnection.php';
 
-header('Content-Type: application/json');
+require_once __DIR__ . '/auth.php';
+require_once __DIR__ . '/dbConnection.php';
 
-// Check if user is logged in and is admin
-if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'admin') {
-    echo json_encode(['success' => false, 'message' => 'Unauthorized access']);
-    exit();
+if (get_current_role() !== 'admin') {
+    app_json_response(['success' => false, 'message' => 'Unauthorized access'], 403);
 }
 
-// Get the POST data
-$input = json_decode(file_get_contents('php://input'), true);
-$user_id = $input['user_id'] ?? null;
-$new_role = $input['new_role'] ?? null;
+$input = app_read_json_input();
+$userId = filter_var($input['user_id'] ?? null, FILTER_VALIDATE_INT, [
+    'options' => ['min_range' => 1],
+]);
+$newRole = trim((string) ($input['new_role'] ?? ''));
 
-if (!$user_id || !$new_role) {
-    echo json_encode(['success' => false, 'message' => 'User ID and new role are required']);
-    exit();
+if ($userId === false || !in_array($newRole, ['player', 'manager', 'admin'], true)) {
+    app_json_response(['success' => false, 'message' => 'A valid user ID and role are required.'], 422);
 }
 
-// Validate role
-if (!in_array($new_role, ['player', 'manager', 'admin'])) {
-    echo json_encode(['success' => false, 'message' => 'Invalid role']);
-    exit();
-}
+$stmt = $conn->prepare('UPDATE users SET user_role = ? WHERE user_id = ?');
+$stmt->bind_param('si', $newRole, $userId);
+$stmt->execute();
+$stmt->close();
 
-try {
-    $sql = "UPDATE users SET user_role = ? WHERE user_id = ?";
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param("si", $new_role, $user_id);
-    
-    if ($stmt->execute()) {
-        echo json_encode(['success' => true, 'message' => 'User role updated successfully']);
-    } else {
-        echo json_encode(['success' => false, 'message' => 'Failed to update user role']);
-    }
-    
-    $stmt->close();
-} catch (Exception $e) {
-    echo json_encode(['success' => false, 'message' => 'Database error: ' . $e->getMessage()]);
-}
-
-$conn->close();
-?> 
+app_json_response(['success' => true, 'message' => 'User role updated successfully']);

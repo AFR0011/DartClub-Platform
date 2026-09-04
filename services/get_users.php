@@ -1,31 +1,24 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) session_start();
-include 'dbConnection.php';
 
-header('Content-Type: application/json');
+require_once __DIR__ . '/auth.php';
+require_once __DIR__ . '/dbConnection.php';
 
-// Check if user is logged in and is admin
-if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'admin') {
-    echo json_encode(['success' => false, 'message' => 'Unauthorized access']);
-    exit();
+if (get_current_role() !== 'admin') {
+    app_json_response(['success' => false, 'message' => 'Unauthorized access'], 403);
 }
 
-try {
-    $sql = "SELECT user_id, user_name, email, user_role, membership_status FROM users ORDER BY user_id";
-    $stmt = $conn->prepare($sql);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    
-    $users = [];
-    while ($row = $result->fetch_assoc()) {
-        $users[] = $row;
-    }
-    
-    echo json_encode($users);
-} catch (Exception $e) {
-    echo json_encode(['error' => 'Failed to fetch users: ' . $e->getMessage()]);
-}
+$stmt = $conn->prepare(
+    'SELECT user_id, user_name, email, user_role, membership_status
+     FROM users
+     ORDER BY user_id'
+);
+$stmt->execute();
+$result = $stmt->get_result();
 
+$users = [];
+while ($row = $result->fetch_assoc()) {
+    $users[] = $row;
+}
 $stmt->close();
-$conn->close();
-?> 
+
+app_json_response($users);

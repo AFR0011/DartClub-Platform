@@ -1,151 +1,79 @@
-# RUN_PROTOCOL
+# Run protocol
 
-## Purpose
-
-Define the validation ladder for Dart Club Website. CI covers dependency/security/static checks, while database-backed browser behavior remains a manual local regression responsibility.
-
-Use `docs/TESTING_CHECKLIST.md` for the detailed click path and this document for validation levels and reporting rules.
-
-## Level 0 — Automated Publication Checks
-
-Run for every maintained change:
+## Level 0 — static and dependency checks
 
 ```bash
 composer validate --strict
 composer install --no-interaction --prefer-dist
-composer audit
+composer audit --no-interaction
 python3 scripts/publication_guard.py
 php scripts/security_smoke.php
 ```
 
-Then lint PHP syntax across the maintained tree:
+Lint every non-vendor PHP file and run `node --check` for maintained JavaScript.
+Also parse Actions YAML, run `git diff --check`, and confirm no tracked generated
+dependency, upload, log, cache, agent/editor state, credential, or private data.
+
+## Level 1 — fresh database integration
+
+Use PHP 8.3+ with `mysqli`, `mbstring`, `fileinfo`, `zip`, and `dom`, plus a
+fresh MySQL/MariaDB database imported from `dart_club.sql`.
+
+Export `APP_DB_HOST`, `APP_DB_PORT`, `APP_DB_NAME`, `APP_DB_USER`, and
+`APP_DB_PASS`, then run:
 
 ```bash
-find . -path './vendor' -prune -o -name '*.php' -print0 | xargs -0 -n1 php -l
+php tests/prepare_integration_fixture.php
+php tests/tournament_contracts.php
+python3 tests/http_integration.py
 ```
 
-GitHub Actions runs the equivalent checks on PHP 8.3 with `mysqli`, `mbstring`, `fileinfo`, `zip`, and `dom` enabled.
+The HTTP suite starts temporary loopback PHP servers. It proves:
 
-## Level 1 — Schema and Bootstrap Validation
+- login sets and reuses only `dart_club_session`;
+- guest/player calls cannot list users or change roles;
+- an administrator can list users and change an auth role;
+- a role change leaves membership state unchanged;
+- membership review leaves auth role unchanged;
+- guest membership-document download is denied;
+- production database failures return generic JSON rather than internals.
 
-Use for database/config/service refactors.
+The tournament suite runs inside a rolled-back transaction and proves:
 
-Confirm active code uses:
+- the five-format registry;
+- eight-player Round Robin fixture count and standings update;
+- League group fixture count and knockout promotion;
+- two-team Group assignment and cross-team player fixtures;
+- single-elimination bracket/third-place structure;
+- double-elimination segment creation and winner/loser propagation.
 
-- `services/config.php`
-- `services/app_bootstrap.php`
-- `services/dbConnection.php`
+GitHub Actions is the canonical reproducible database environment.
 
-Confirm the schema contains the fields/tables expected by the maintained application, including:
+## Level 2 — focused browser review
 
-- `membership_applications`
-- `tournament_teams`
-- `tournament_team_players`
-- `team_matches`
-- `blog_images`
-- `blog_comments`
-- `blog_reactions`
-- `gallery_images`
+With the fresh fixture and a local server, inspect at desktop and mobile width:
 
-Check that request paths do not mutate schema and that `user_role` remains distinct from `membership_status`.
+- homepage/navigation and the README screenshot viewport;
+- login and admin user table;
+- tournament list/detail and bracket filters;
+- membership review controls;
+- blog/gallery loading and missing-media handling.
 
-## Level 2 — Local Browser / Database Smoke
+Record the browser, viewport, commit, and exact paths. Browser review does not
+replace Level 1 contracts.
 
-Recommended environment:
+## Level 3 — deployment-specific checks
 
-- Apache/XAMPP or equivalent PHP-capable web server
-- MySQL/MariaDB
-- database imported from `dart_club.sql`
-- local configuration copied from `services/config.local.example.php`
+Only when preparing a real controlled deployment:
 
-Install dependencies:
+- verify TLS, host/origin behavior, production errors, and seed-account removal;
+- verify direct membership-file denial under the chosen web server;
+- verify writable upload paths, quotas, backups, and retention;
+- verify SMTP credentials and delivery separately;
+- repeat critical role/membership/tournament flows with synthetic data.
 
-```bash
-composer install
-```
+## Reporting rule
 
-Import the database:
-
-```bash
-mysql -u root -p dart_club < dart_club.sql
-```
-
-For a lightweight non-Apache check:
-
-```bash
-php -S 127.0.0.1:8090 -t .
-```
-
-Use Apache/XAMPP for the complete membership-document `.htaccess` boundary.
-
-Minimum smoke path:
-
-- signup
-- login/logout
-- profile save
-- membership submission and authorized admin review/download
-- public tournament hub/detail
-- blog and gallery pages
-- player approval/creation
-- admin tournament list/detail
-
-## Level 3 — Tournament Regression
-
-For tournament engine changes, exercise every supported format:
-
-### Round Robin
-
-- generate fixtures
-- record several results
-- verify standings update
-
-### League
-
-- create groups
-- complete group stage
-- verify group standings and promoted knockout structure
-
-### Group
-
-- verify two-team roster assignment
-- generate cross-team player fixtures
-- record results and verify team standings
-
-### Elimination
-
-- verify bracket links, byes, winner advancement, and placement/third-place behavior
-
-### Double Elimination
-
-- verify opening round
-- winners and losers paths
-- loser propagation
-- third-place playoff
-- grand final
-- public/admin path filters
-
-Also archive a completed tournament and verify public reads remain available while mutation services reject edits.
-
-## Level 4 — Membership and Community Regression
-
-- submit membership application as a signed-in player
-- verify unsupported document types are rejected
-- verify direct `/files/applications/membership/...` access is denied under Apache
-- approve/reject as manager/admin using the authorized download route
-- confirm membership changes do not silently change auth role
-- create a blog draft as an approved member
-- test rich HTML sanitization with safe formatting and hostile event/script payloads
-- publish as manager/admin
-- add/delete comments and reactions
-- verify blog images appear in gallery as intended
-
-## Reporting Rule
-
-When reporting verification, separate:
-
-- automated commands that passed;
-- browser/database workflows that were manually exercised;
-- behaviors only inspected in source;
-- deployment assumptions not tested locally.
-
-Do not report the project as runtime-verified merely because syntax/CI is green. A PHP file can be syntactically flawless while still making terrible decisions with a database, a tradition the ecosystem has maintained with impressive consistency.
+Separate automated, browser-manual, source-inspected, and unavailable evidence.
+Do not infer runtime correctness from syntax, or production readiness from a
+loopback test.

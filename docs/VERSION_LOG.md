@@ -1,5 +1,24 @@
 # VERSION_LOG
 
+## Portfolio Verification Release
+- Date: 2026-09-03
+- Status: finalization in verification
+- Main changes:
+  - repaired admin user listing/role mutation to use the named application
+    session, shared authorization helpers, JSON responses, and safe errors;
+  - added MariaDB-backed HTTP/session/membership contracts and five-format
+    tournament characterization tests to CI;
+  - removed detached admin fallbacks, unfinished developer/logo placeholders,
+    stale planning notes, and tracked agent/editor state;
+  - reconciled publication/security/state documentation to the same public
+    repository and authentic-history decision;
+  - reduced eleven 6000×4000 photographs to 1920×1280 web copies while
+    retaining cleared content and filenames;
+  - added a privacy-safe homepage screenshot and synthetic architecture visual.
+- Verification:
+  - local PHP 8.4 syntax and UTF-8 sanitizer smoke: pass;
+  - public PHP 8.3/MariaDB CI, fresh-clone rerun, and release read-back: pending.
+
 ## Admin Locale Console Pass
 - Date: 2026-04-20
 - Status: shared admin-console localization follow-up focused on full admin EN/TR coverage, a console-wide locale switch, and locale-aware tournament/match admin flows

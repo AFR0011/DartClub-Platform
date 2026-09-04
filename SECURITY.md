@@ -1,92 +1,84 @@
-# Security Policy
+# Security policy
 
-Dart Club Website is a legacy PHP/MySQL club-management application maintained as an engineering portfolio project. It includes authentication, role-based administration, membership documents, tournament data, community content, and local file uploads. Those features make deployment security materially more important than the age or simplicity of the stack might suggest.
+## Supported boundary
 
-## Supported deployment boundary
+DartClub-Platform is maintained for local demonstration and controlled
+deployment. It handles authentication, roles, membership documents, community
+content, and file uploads, so it must not be exposed directly to the public
+Internet without a separate deployment/security review.
 
-The repository is intended for local development, demonstration, and controlled deployment behind a properly configured PHP-capable web server and database.
+An Internet-facing operator must address TLS and trusted origins, rate limiting,
+tokenized account recovery, database/network credentials, web-server rules,
+filesystem permissions and quotas, SMTP policy, demo accounts, backups, and
+document retention.
 
-Do not expose the application directly to the public Internet without reviewing:
+## Configuration and secrets
 
-- TLS termination and host/origin configuration;
-- database credentials and network access;
-- Apache or equivalent private-upload denial rules;
-- filesystem permissions and upload quotas;
-- SMTP credentials and sender policy;
-- production PHP error/display settings;
-- seed/demo accounts;
-- backups and retention for membership/application documents.
+Database and SMTP credentials belong in environment variables or the ignored
+`services/config.local.php`. Production refuses an empty database password.
+Never commit real credentials or reuse the synthetic CI/local fixture values.
 
-## Database secrets
+A short database value exists only in historical development commits. The owner
+confirmed it was disposable local-only data and was never reused for a real
+system; authentic history is therefore retained.
 
-Database credentials are supplied through environment variables or the ignored `services/config.local.php` file. The committed configuration does not contain a usable production password, and production refuses an empty database password.
+## Sessions and authorization
 
-Never commit real values for database or SMTP credentials.
+The canonical bootstrap configures strict cookie-only sessions named
+`dart_club_session`, HttpOnly cookies, SameSite=Lax, Secure cookies for
+production/HTTPS, and session-ID regeneration after login.
 
-## Sessions and authentication
+Sensitive service handlers enforce authorization themselves. `user_role`
+controls authorization; `membership_status` is a separate club workflow state.
+Database-backed HTTP tests verify guest/player denial and administrator role
+changes through the named session.
 
-The shared bootstrap enables strict cookie-only PHP sessions and configures:
+## Passwords and recovery
 
-- HttpOnly session cookies;
-- SameSite=Lax;
-- Secure cookies in production/HTTPS;
-- session identifier regeneration after successful login;
-- explicit cookie clearing on logout.
+New and fixture passwords use PHP password hashes. The login service retains a
+bounded migration path for historical plaintext/MD5 development rows and
+rehashes them after a successful verified login. New legacy-format rows are not
+supported practice.
 
-Passwords are stored using PHP password hashes. The local SQL fixture keeps known QA passwords only as bcrypt hashes.
-
-The login service retains migration compatibility for historical plaintext/MD5 rows so an old development database can be upgraded to bcrypt after a successful verified login. New passwords must not be stored in legacy formats.
+Self-service password reset is intentionally not implemented. Controlled-demo
+operators use an administrator/support recovery process. Temporary credentials
+must be delivered through a separate trusted channel, never email body text.
 
 ## State-changing requests
 
-In production, PHP service requests using `POST`, `PUT`, `PATCH`, or `DELETE` must carry a same-origin `Origin` header matching the application host. SameSite=Lax cookies provide an additional browser boundary.
-
-This is a centralized legacy-app CSRF defense, not a claim that the application implements per-form synchronizer tokens. Deployments that add cross-origin clients or APIs must redesign this boundary rather than disabling it casually.
+Production mutation requests require an `Origin` host matching the application
+host; SameSite=Lax cookies provide another browser boundary. This is a legacy-
+application same-origin defense, not a claim of synchronizer-token CSRF.
 
 ## Membership documents
 
-Membership applications may contain private personal information.
+Submitted forms may contain private information even though the blank templates
+are public. The maintained path validates size, extension, detected MIME, and
+DOCX structure; stores randomized names; rolls back newly moved files on DB
+failure; and exposes them only through a manager/admin endpoint with private,
+no-store responses and path confinement.
 
-The maintained release:
+Apache `.htaccess` denies direct access to the membership upload directory.
+Nginx, Caddy, IIS, and other servers require an equivalent rule.
 
-- stores uploaded membership documents under `files/applications/membership/`;
-- blocks direct Apache access to that directory with `.htaccess`;
-- validates file size, extension, server-detected MIME type, and DOCX structure when available;
-- exposes documents only through a manager/admin-authorized PHP download endpoint;
-- validates stored paths remain inside the membership directory;
-- returns `Cache-Control: private, no-store`;
-- removes newly moved files if the database transaction fails.
+## Rich content and media
 
-If the application is deployed behind Nginx, Caddy, IIS, or another web server, equivalent direct-access denial is required. Do not assume Apache `.htaccess` semantics magically follow the files to another server. Computers remain disappointingly literal.
+Blog HTML is sanitized on write and read with an allowlist. Unsafe tags,
+attributes, event handlers, styles, and protocols are removed; `_blank` links
+receive `noopener noreferrer`. Security smoke tests cover hostile examples and
+UTF-8 preservation.
 
-## Blog and gallery content
+Gallery/blog uploads use detected MIME types and randomized filenames. Shared
+blog/gallery files must not be removed while another record references them.
 
-Blog content is rich HTML, so stored XSS is treated as a security boundary. The maintained release sanitizes blog HTML through a DOM-based tag/attribute allowlist on both write and read. Legacy stored rows therefore pass through the sanitizer before being returned.
+## Error disclosure and dependencies
 
-Link/image protocols are restricted, event/style attributes are removed, and `_blank` links receive `noopener noreferrer`.
-
-Blog/gallery image uploads use server-detected MIME types and randomized filenames.
-
-## Error disclosure
-
-Service exceptions pass through a shared safe-error helper. Development can expose useful diagnostic text, while production returns generic failures instead of database/runtime exception details.
-
-## Email credentials and temporary passwords
-
-PHPMailer configuration comes from environment variables. Player-account emails do not contain temporary passwords. Temporary credentials must be delivered through a separate trusted channel.
-
-## Dependency security
-
-Composer dependencies are installed from `composer.lock`; generated `vendor/` files are not committed. CI validates Composer metadata, installs the lockfile, and runs `composer audit`.
-
-The maintained dependency set currently uses PHPMailer 6.12.x.
-
-## Historical repository boundary
-
-The current working tree has been hardened and cleaned, but historical Git objects remain immutable unless history is deliberately rewritten. Before public visibility, old commits should be treated as a separate review surface for removed config files, credentials, application uploads, generated vendor code, and development transcripts.
-
-For that reason the recommended recruiter-facing publication path is a clean-history public repository created from the maintained source tree, while preserving the original private repository as development history.
+Service exceptions pass through the shared JSON/error boundary. Production
+returns generic failures; database/runtime details remain development-only.
+Composer installs the committed lockfile and CI runs `composer audit`.
 
 ## Reporting
 
-Report security issues privately to the repository owner. Do not publish membership documents, credentials, personal data, exploit payloads, or database dumps in a public issue.
+Report security issues privately to the repository owner. Do not include
+credentials, membership documents, personal data, database dumps, or exploit
+payloads in public issues.
